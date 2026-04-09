@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>词表文献索引</title>
+    <style>
+:root {
+  --bg: #f5efe5;
+  --paper: #fffdf8;
+  --ink: #223031;
+  --muted: #617172;
+  --line: #d9d0c1;
+  --accent: #b55a2b;
+  --accent-2: #1e5875;
+  --shadow: 0 18px 42px rgba(29, 43, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(181, 90, 43, 0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(30, 88, 117, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8f3eb 0%, #efe7da 100%);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Serif CJK SC", "Songti SC", serif;
+}
+.page {
+  width: min(1080px, calc(100% - 32px));
+  margin: 24px auto 48px;
+}
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f4ecdf;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+.crumb:hover { color: var(--accent); }
+h1, h2, h3, h4 {
+  margin: 0 0 12px;
+  font-family: "STSong", "Songti SC", serif;
+}
+h1 { font-size: 30px; line-height: 1.25; }
+h2 { font-size: 22px; margin-top: 28px; }
+h3 { font-size: 18px; margin-top: 20px; }
+h4 { font-size: 16px; margin-top: 18px; }
+p, li {
+  font-size: 15px;
+  line-height: 1.72;
+}
+ul, ol {
+  padding-left: 22px;
+  margin: 10px 0 16px;
+}
+code {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f2ece2;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.92em;
+}
+pre {
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f2ece2;
+  border: 1px solid var(--line);
+}
+pre code {
+  padding: 0;
+  background: transparent;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 20px;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: #efe7da;
+  font-weight: 700;
+}
+a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.footer {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) {
+  .page { width: min(100% - 20px, 1080px); margin-top: 12px; }
+  .panel { padding: 18px; border-radius: 18px; }
+  h1 { font-size: 24px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <nav class="topbar">
+          <a class="crumb" href="../../index.html">返回首页</a>
+          <a class="crumb" href="../index.html">方法文献库索引</a>
+        </nav>
+        <h1>词表文献索引</h1>
+        <p class="meta"><code>method_library/vocabulary/index.html</code></p>
+        <h1>词表文献索引</h1>
+<h2>总览</h2>
+<ul><li><code>page_count</code>: 48</li><li><code>product_categories</code>: 11</li><li><code>visible_contents</code>: 19</li><li><code>attack_objects</code>: 18</li><li><code>search_sweep</code>: <a href="SEARCH_SWEEP_2026-04-08.html">SEARCH_SWEEP_2026-04-08.md</a></li><li><code>verification_log</code>: <a href="../LITERATURE_VERIFICATION_2026-04-08.html">../LITERATURE_VERIFICATION_2026-04-08.md</a></li></ul>
+<h2>页面目录</h2>
+<table><thead><tr><th>axis</th><th>term</th><th>rule_count</th><th>paper_count</th><th>page</th></tr></thead><tbody><tr><td>product_categories</td><td>API</td><td>21</td><td>30</td><td><a href="product_categories/API.html">product_categories/API.md</a></td></tr><tr><td>product_categories</td><td>histogram</td><td>3</td><td>5</td><td><a href="product_categories/histogram.html">product_categories/histogram.md</a></td></tr><tr><td>product_categories</td><td>statistics</td><td>3</td><td>5</td><td><a href="product_categories/statistics.html">product_categories/statistics.md</a></td></tr><tr><td>product_categories</td><td>raw_data</td><td>5</td><td>7</td><td><a href="product_categories/raw_data.html">product_categories/raw_data.md</a></td></tr><tr><td>product_categories</td><td>partial_data</td><td>5</td><td>7</td><td><a href="product_categories/partial_data.html">product_categories/partial_data.md</a></td></tr><tr><td>product_categories</td><td>trained_model</td><td>15</td><td>24</td><td><a href="product_categories/trained_model.html">product_categories/trained_model.md</a></td></tr><tr><td>product_categories</td><td>synthetic_data</td><td>4</td><td>3</td><td><a href="product_categories/synthetic_data.html">product_categories/synthetic_data.md</a></td></tr><tr><td>product_categories</td><td>collaborative_training</td><td>9</td><td>14</td><td><a href="product_categories/collaborative_training.html">product_categories/collaborative_training.md</a></td></tr><tr><td>product_categories</td><td>generative_model</td><td>12</td><td>15</td><td><a href="product_categories/generative_model.html">product_categories/generative_model.md</a></td></tr><tr><td>product_categories</td><td>rag_or_agent</td><td>13</td><td>17</td><td><a href="product_categories/rag_or_agent.html">product_categories/rag_or_agent.md</a></td></tr><tr><td>product_categories</td><td>online_decision_system</td><td>5</td><td>3</td><td><a href="product_categories/online_decision_system.html">product_categories/online_decision_system.md</a></td></tr><tr><td>visible_contents</td><td>direct_records</td><td>5</td><td>7</td><td><a href="visible_contents/direct_records.html">visible_contents/direct_records.md</a></td></tr><tr><td>visible_contents</td><td>partial_records</td><td>8</td><td>14</td><td><a href="visible_contents/partial_records.html">visible_contents/partial_records.md</a></td></tr><tr><td>visible_contents</td><td>histogram_bins</td><td>2</td><td>5</td><td><a href="visible_contents/histogram_bins.html">visible_contents/histogram_bins.md</a></td></tr><tr><td>visible_contents</td><td>aggregate_statistics</td><td>3</td><td>5</td><td><a href="visible_contents/aggregate_statistics.html">visible_contents/aggregate_statistics.md</a></td></tr><tr><td>visible_contents</td><td>binary_decision</td><td>0</td><td>0</td><td><a href="visible_contents/binary_decision.html">visible_contents/binary_decision.md</a></td></tr><tr><td>visible_contents</td><td>label_output</td><td>7</td><td>13</td><td><a href="visible_contents/label_output.html">visible_contents/label_output.md</a></td></tr><tr><td>visible_contents</td><td>score_or_logit</td><td>21</td><td>30</td><td><a href="visible_contents/score_or_logit.html">visible_contents/score_or_logit.md</a></td></tr><tr><td>visible_contents</td><td>rank_or_topk</td><td>3</td><td>8</td><td><a href="visible_contents/rank_or_topk.html">visible_contents/rank_or_topk.md</a></td></tr><tr><td>visible_contents</td><td>model_parameters</td><td>3</td><td>5</td><td><a href="visible_contents/model_parameters.html">visible_contents/model_parameters.md</a></td></tr><tr><td>visible_contents</td><td>model_architecture</td><td>0</td><td>0</td><td><a href="visible_contents/model_architecture.html">visible_contents/model_architecture.md</a></td></tr><tr><td>visible_contents</td><td>gradients</td><td>3</td><td>9</td><td><a href="visible_contents/gradients.html">visible_contents/gradients.md</a></td></tr><tr><td>visible_contents</td><td>parameter_updates</td><td>3</td><td>6</td><td><a href="visible_contents/parameter_updates.html">visible_contents/parameter_updates.md</a></td></tr><tr><td>visible_contents</td><td>intermediate_features</td><td>13</td><td>23</td><td><a href="visible_contents/intermediate_features.html">visible_contents/intermediate_features.md</a></td></tr><tr><td>visible_contents</td><td>synthetic_samples</td><td>0</td><td>0</td><td><a href="visible_contents/synthetic_samples.html">visible_contents/synthetic_samples.md</a></td></tr><tr><td>visible_contents</td><td>generated_content</td><td>13</td><td>17</td><td><a href="visible_contents/generated_content.html">visible_contents/generated_content.md</a></td></tr><tr><td>visible_contents</td><td>retrieved_context</td><td>4</td><td>6</td><td><a href="visible_contents/retrieved_context.html">visible_contents/retrieved_context.md</a></td></tr><tr><td>visible_contents</td><td>tool_calls</td><td>3</td><td>7</td><td><a href="visible_contents/tool_calls.html">visible_contents/tool_calls.md</a></td></tr><tr><td>visible_contents</td><td>actions_or_decisions</td><td>6</td><td>6</td><td><a href="visible_contents/actions_or_decisions.html">visible_contents/actions_or_decisions.md</a></td></tr><tr><td>visible_contents</td><td>memory_entries</td><td>1</td><td>3</td><td><a href="visible_contents/memory_entries.html">visible_contents/memory_entries.md</a></td></tr><tr><td>attack_objects</td><td>raw_record</td><td>11</td><td>21</td><td><a href="attack_objects/raw_record.html">attack_objects/raw_record.md</a></td></tr><tr><td>attack_objects</td><td>partial_record</td><td>0</td><td>0</td><td><a href="attack_objects/partial_record.html">attack_objects/partial_record.md</a></td></tr><tr><td>attack_objects</td><td>member</td><td>14</td><td>21</td><td><a href="attack_objects/member.html">attack_objects/member.md</a></td></tr><tr><td>attack_objects</td><td>sensitive_attribute</td><td>10</td><td>16</td><td><a href="attack_objects/sensitive_attribute.html">attack_objects/sensitive_attribute.md</a></td></tr><tr><td>attack_objects</td><td>training_property</td><td>2</td><td>4</td><td><a href="attack_objects/training_property.html">attack_objects/training_property.md</a></td></tr><tr><td>attack_objects</td><td>subgroup_statistics</td><td>0</td><td>0</td><td><a href="attack_objects/subgroup_statistics.html">attack_objects/subgroup_statistics.md</a></td></tr><tr><td>attack_objects</td><td>model_parameters_object</td><td>1</td><td>4</td><td><a href="attack_objects/model_parameters_object.html">attack_objects/model_parameters_object.md</a></td></tr><tr><td>attack_objects</td><td>model_architecture_object</td><td>1</td><td>4</td><td><a href="attack_objects/model_architecture_object.html">attack_objects/model_architecture_object.md</a></td></tr><tr><td>attack_objects</td><td>decision_boundary</td><td>1</td><td>2</td><td><a href="attack_objects/decision_boundary.html">attack_objects/decision_boundary.md</a></td></tr><tr><td>attack_objects</td><td>intermediate_representation</td><td>2</td><td>7</td><td><a href="attack_objects/intermediate_representation.html">attack_objects/intermediate_representation.md</a></td></tr><tr><td>attack_objects</td><td>system_prompt</td><td>1</td><td>4</td><td><a href="attack_objects/system_prompt.html">attack_objects/system_prompt.md</a></td></tr><tr><td>attack_objects</td><td>private_context</td><td>1</td><td>2</td><td><a href="attack_objects/private_context.html">attack_objects/private_context.md</a></td></tr><tr><td>attack_objects</td><td>retrieved_corpus</td><td>1</td><td>1</td><td><a href="attack_objects/retrieved_corpus.html">attack_objects/retrieved_corpus.md</a></td></tr><tr><td>attack_objects</td><td>tool_privilege</td><td>1</td><td>3</td><td><a href="attack_objects/tool_privilege.html">attack_objects/tool_privilege.md</a></td></tr><tr><td>attack_objects</td><td>memory_state</td><td>1</td><td>3</td><td><a href="attack_objects/memory_state.html">attack_objects/memory_state.md</a></td></tr><tr><td>attack_objects</td><td>policy</td><td>7</td><td>14</td><td><a href="attack_objects/policy.html">attack_objects/policy.md</a></td></tr><tr><td>attack_objects</td><td>reward_signal</td><td>1</td><td>1</td><td><a href="attack_objects/reward_signal.html">attack_objects/reward_signal.md</a></td></tr><tr><td>attack_objects</td><td>action_trajectory</td><td>1</td><td>1</td><td><a href="attack_objects/action_trajectory.html">attack_objects/action_trajectory.md</a></td></tr></tbody></table>
+        <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
+      </section>
+    </main>
+  </body>
+</html>

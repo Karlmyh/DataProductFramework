@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>数据产品类别：`synthetic_data`</title>
+    <style>
+:root {
+  --bg: #f5efe5;
+  --paper: #fffdf8;
+  --ink: #223031;
+  --muted: #617172;
+  --line: #d9d0c1;
+  --accent: #b55a2b;
+  --accent-2: #1e5875;
+  --shadow: 0 18px 42px rgba(29, 43, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(181, 90, 43, 0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(30, 88, 117, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8f3eb 0%, #efe7da 100%);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Serif CJK SC", "Songti SC", serif;
+}
+.page {
+  width: min(1080px, calc(100% - 32px));
+  margin: 24px auto 48px;
+}
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f4ecdf;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+.crumb:hover { color: var(--accent); }
+h1, h2, h3, h4 {
+  margin: 0 0 12px;
+  font-family: "STSong", "Songti SC", serif;
+}
+h1 { font-size: 30px; line-height: 1.25; }
+h2 { font-size: 22px; margin-top: 28px; }
+h3 { font-size: 18px; margin-top: 20px; }
+h4 { font-size: 16px; margin-top: 18px; }
+p, li {
+  font-size: 15px;
+  line-height: 1.72;
+}
+ul, ol {
+  padding-left: 22px;
+  margin: 10px 0 16px;
+}
+code {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f2ece2;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.92em;
+}
+pre {
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f2ece2;
+  border: 1px solid var(--line);
+}
+pre code {
+  padding: 0;
+  background: transparent;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 20px;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: #efe7da;
+  font-weight: 700;
+}
+a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.footer {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) {
+  .page { width: min(100% - 20px, 1080px); margin-top: 12px; }
+  .panel { padding: 18px; border-radius: 18px; }
+  h1 { font-size: 24px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <nav class="topbar">
+          <a class="crumb" href="../../../index.html">返回首页</a>
+          <a class="crumb" href="../../index.html">方法文献库索引</a>
+        </nav>
+        <h1>数据产品类别：`synthetic_data`</h1>
+        <p class="meta"><code>method_library/vocabulary/product_categories/synthetic_data.html</code></p>
+        <h1>数据产品类别：<code>synthetic_data</code></h1>
+<h2>词项定义</h2>
+<ul><li><code>term</code>: synthetic_data</li><li><code>中文标签</code>: Synthetic Data</li><li><code>semantic_definition</code>: 发布合成样本、合成表或可下载的 synthetic data 产品。</li></ul>
+<h2>当前规则覆盖</h2>
+<ul><li><code>related_rule_count</code>: 4</li><li><code>structured_paper_count</code>: 3</li><li><code>manual_search_lead_count</code>: 0</li></ul>
+<h2>关联规则</h2>
+<ul><li><code>privacy/synthetic_data_release/tabular/download/linkability/privacy_attack/linkability</code></li><li><code>privacy/synthetic_data_release/tabular/download/member/formal_bound/dp_synthetic_release</code></li><li><code>privacy/synthetic_data_release/tabular/download/member_or_unique_record/privacy_attack/singling_out</code></li><li><code>privacy/synthetic_data_release/tabular/download/sensitive_attribute/privacy_attack/attribute_inference</code></li></ul>
+<h2>结构化文献</h2>
+<table><thead><tr><th>paper_id</th><th>year</th><th>role</th><th>venue</th><th>primary_tree_path</th></tr></thead><tbody><tr><td>anonymeter2023_privacy_evaluation</td><td>2023</td><td>representative</td><td>Open-source methodology</td><td>privacy/synthetic_data_release/tabular/download/member_or_unique_record/privacy_attack/singling_out</td></tr><tr><td>narayanan2008_robust_deanonymization</td><td>2008</td><td>representative</td><td>IEEE S&amp;P</td><td>privacy/statistical_release_and_query/microdata_release/download/identity/identity_disclosure/linkage</td></tr><tr><td>dwork2006_calibrating_noise</td><td>2006</td><td>historical_foundation</td><td>TCC</td><td>privacy/statistical_release_and_query/noisy_query_release/noisy_counts_or_sums/member_or_attribute/formal_bound/differential_privacy</td></tr></tbody></table>
+<h3>anonymeter2023_privacy_evaluation</h3>
+<ul><li><code>title</code>: <a href="https://github.com/statice/anonymeter" target="_blank" rel="noopener">Anonymeter: How to Evaluate the Privacy Risks of Synthetic Data</a></li><li><code>fit_note</code>: Practical benchmark family for synthetic-data privacy auditing.</li></ul>
+<h3>narayanan2008_robust_deanonymization</h3>
+<ul><li><code>title</code>: Robust De-anonymization of Large Sparse Datasets</li><li><code>fit_note</code>: Canonical de-anonymization result for sparse, auxiliary-rich datasets.</li></ul>
+<h3>dwork2006_calibrating_noise</h3>
+<ul><li><code>title</code>: <a href="https://link.springer.com/chapter/10.1007/11681878_14" target="_blank" rel="noopener">Calibrating Noise to Sensitivity in Private Data Analysis</a></li><li><code>fit_note</code>: Canonical DP mechanism paper used as formal hardness anchor.</li></ul>
+<h2>额外检索线索</h2>
+<ul><li><code>2022</code> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8766950/" target="_blank" rel="noopener">Membership inference attacks against synthetic health data</a> (Journal of Biomedical Informatics)</li><li>直接把 <code>synthetic_data</code> 作为产品类别来审视，说明 fully synthetic 与 partially synthetic 的风险差异非常大。</li><li><code>2020</code> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7165454/" target="_blank" rel="noopener">Towards formalizing the GDPR’s notion of singling out</a> (PNAS)</li><li>适合支撑 <code>synthetic_data</code> 下 singling out 风险的 formal object 定义，而不只是经验型攻击。</li><li><code>2025</code> <a href="https://www.annualreviews.org/content/journals/10.1146/annurev-statistics-112723-034848" target="_blank" rel="noopener">Statistical Data Privacy: A Song of Privacy and Utility</a> (Annual Review of Statistics and Its Application)</li><li>统计学视角的新综述，适合继续追 synthetic data、formal privacy 与 utility trade-off 的引文链。</li></ul>
+<h2>survey 引文滚雪球</h2>
+<ul><li>这一类最值得沿 survey 往下追的两篇是：</li><li><code>Anonymeter / PoPETs 2023</code></li><li><code>Statistical Data Privacy: A Song of Privacy and Utility 2025</code></li><li>它们一头连 practical auditing，一头连统计学 formalism，正好能把 <code>singling out / linkability / attribute inference / formal bound</code> 四支串起来。</li></ul>
+<h2>当前结论</h2>
+<ul><li>该词项已经进入当前三层匹配框架，可通过关联规则与结构化文献继续扩展。</li></ul>
+        <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
+      </section>
+    </main>
+  </body>
+</html>

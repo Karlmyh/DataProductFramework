@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>可见内容：`rank_or_topk`</title>
+    <style>
+:root {
+  --bg: #f5efe5;
+  --paper: #fffdf8;
+  --ink: #223031;
+  --muted: #617172;
+  --line: #d9d0c1;
+  --accent: #b55a2b;
+  --accent-2: #1e5875;
+  --shadow: 0 18px 42px rgba(29, 43, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(181, 90, 43, 0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(30, 88, 117, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8f3eb 0%, #efe7da 100%);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Serif CJK SC", "Songti SC", serif;
+}
+.page {
+  width: min(1080px, calc(100% - 32px));
+  margin: 24px auto 48px;
+}
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f4ecdf;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+.crumb:hover { color: var(--accent); }
+h1, h2, h3, h4 {
+  margin: 0 0 12px;
+  font-family: "STSong", "Songti SC", serif;
+}
+h1 { font-size: 30px; line-height: 1.25; }
+h2 { font-size: 22px; margin-top: 28px; }
+h3 { font-size: 18px; margin-top: 20px; }
+h4 { font-size: 16px; margin-top: 18px; }
+p, li {
+  font-size: 15px;
+  line-height: 1.72;
+}
+ul, ol {
+  padding-left: 22px;
+  margin: 10px 0 16px;
+}
+code {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f2ece2;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.92em;
+}
+pre {
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f2ece2;
+  border: 1px solid var(--line);
+}
+pre code {
+  padding: 0;
+  background: transparent;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 20px;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: #efe7da;
+  font-weight: 700;
+}
+a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.footer {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) {
+  .page { width: min(100% - 20px, 1080px); margin-top: 12px; }
+  .panel { padding: 18px; border-radius: 18px; }
+  h1 { font-size: 24px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <nav class="topbar">
+          <a class="crumb" href="../../../index.html">返回首页</a>
+          <a class="crumb" href="../../index.html">方法文献库索引</a>
+        </nav>
+        <h1>可见内容：`rank_or_topk`</h1>
+        <p class="meta"><code>method_library/vocabulary/visible_contents/rank_or_topk.html</code></p>
+        <h1>可见内容：<code>rank_or_topk</code></h1>
+<h2>词项定义</h2>
+<ul><li><code>term</code>: rank_or_topk</li><li><code>中文标签</code>: rank_or_topk</li><li><code>semantic_definition</code>: 排序、top-k 或候选集。</li></ul>
+<h2>当前规则覆盖</h2>
+<ul><li><code>related_rule_count</code>: 3</li><li><code>structured_paper_count</code>: 8</li><li><code>manual_search_lead_count</code>: 0</li></ul>
+<h2>关联规则</h2>
+<ul><li><code>privacy/recommender_ranking_search/ranking/topk/member/membership_inference/topk_gap</code></li><li><code>stability/recommender_ranking_search/feedback_channel/item_or_rank/utility_or_targeted_behavior/poisoning/recommendation_poisoning</code></li><li><code>stability/recommender_ranking_search/query_interface/service_clone/model_extraction/recommender_substitute</code></li></ul>
+<h2>结构化文献</h2>
+<table><thead><tr><th>paper_id</th><th>year</th><th>role</th><th>venue</th><th>primary_tree_path</th></tr></thead><tbody><tr><td>ojokoh2025_recommender_security_review</td><td>2025</td><td>representative</td><td>Artificial Intelligence Review</td><td>privacy/recommender_ranking_search/ranking/topk/member/membership_inference/topk_gap</td></tr><tr><td>niu2024_mia_survey</td><td>2024</td><td>representative</td><td>Intelligent Computing</td><td>privacy/predict_api_or_exported_model/classification/score/member/membership_inference/black_box_posterior</td></tr><tr><td>huang2021_recsys_poisoning</td><td>2021</td><td>representative</td><td>NDSS</td><td>stability/recommender_ranking_search/feedback_channel/item_or_rank/utility_or_targeted_behavior/poisoning/recommendation_poisoning</td></tr><tr><td>yue2021_black_box_sequential_recsys</td><td>2021</td><td>representative</td><td>RecSys</td><td>stability/recommender_ranking_search/query_interface/service_clone/model_extraction/recommender_substitute</td></tr><tr><td>zhang2021_recsys_mia</td><td>2021</td><td>representative</td><td>CCS</td><td>privacy/recommender_ranking_search/ranking/topk/member/membership_inference/topk_gap</td></tr><tr><td>zhang2020_loki_next_item</td><td>2020</td><td>supplemental</td><td>WWW</td><td>stability/recommender_ranking_search/feedback_channel/item_or_rank/utility_or_targeted_behavior/poisoning/recommendation_poisoning</td></tr><tr><td>tramer2016_prediction_apis</td><td>2016</td><td>historical_foundation</td><td>USENIX Security</td><td>stability/predict_api_or_exported_model/score_or_label/query_interface/extractable_function/model_extraction/substitute_training</td></tr><tr><td>biggio2012_poisoning_attacks</td><td>2012</td><td>historical_foundation</td><td>ICML</td><td>stability/predict_api_or_exported_model/training/train_data/utility_or_targeted_behavior/poisoning/clean_label_poisoning</td></tr></tbody></table>
+<h3>ojokoh2025_recommender_security_review</h3>
+<ul><li><code>title</code>: <a href="https://link.springer.com/article/10.1007/s10462-025-11333-4" target="_blank" rel="noopener">Privacy and security in recommenders: an analytical review</a></li><li><code>fit_note</code>: Analytical review covering privacy leakage, poisoning, extraction, and system-level security issues in recommenders.</li></ul>
+<h3>niu2024_mia_survey</h3>
+<ul><li><code>title</code>: <a href="https://www.sciencedirect.com/science/article/pii/S2949715924000064" target="_blank" rel="noopener">Membership Inference Attacks against Machine Learning Models: A Survey</a></li><li><code>fit_note</code>: Broad survey anchor for the MIA subtree.</li></ul>
+<h3>huang2021_recsys_poisoning</h3>
+<ul><li><code>title</code>: <a href="https://www.ndss-symposium.org/ndss-paper/data-poisoning-attacks-to-deep-learning-based-recommender-systems/" target="_blank" rel="noopener">Data Poisoning Attacks to Deep Learning Based Recommender Systems</a></li><li><code>fit_note</code>: Systematic poisoning study for deep recommender systems.</li></ul>
+<h3>yue2021_black_box_sequential_recsys</h3>
+<ul><li><code>title</code>: <a href="https://doi.org/10.1145/3460231.3474275" target="_blank" rel="noopener">Black-Box Attacks on Sequential Recommenders via Data-Free Model Extraction</a></li><li><code>fit_note</code>: Data-free distillation attack for sequential recommenders.</li></ul>
+<h3>zhang2021_recsys_mia</h3>
+<ul><li><code>title</code>: <a href="https://publications.cispa.saarland/3487/" target="_blank" rel="noopener">Membership Inference Attacks Against Recommender Systems</a></li><li><code>fit_note</code>: Canonical user-level membership inference for recommender outputs.</li></ul>
+<h3>zhang2020_loki_next_item</h3>
+<ul><li><code>title</code>: <a href="https://deepai.org/publication/practical-data-poisoning-attack-against-next-item-recommendation" target="_blank" rel="noopener">Practical Data Poisoning Attack against Next-Item Recommendation</a></li><li><code>fit_note</code>: LOKI demonstrates practical black-box poisoning for next-item recommendation.</li></ul>
+<h3>tramer2016_prediction_apis</h3>
+<ul><li><code>title</code>: Stealing Machine Learning Models via Prediction APIs</li><li><code>fit_note</code>: Canonical prediction-API extraction result.</li></ul>
+<h3>biggio2012_poisoning_attacks</h3>
+<ul><li><code>title</code>: Poisoning Attacks against Support Vector Machines</li><li><code>fit_note</code>: Classical poisoning reference.</li></ul>
+<h2>额外检索线索</h2>
+<ul><li>本轮没有为该词项新增独立检索线索，先以规则级结构化文献为主。</li></ul>
+<h2>当前结论</h2>
+<ul><li>该词项已经进入当前三层匹配框架，可通过关联规则与结构化文献继续扩展。</li></ul>
+        <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
+      </section>
+    </main>
+  </body>
+</html>

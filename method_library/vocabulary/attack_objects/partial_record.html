@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>攻击对象：`partial_record`</title>
+    <style>
+:root {
+  --bg: #f5efe5;
+  --paper: #fffdf8;
+  --ink: #223031;
+  --muted: #617172;
+  --line: #d9d0c1;
+  --accent: #b55a2b;
+  --accent-2: #1e5875;
+  --shadow: 0 18px 42px rgba(29, 43, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(181, 90, 43, 0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(30, 88, 117, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8f3eb 0%, #efe7da 100%);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Serif CJK SC", "Songti SC", serif;
+}
+.page {
+  width: min(1080px, calc(100% - 32px));
+  margin: 24px auto 48px;
+}
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f4ecdf;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+.crumb:hover { color: var(--accent); }
+h1, h2, h3, h4 {
+  margin: 0 0 12px;
+  font-family: "STSong", "Songti SC", serif;
+}
+h1 { font-size: 30px; line-height: 1.25; }
+h2 { font-size: 22px; margin-top: 28px; }
+h3 { font-size: 18px; margin-top: 20px; }
+h4 { font-size: 16px; margin-top: 18px; }
+p, li {
+  font-size: 15px;
+  line-height: 1.72;
+}
+ul, ol {
+  padding-left: 22px;
+  margin: 10px 0 16px;
+}
+code {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f2ece2;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.92em;
+}
+pre {
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f2ece2;
+  border: 1px solid var(--line);
+}
+pre code {
+  padding: 0;
+  background: transparent;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 20px;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: #efe7da;
+  font-weight: 700;
+}
+a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.footer {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) {
+  .page { width: min(100% - 20px, 1080px); margin-top: 12px; }
+  .panel { padding: 18px; border-radius: 18px; }
+  h1 { font-size: 24px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <nav class="topbar">
+          <a class="crumb" href="../../../index.html">返回首页</a>
+          <a class="crumb" href="../../index.html">方法文献库索引</a>
+        </nav>
+        <h1>攻击对象：`partial_record`</h1>
+        <p class="meta"><code>method_library/vocabulary/attack_objects/partial_record.html</code></p>
+        <h1>攻击对象：<code>partial_record</code></h1>
+<h2>词项定义</h2>
+<ul><li><code>term</code>: partial_record</li><li><code>中文标签</code>: partial_record</li><li><code>semantic_definition</code>: 局部字段、遮蔽单元或不完整记录。</li></ul>
+<h2>当前规则覆盖</h2>
+<ul><li><code>related_rule_count</code>: 0</li><li><code>structured_paper_count</code>: 0</li><li><code>manual_search_lead_count</code>: 7</li></ul>
+<h2>关联规则</h2>
+<ul><li>当前 canonical 规则表中还没有直接以该词项为筛选条件的规则。</li></ul>
+<h2>结构化文献</h2>
+<ul><li>当前结构化库里还没有直接通过规则映射到该词项的论文。</li></ul>
+<h2>额外检索线索</h2>
+<ul><li><code>2009</code> <a href="https://www.sciencedirect.com/science/article/abs/pii/S016971610800014X" target="_blank" rel="noopener">Record Linkage</a> (Handbook of Statistics)</li><li>局部记录、去标识片段和 quasi-identifiers 的经典链接锚点。</li><li><code>2019</code> <a href="https://pubmed.ncbi.nlm.nih.gov/30620344/" target="_blank" rel="noopener">Probabilistic record linkage of de-identified research datasets with discrepancies using diagnosis codes</a> (Scientific Data)</li><li>说明 partial record 场景即便只有不完整识别符，也可能恢复跨库关联。</li><li><code>2011</code> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3229505/" target="_blank" rel="noopener">A Systematic Review of Re-Identification Attacks on Health Data</a> (PLoS ONE)</li><li>从系统综述角度总结去标识健康数据上的重识别攻击，适合为 <code>partial_record</code> 提供攻击成功率和现实威胁背景。</li><li><code>2023</code> <a href="https://bmcmedinformdecismak.biomedcentral.com/articles/10.1186/s12911-023-02176-6" target="_blank" rel="noopener">De-identified Bayesian personal identity matching for privacy-preserving record linkage despite errors</a> (BMC Medical Informatics and Decision Making)</li><li>说明即使不共享直接标识符，仅靠去标识片段和误差容忍匹配也能完成高质量 linkage。</li><li><code>2002</code> <a href="https://www.hks.harvard.edu/publications/k-anonymity-model-protecting-privacy" target="_blank" rel="noopener">K-Anonymity: A Model for Protecting Privacy</a> (Int. J. Uncertainty, Fuzziness and Knowledge-Based Systems)</li><li>虽然是防护方向，但它清楚界定了 <code>partial_record</code> / quasi-identifier 组合为何会成为攻击面，是这类对象页的关键背景文献。</li><li><code>2024</code> <a href="https://www.mdpi.com/2306-5729/9/6/75" target="_blank" rel="noopener">De-Anonymizing Users across Rating Datasets via Record Linkage and Quasi-Identifier Attacks</a> (Data)</li><li>很适合作为近年的 record-linkage extension，因为它把 quasi-identifier 和跨库 linkage 重新放回推荐/评分场景。</li><li><code>2024</code> <a href="https://link.springer.com/article/10.1007/s10618-024-01066-3" target="_blank" rel="noopener">Evaluating the disclosure risk of anonymized documents via a machine learning-based re-identification attack</a> (Data Mining and Knowledge Discovery)</li><li>这篇工作说明 partial record 风险已经扩展到文本和文档匿名化，而不只是表格数据。</li></ul>
+<h2>滚雪球补充建议</h2>
+<ul><li>这个词项的检索关键词不应只用 <code>partial record</code>，还应并行使用：</li><li><code>de-identified record linkage</code></li><li><code>quasi-identifier re-identification</code></li><li><code>privacy-preserving record linkage</code></li><li><code>masked-cell inference</code></li><li>现有文献已经足够说明：<code>partial_record</code> 不是弱对象，而是统计披露、医疗去标识和跨库链接里的高频攻击对象。</li></ul>
+<h2>survey 引文滚雪球</h2>
+<ul><li>对 <code>partial_record</code> 最值得继续沿引文链补的是：</li><li><code>Record Linkage 2009 -&gt; health-data re-identification review 2011 -&gt; de-identified linkage papers 2019+</code></li><li><code>k-Anonymity 2002 -&gt; quasi-identifier failure literature -&gt; modern ML-based re-identification 2024</code></li><li>这两条链正好对应：</li><li><code>医疗/官方数据链接</code></li><li><code>更一般的匿名化与去标识失败</code></li></ul>
+<h2>当前可见文献簇</h2>
+<ul><li><code>record linkage / handbook</code></li><li><code>Record Linkage</code></li><li><code>Probabilistic record linkage of de-identified research datasets</code></li><li><code>systematic review / health-data re-identification</code></li><li><code>A Systematic Review of Re-Identification Attacks on Health Data</code></li><li><code>quasi-identifier / anonymization failure</code></li><li><code>K-Anonymity</code></li><li><code>De-Anonymizing Users across Rating Datasets via Record Linkage and Quasi-Identifier Attacks</code></li><li><code>modern ML-based re-identification</code></li><li><code>Evaluating the disclosure risk of anonymized documents via a machine learning-based re-identification attack</code></li></ul>
+<h2>当前结论</h2>
+<ul><li>该词项目前仍是词表层语义，尚未在 canonical 规则表中形成直接匹配入口。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/可见内容语义，再进入候选队列。</li></ul>
+        <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
+      </section>
+    </main>
+  </body>
+</html>

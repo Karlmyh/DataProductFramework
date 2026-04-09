@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>privacy/generative_model/image_generation/image/member/membership_inference/similarity_score</title>
+    <style>
+:root {
+  --bg: #f5efe5;
+  --paper: #fffdf8;
+  --ink: #223031;
+  --muted: #617172;
+  --line: #d9d0c1;
+  --accent: #b55a2b;
+  --accent-2: #1e5875;
+  --shadow: 0 18px 42px rgba(29, 43, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(181, 90, 43, 0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(30, 88, 117, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8f3eb 0%, #efe7da 100%);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Serif CJK SC", "Songti SC", serif;
+}
+.page {
+  width: min(1080px, calc(100% - 32px));
+  margin: 24px auto 48px;
+}
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f4ecdf;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+.crumb:hover { color: var(--accent); }
+h1, h2, h3, h4 {
+  margin: 0 0 12px;
+  font-family: "STSong", "Songti SC", serif;
+}
+h1 { font-size: 30px; line-height: 1.25; }
+h2 { font-size: 22px; margin-top: 28px; }
+h3 { font-size: 18px; margin-top: 20px; }
+h4 { font-size: 16px; margin-top: 18px; }
+p, li {
+  font-size: 15px;
+  line-height: 1.72;
+}
+ul, ol {
+  padding-left: 22px;
+  margin: 10px 0 16px;
+}
+code {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f2ece2;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.92em;
+}
+pre {
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f2ece2;
+  border: 1px solid var(--line);
+}
+pre code {
+  padding: 0;
+  background: transparent;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 20px;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: #efe7da;
+  font-weight: 700;
+}
+a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.footer {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) {
+  .page { width: min(100% - 20px, 1080px); margin-top: 12px; }
+  .panel { padding: 18px; border-radius: 18px; }
+  h1 { font-size: 24px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <nav class="topbar">
+          <a class="crumb" href="../../../../../../../../index.html">返回首页</a>
+          <a class="crumb" href="../../../../../../../index.html">方法文献库索引</a>
+        </nav>
+        <h1>privacy/generative_model/image_generation/image/member/membership_inference/similarity_score</h1>
+        <p class="meta"><code>method_library/rules/privacy/generative_model/image_generation/image/member/membership_inference/similarity_score.html</code></p>
+        <h1>privacy/generative_model/image_generation/image/member/membership_inference/similarity_score</h1>
+<h2>规则摘要</h2>
+<ul><li><code>score_domain</code>: privacy</li><li><code>attack_family</code>: membership_inference</li><li><code>status_policy</code>: attack_supported</li><li><code>evidence_strength</code>: seeded</li><li><code>phase</code>: inference_time</li><li><code>semantic_definition</code>: Membership inference against image generators through similarity or reconstruction scores.</li></ul>
+<h2>三层匹配条件</h2>
+<ul><li><code>eligible_product_categories</code>: generative_model</li><li><code>required_visible_contents</code>: generated_content</li><li><code>target_attack_objects</code>: member</li><li><code>required_tags</code>: asset:candidate_data_available</li><li><code>forbidden_tags</code>: none</li></ul>
+<h2>分数定义</h2>
+<ul><li>攻击暴露度：<code>E = (R - R0) / (R_full - R0)</code></li><li>隐私性能分：<code>S_priv = 1 - E</code></li><li><code>R</code>: 当前算法/攻击在该规则下的实际结果。</li><li><code>R0</code>: 随机猜测或总体先验下的成员判定基线。</li><li><code>R_full</code>: 优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。</li><li><code>R_full_priority</code>: oracle, literature_best, theoretical_ceiling</li><li>聚合：</li><li>同一 attack_family 取 max(E)</li><li>同一 攻击对象 下多个 family 取 max(E)</li><li>同一 score_domain 下多个对象取 max(E)</li><li>最终对外展示 S_priv = 1 - E_domain</li></ul>
+<h2>方法列表</h2>
+<table><thead><tr><th>method_id</th><th>name</th><th>family</th><th>access_pattern</th><th>attacker_knowledge</th><th>raw_metric</th><th>data_requirement</th><th>maturity</th></tr></thead><tbody><tr><td>diffusion_similarity_mia</td><td>Similarity-based diffusion MIA</td><td>membership_inference</td><td>image generation samples</td><td>candidate member images</td><td>auc</td><td>candidate_images</td><td>C</td></tr></tbody></table>
+<h2>文献矩阵</h2>
+<table><thead><tr><th>paper_id</th><th>relation</th><th>role</th><th>year</th><th>venue</th><th>method</th><th>access</th><th>knowledge</th><th>metric</th><th>R</th><th>R0</th><th>R_full(type)</th><th>normalization</th></tr></thead><tbody><tr><td>niu2024_mia_survey</td><td>cross_support</td><td>survey_anchor</td><td>2024</td><td>Intelligent Computing</td><td>membership_inference</td><td>black_box_query</td><td>black_box</td><td>taxonomy</td><td>unavailable</td><td>随机猜测或总体先验下的成员判定基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (oracle)</td><td>unavailable</td></tr><tr><td>matsumoto2023_diffusion_mia</td><td>primary</td><td>representative</td><td>2023</td><td>CoRR / arXiv</td><td>diffusion_similarity_mia</td><td>generated_samples</td><td>black_box</td><td>auc</td><td>unavailable</td><td>随机猜测或总体先验下的成员判定基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (literature_best)</td><td>proxy</td></tr><tr><td>tang2024_diffusion_quantile_mia</td><td>primary</td><td>supplemental</td><td>2024</td><td>Amazon Science</td><td>quantile_regression_mia</td><td>generated_samples</td><td>black_box</td><td>auc</td><td>unavailable</td><td>随机猜测或总体先验下的成员判定基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (literature_best)</td><td>proxy</td></tr><tr><td>quo_vadis_diffusion2025</td><td>primary</td><td>supplemental</td><td>2025</td><td>IEICE Transactions</td><td>diffusion_similarity_mia</td><td>generated_samples</td><td>black_box, white_box</td><td>auc</td><td>unavailable</td><td>随机猜测或总体先验下的成员判定基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (literature_best)</td><td>proxy</td></tr></tbody></table>
+<h3>niu2024_mia_survey</h3>
+<ul><li><code>title</code>: <a href="https://www.sciencedirect.com/science/article/pii/S2949715924000064" target="_blank" rel="noopener">Membership Inference Attacks against Machine Learning Models: A Survey</a></li><li><code>domain / publication_type</code>: cs / survey</li><li><code>product_category_scope</code>: API, trained_model, generative_model</li><li><code>visible_content_scope</code>: label_output, score_or_logit, rank_or_topk</li><li><code>attack_object_scope</code>: member</li><li><code>required_tags</code>: asset:candidate_data_available</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: none</li><li><code>fit_note</code>: Broad survey anchor for the MIA subtree.</li><li><code>limitations</code>: 当前条目尚未统一抽取可直接比较的 R / R0 / R_full 数值，只记录方法与适用条件。</li></ul>
+<h3>matsumoto2023_diffusion_mia</h3>
+<ul><li><code>title</code>: <a href="https://huggingface.co/papers/2302.03262" target="_blank" rel="noopener">Membership Inference Attacks against Diffusion Models</a></li><li><code>domain / publication_type</code>: security / seminal</li><li><code>product_category_scope</code>: generative_model</li><li><code>visible_content_scope</code>: generated_content</li><li><code>attack_object_scope</code>: member</li><li><code>required_tags</code>: asset:candidate_data_available</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: candidate_images</li><li><code>fit_note</code>: 这是 diffusion MIA 的直接起点，最符合当前 <code>similarity_score</code> 规则语义。</li><li><code>limitations</code>: 主要围绕 DDIM / image diffusion 设定，和更广泛的多模态生成模型仍有差距。</li></ul>
+<h3>tang2024_diffusion_quantile_mia</h3>
+<ul><li><code>title</code>: <a href="https://www.amazon.science/publications/membership-inference-attack-on-diffusion-models-via-quantile-regression" target="_blank" rel="noopener">Membership inference attack on diffusion models via quantile regression</a></li><li><code>domain / publication_type</code>: security / extension</li><li><code>product_category_scope</code>: generative_model</li><li><code>visible_content_scope</code>: generated_content</li><li><code>attack_object_scope</code>: member</li><li><code>required_tags</code>: asset:candidate_data_available</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: candidate_images</li><li><code>fit_note</code>: 把传统 quantile-regression MIA 思路明确迁移到了 diffusion models 上，是这条规则很自然的 extension。</li><li><code>limitations</code>: 当前公开页更像 Amazon Science publication 页，细粒度实验设定需要结合原文进一步抽取。</li></ul>
+<h3>quo_vadis_diffusion2025</h3>
+<ul><li><code>title</code>: <a href="https://www.jstage.jst.go.jp/article/transinf/E108.D/12/E108.D_2024ICP0005/_article/-char/en" target="_blank" rel="noopener">Quo Vadis Diffusion Model? A Case for Membership Inference Attacks</a></li><li><code>domain / publication_type</code>: security / extension</li><li><code>product_category_scope</code>: generative_model</li><li><code>visible_content_scope</code>: generated_content</li><li><code>attack_object_scope</code>: member</li><li><code>required_tags</code>: asset:candidate_data_available</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: generated_samples, candidate_images</li><li><code>fit_note</code>: 它把 diffusion MIA 往更系统的超参数和攻击面比较推进，是很好的后续补强。</li><li><code>limitations</code>: 主要仍围绕 image diffusion；其他生成模态的可迁移性需要额外判断。</li></ul>
+<h2>Hardness / Contested 证据</h2>
+<ul><li>当前规则没有独立 hardness evidence。</li></ul>
+<h2>Survey 引文滚雪球补充</h2>
+<ul><li>这条规则最适合沿下面这条线继续补：</li><li><code>Generative AI model privacy: a survey 2025 -&gt; Membership Inference Attacks against Diffusion Models 2023 -&gt; membership inference attack on diffusion models via quantile regression 2024 -&gt; Quo Vadis Diffusion Model? 2025</code></li><li>当前最值得挂上的核心论文是：</li><li><code>2025</code> <a href="https://link.springer.com/article/10.1007/s10462-024-11024-6" target="_blank" rel="noopener">Generative AI model privacy: a survey</a></li><li><code>2023</code> <a href="https://huggingface.co/papers/2302.03262" target="_blank" rel="noopener">Membership Inference Attacks against Diffusion Models</a></li><li><code>2024</code> <a href="https://www.amazon.science/publications/membership-inference-attack-on-diffusion-models-via-quantile-regression" target="_blank" rel="noopener">Membership inference attack on diffusion models via quantile regression</a></li><li><code>2025</code> <a href="https://www.jstage.jst.go.jp/article/transinf/advpub/0/advpub_2024ICP0005/_article" target="_blank" rel="noopener">Quo Vadis Diffusion Model? A Case for Membership Inference Attacks</a></li></ul>
+<h2>当前文献簇</h2>
+<ul><li><code>survey / modality overview</code></li><li><code>Generative AI model privacy: a survey</code></li><li><code>seminal diffusion MIA</code></li><li><code>Membership Inference Attacks against Diffusion Models</code></li><li><code>distribution-aware / quantile-regression extension</code></li><li><code>Membership inference attack on diffusion models via quantile regression</code></li><li><code>hyperparameter / robustness extension</code></li><li><code>Quo Vadis Diffusion Model? A Case for Membership Inference Attacks</code></li></ul>
+<h2>当前结论</h2>
+<ul><li><code>status_policy</code>: attack_supported</li><li><code>primary_paper_count</code>: 3</li><li><code>cross_support_paper_count</code>: 1</li><li><code>method_count</code>: 1</li><li><code>hardness_count</code>: 0</li></ul>
+<h2>开放问题</h2>
+<ul><li>该规则文献仍偏稀，优先继续补 survey / seminal / recent extension。</li></ul>
+        <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
+      </section>
+    </main>
+  </body>
+</html>

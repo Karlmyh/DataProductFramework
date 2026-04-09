@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>stability/rag_or_agent_workflow/retrieved_docs/ingestion_or_store/answer_integrity/retrieval_poisoning/corpus_poisoning</title>
+    <style>
+:root {
+  --bg: #f5efe5;
+  --paper: #fffdf8;
+  --ink: #223031;
+  --muted: #617172;
+  --line: #d9d0c1;
+  --accent: #b55a2b;
+  --accent-2: #1e5875;
+  --shadow: 0 18px 42px rgba(29, 43, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(181, 90, 43, 0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(30, 88, 117, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8f3eb 0%, #efe7da 100%);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Serif CJK SC", "Songti SC", serif;
+}
+.page {
+  width: min(1080px, calc(100% - 32px));
+  margin: 24px auto 48px;
+}
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f4ecdf;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+.crumb:hover { color: var(--accent); }
+h1, h2, h3, h4 {
+  margin: 0 0 12px;
+  font-family: "STSong", "Songti SC", serif;
+}
+h1 { font-size: 30px; line-height: 1.25; }
+h2 { font-size: 22px; margin-top: 28px; }
+h3 { font-size: 18px; margin-top: 20px; }
+h4 { font-size: 16px; margin-top: 18px; }
+p, li {
+  font-size: 15px;
+  line-height: 1.72;
+}
+ul, ol {
+  padding-left: 22px;
+  margin: 10px 0 16px;
+}
+code {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f2ece2;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.92em;
+}
+pre {
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f2ece2;
+  border: 1px solid var(--line);
+}
+pre code {
+  padding: 0;
+  background: transparent;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 20px;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: #efe7da;
+  font-weight: 700;
+}
+a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.footer {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) {
+  .page { width: min(100% - 20px, 1080px); margin-top: 12px; }
+  .panel { padding: 18px; border-radius: 18px; }
+  h1 { font-size: 24px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <nav class="topbar">
+          <a class="crumb" href="../../../../../../../../index.html">返回首页</a>
+          <a class="crumb" href="../../../../../../../index.html">方法文献库索引</a>
+        </nav>
+        <h1>stability/rag_or_agent_workflow/retrieved_docs/ingestion_or_store/answer_integrity/retrieval_poisoning/corpus_poisoning</h1>
+        <p class="meta"><code>method_library/rules/stability/rag_or_agent_workflow/retrieved_docs/ingestion_or_store/answer_integrity/retrieval_poisoning/corpus_poisoning.html</code></p>
+        <h1>stability/rag_or_agent_workflow/retrieved_docs/ingestion_or_store/answer_integrity/retrieval_poisoning/corpus_poisoning</h1>
+<h2>规则摘要</h2>
+<ul><li><code>score_domain</code>: stability</li><li><code>attack_family</code>: retrieval_poisoning</li><li><code>status_policy</code>: attack_supported</li><li><code>evidence_strength</code>: seeded</li><li><code>phase</code>: training_or_update</li><li><code>semantic_definition</code>: Answer corruption through poisoned retrieval corpora.</li></ul>
+<h2>三层匹配条件</h2>
+<ul><li><code>eligible_product_categories</code>: rag_or_agent</li><li><code>required_visible_contents</code>: retrieved_context</li><li><code>target_attack_objects</code>: none</li><li><code>required_tags</code>: none</li><li><code>forbidden_tags</code>: none</li></ul>
+<h2>分数定义</h2>
+<ul><li>攻击暴露度：<code>E = (R - R0) / (R_full - R0)</code></li><li>隐私性能分：<code>S_priv = 1 - E</code></li><li><code>R</code>: 当前算法/攻击在该规则下的实际结果。</li><li><code>R0</code>: 不加攻击扰动或不注入恶意内容时的控制组基线。</li><li><code>R_full</code>: 优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。</li><li><code>R_full_priority</code>: oracle, literature_best, theoretical_ceiling</li><li>聚合：</li><li>同一 attack_family 取 max(E)</li><li>同一 攻击对象 下多个 family 取 max(E)</li><li>同一 score_domain 下多个对象取 max(E)</li><li>最终对外展示 S_priv = 1 - E_domain</li></ul>
+<h2>方法列表</h2>
+<table><thead><tr><th>method_id</th><th>name</th><th>family</th><th>access_pattern</th><th>attacker_knowledge</th><th>raw_metric</th><th>data_requirement</th><th>maturity</th></tr></thead><tbody><tr><td>retrieval_corpus_poisoning</td><td>Retrieval corpus poisoning</td><td>retrieval_poisoning</td><td>corpus ingestion or ranking manipulation</td><td>retriever or corpus format</td><td>answer_corruption_rate</td><td>retrieval_corpus, poisoned_documents</td><td>B</td></tr></tbody></table>
+<h2>文献矩阵</h2>
+<table><thead><tr><th>paper_id</th><th>relation</th><th>role</th><th>year</th><th>venue</th><th>method</th><th>access</th><th>knowledge</th><th>metric</th><th>R</th><th>R0</th><th>R_full(type)</th><th>normalization</th></tr></thead><tbody><tr><td>rag_threat_model2025</td><td>cross_support</td><td>survey_anchor</td><td>2025</td><td>Preprint</td><td>indirect_retrieval_injection, private_context_exfiltration, unauthorized_tool_chain_attack, retrieval_corpus_poisoning, knowledge_base_poisoning</td><td>workflow_observation</td><td>gray_box</td><td>taxonomy</td><td>unavailable</td><td>不加攻击扰动或不注入恶意内容时的控制组基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (oracle)</td><td>unavailable</td></tr><tr><td>poisonedrag2025</td><td>primary</td><td>representative</td><td>2025</td><td>USENIX Security</td><td>retrieval_corpus_poisoning</td><td>corpus_ingestion</td><td>black_box, white_box</td><td>attack_success_rate</td><td>unavailable</td><td>不加攻击扰动或不注入恶意内容时的控制组基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (literature_best)</td><td>proxy</td></tr><tr><td>zhao2026_knowledge_poisoning_rag</td><td>primary</td><td>supplemental</td><td>2026</td><td>Information Fusion</td><td>retrieval_corpus_poisoning, kg_rag_poisoning</td><td>corpus_ingestion</td><td>black_box</td><td>answer_corruption_rate</td><td>unavailable</td><td>不加攻击扰动或不注入恶意内容时的控制组基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (literature_best)</td><td>proxy</td></tr><tr><td>zhong2023_poisoning_retrieval_corpora</td><td>cross_support</td><td>historical_foundation</td><td>2023</td><td>EMNLP</td><td>adversarial_passage_injection</td><td>retrieval_corpus_injection</td><td>black_box</td><td>retrieval_hit_rate</td><td>unavailable</td><td>不加攻击扰动或不注入恶意内容时的控制组基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (proxy)</td><td>proxy</td></tr><tr><td>badrag2024_identifying_vulnerabilities</td><td>cross_support</td><td>extension</td><td>2024</td><td>arXiv</td><td>retrieval_backdoor, indirect_generation_attack</td><td>knowledge_base_ingestion</td><td>black_box</td><td>attack_success_rate</td><td>unavailable</td><td>不加攻击扰动或不注入恶意内容时的控制组基线。</td><td>优先取同评测协议下的 oracle benchmark；缺失时取同规则可比文献中的最强攻击结果；若两者都不可得，则退回指标理论上界。 (literature_best)</td><td>proxy</td></tr></tbody></table>
+<h3>rag_threat_model2025</h3>
+<ul><li><code>title</code>: <a href="https://www.researchgate.net/publication/395807145_RAG_Security_and_Privacy_Formalizing_the_Threat_Model_and_Attack_Surface" target="_blank" rel="noopener">RAG Security and Privacy: Formalizing the Threat Model and Attack Surface</a></li><li><code>domain / publication_type</code>: security / preprint</li><li><code>product_category_scope</code>: rag_or_agent</li><li><code>visible_content_scope</code>: retrieved_context, tool_calls, actions_or_decisions</li><li><code>attack_object_scope</code>: private_context, policy, tool_privilege</li><li><code>required_tags</code>: none</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: none</li><li><code>fit_note</code>: Current RAG/Agent threat-model anchor.</li><li><code>limitations</code>: 当前条目尚未统一抽取可直接比较的 R / R0 / R_full 数值，只记录方法与适用条件。</li></ul>
+<h3>poisonedrag2025</h3>
+<ul><li><code>title</code>: <a href="https://www.usenix.org/conference/usenixsecurity25/presentation/zou" target="_blank" rel="noopener">PoisonedRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of Large Language Models</a></li><li><code>domain / publication_type</code>: security / seminal</li><li><code>product_category_scope</code>: rag_or_agent</li><li><code>visible_content_scope</code>: retrieved_context</li><li><code>attack_object_scope</code>: none</li><li><code>required_tags</code>: none</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: retrieval_corpus, poisoned_documents</li><li><code>fit_note</code>: 这是当前 <code>corpus_poisoning</code> 规则最直接的主锚点。</li><li><code>limitations</code>: 主要针对文本知识库与 target-question setting，向更一般 agent memory / tool corpora 扩展时仍需映射。</li></ul>
+<h3>zhao2026_knowledge_poisoning_rag</h3>
+<ul><li><code>title</code>: <a href="https://www.sciencedirect.com/science/article/pii/S1566253525009625" target="_blank" rel="noopener">Exploring knowledge poisoning attacks to retrieval-augmented generation</a></li><li><code>domain / publication_type</code>: security / extension</li><li><code>product_category_scope</code>: rag_or_agent</li><li><code>visible_content_scope</code>: retrieved_context</li><li><code>attack_object_scope</code>: none</li><li><code>required_tags</code>: none</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: retrieval_corpus, poisoned_documents</li><li><code>fit_note</code>: 这篇把 corpus poisoning 推到了 KG-RAG 和更系统的攻击分析，是很好的 extension。</li><li><code>limitations</code>: 更偏 KG-RAG，和通用文本 RAG 的索引结构不完全相同。</li></ul>
+<h3>zhong2023_poisoning_retrieval_corpora</h3>
+<ul><li><code>title</code>: <a href="https://collaborate.princeton.edu/en/publications/poisoning-retrieval-corpora-by-injecting-adversarial-passages/" target="_blank" rel="noopener">Poisoning Retrieval Corpora by Injecting Adversarial Passages</a></li><li><code>domain / publication_type</code>: security / historical_foundation</li><li><code>product_category_scope</code>: rag_or_agent</li><li><code>visible_content_scope</code>: retrieved_context</li><li><code>attack_object_scope</code>: none</li><li><code>required_tags</code>: none</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: retrieval_corpus, poisoned_documents</li><li><code>fit_note</code>: 这篇虽然面向 dense retrieval，更上游，但正好是 RAG corpus poisoning 的重要前身。</li><li><code>limitations</code>: 主要研究 retriever attack，不直接包含生成阶段 answer corruption。</li></ul>
+<h3>badrag2024_identifying_vulnerabilities</h3>
+<ul><li><code>title</code>: <a href="https://huggingface.co/papers/2406.00083" target="_blank" rel="noopener">BadRAG: Identifying Vulnerabilities in Retrieval Augmented Generation of Large Language Models</a></li><li><code>domain / publication_type</code>: security / preprint</li><li><code>product_category_scope</code>: rag_or_agent</li><li><code>visible_content_scope</code>: retrieved_context</li><li><code>attack_object_scope</code>: none</li><li><code>required_tags</code>: none</li><li><code>forbidden_tags</code>: none</li><li><code>data_requirement</code>: retrieval_corpus, poisoned_documents</li><li><code>fit_note</code>: BadRAG 适合挂成 cross-support，因为它系统梳理了 RAG retrieval-side vulnerabilities 并覆盖 poisoning 变体。</li><li><code>limitations</code>: 当前稳定公开落点主要还是 arXiv metadata 镜像。</li></ul>
+<h2>Hardness / Contested 证据</h2>
+<ul><li>当前规则没有独立 hardness evidence。</li></ul>
+<h2>Survey 引文滚雪球补充</h2>
+<ul><li>这条规则最适合沿下面这条线继续补：</li><li><code>RAG Security and Privacy 2025 -&gt; PoisonedRAG 2025 -&gt; Exploring knowledge poisoning attacks to retrieval-augmented generation 2026</code></li><li>当前最值得挂上的核心论文是：</li><li><code>2025</code> <a href="https://www.researchgate.net/publication/395807145_RAG_Security_and_Privacy_Formalizing_the_Threat_Model_and_Attack_Surface" target="_blank" rel="noopener">RAG Security and Privacy: Formalizing the Threat Model and Attack Surface</a></li><li><code>2025</code> <a href="https://pure.psu.edu/en/publications/poisonedrag-knowledge-corruption-attacks-to-retrieval-augmented-g/" target="_blank" rel="noopener">PoisonedRAG: Knowledge Corruption Attacks to Retrieval-Augmented Generation of Large Language Models</a></li><li><code>2026</code> <a href="https://www.sciencedirect.com/science/article/pii/S1566253525009625" target="_blank" rel="noopener">Exploring knowledge poisoning attacks to retrieval-augmented generation</a></li></ul>
+<h2>当前文献簇</h2>
+<ul><li><code>threat model / survey</code></li><li><code>RAG Security and Privacy: Formalizing the Threat Model and Attack Surface</code></li><li><code>retriever poisoning precursor</code></li><li><code>Poisoning Retrieval Corpora by Injecting Adversarial Passages</code></li><li><code>seminal corpus poisoning</code></li><li><code>PoisonedRAG</code></li><li><code>recent extension</code></li><li><code>Exploring knowledge poisoning attacks to retrieval-augmented generation</code></li><li><code>BadRAG</code></li></ul>
+<h2>当前结论</h2>
+<ul><li><code>status_policy</code>: attack_supported</li><li><code>primary_paper_count</code>: 2</li><li><code>cross_support_paper_count</code>: 3</li><li><code>method_count</code>: 1</li><li><code>hardness_count</code>: 0</li></ul>
+<h2>开放问题</h2>
+<ul><li>该规则文献仍偏稀，优先继续补 survey / seminal / recent extension。</li></ul>
+        <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
+      </section>
+    </main>
+  </body>
+</html>

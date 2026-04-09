@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>攻击对象：`action_trajectory`</title>
+    <style>
+:root {
+  --bg: #f5efe5;
+  --paper: #fffdf8;
+  --ink: #223031;
+  --muted: #617172;
+  --line: #d9d0c1;
+  --accent: #b55a2b;
+  --accent-2: #1e5875;
+  --shadow: 0 18px 42px rgba(29, 43, 42, 0.08);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(181, 90, 43, 0.10), transparent 26%),
+    radial-gradient(circle at top right, rgba(30, 88, 117, 0.10), transparent 22%),
+    linear-gradient(180deg, #f8f3eb 0%, #efe7da 100%);
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Serif CJK SC", "Songti SC", serif;
+}
+.page {
+  width: min(1080px, calc(100% - 32px));
+  margin: 24px auto 48px;
+}
+.panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 28px;
+}
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f4ecdf;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+.crumb:hover { color: var(--accent); }
+h1, h2, h3, h4 {
+  margin: 0 0 12px;
+  font-family: "STSong", "Songti SC", serif;
+}
+h1 { font-size: 30px; line-height: 1.25; }
+h2 { font-size: 22px; margin-top: 28px; }
+h3 { font-size: 18px; margin-top: 20px; }
+h4 { font-size: 16px; margin-top: 18px; }
+p, li {
+  font-size: 15px;
+  line-height: 1.72;
+}
+ul, ol {
+  padding-left: 22px;
+  margin: 10px 0 16px;
+}
+code {
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #f2ece2;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.92em;
+}
+pre {
+  overflow: auto;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f2ece2;
+  border: 1px solid var(--line);
+}
+pre code {
+  padding: 0;
+  background: transparent;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 20px;
+  font-size: 14px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: #efe7da;
+  font-weight: 700;
+}
+a {
+  color: var(--accent-2);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.footer {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 24px;
+}
+@media (max-width: 720px) {
+  .page { width: min(100% - 20px, 1080px); margin-top: 12px; }
+  .panel { padding: 18px; border-radius: 18px; }
+  h1 { font-size: 24px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+</style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <nav class="topbar">
+          <a class="crumb" href="../../../index.html">返回首页</a>
+          <a class="crumb" href="../../index.html">方法文献库索引</a>
+        </nav>
+        <h1>攻击对象：`action_trajectory`</h1>
+        <p class="meta"><code>method_library/vocabulary/attack_objects/action_trajectory.html</code></p>
+        <h1>攻击对象：<code>action_trajectory</code></h1>
+<h2>词项定义</h2>
+<ul><li><code>term</code>: action_trajectory</li><li><code>中文标签</code>: action_trajectory</li><li><code>semantic_definition</code>: 轨迹、状态-动作序列或交互日志。</li></ul>
+<h2>当前规则覆盖</h2>
+<ul><li><code>related_rule_count</code>: 1</li><li><code>structured_paper_count</code>: 1</li><li><code>manual_search_lead_count</code>: 4</li></ul>
+<h2>关联规则</h2>
+<ul><li><code>privacy/online_decision_bandit_rl/trajectory/interaction/member_or_update/membership_inference/trajectory_gap</code></li></ul>
+<h2>结构化文献</h2>
+<table><thead><tr><th>paper_id</th><th>year</th><th>role</th><th>venue</th><th>primary_tree_path</th></tr></thead><tbody><tr><td>rl_security_privacy_survey2022</td><td>2022</td><td>representative</td><td>Survey article</td><td>stability/online_decision_bandit_rl/bandit/reward_channel/regret/poisoning/reward_poisoning</td></tr></tbody></table>
+<h3>rl_security_privacy_survey2022</h3>
+<ul><li><code>title</code>: <a href="https://opus.lib.uts.edu.au/handle/10453/166417" target="_blank" rel="noopener">A Survey of Security and Privacy Issues in Reinforcement Learning</a></li><li><code>fit_note</code>: Broad RL / bandit security survey anchor.</li></ul>
+<h2>额外检索线索</h2>
+<ul><li><code>2019</code> <a href="https://experts.illinois.edu/en/publications/how-you-act-tells-a-lot-privacy-leaking-attack-on-deep-reinforcem" target="_blank" rel="noopener">How you act tells a lot: Privacy-leaking attack on deep reinforcement learning</a> (AAMAS)</li><li>最接近 <code>action_trajectory</code> 的直接隐私攻击锚点，明确从行为/轨迹恢复环境与私有训练信息。</li><li><code>2024</code> <a href="https://www.sciencedirect.com/science/article/pii/S0950705124006381" target="_blank" rel="noopener">Privacy preservation in deep reinforcement learning: A training perspective</a> (Knowledge-Based Systems)</li><li>更偏 defense / training 视角，但系统讨论了轨迹、策略和训练环境之间的隐私耦合，可作为长尾补充。</li><li><code>2023</code> <a href="https://www.tandfonline.com/doi/abs/10.1080/09540091.2023.2211240" target="_blank" rel="noopener">Empirical study of privacy inference attack against deep reinforcement learning models</a> (Journal of Intelligent &amp; Fuzzy Systems)</li><li>这篇工作把轨迹/行为泄露路线做成更系统的攻击实验，是 <code>action_trajectory</code> 页很值得挂上的 concrete extension。</li></ul>
+<h2>滚雪球补充建议</h2>
+<ul><li><code>action_trajectory</code> 这个对象页的核心不是“又一个 RL 攻击”，而是它把行为日志本身变成了隐私载体。</li><li>后续最值得继续查的是：</li><li><code>trajectory privacy</code></li><li><code>behavior leakage</code></li><li><code>environment inference from policy behavior</code></li><li><code>membership inference from trajectories</code></li></ul>
+<h2>survey 引文滚雪球</h2>
+<ul><li>对 <code>action_trajectory</code> 最值得继续沿引文链补的是：</li><li><code>RL security/privacy survey 2022 -&gt; How you act tells a lot 2019 -&gt; empirical trajectory/privacy papers 2023+</code></li><li>这条链已经足够把：</li><li><code>行为日志</code></li><li><code>轨迹级隐私</code></li><li><code>环境/成员推断</code></li></ul>
+<p>连成一个稳定对象，而不是零散 attack note。</p>
+<h2>当前可见文献簇</h2>
+<ul><li><code>survey / taxonomy</code></li><li><code>A Survey of Security and Privacy Issues in Reinforcement Learning</code></li><li><code>trajectory privacy attack</code></li><li><code>How you act tells a lot</code></li><li><code>Empirical study of privacy inference attack against deep reinforcement learning models</code></li><li><code>training / defense perspective</code></li><li><code>Privacy preservation in deep reinforcement learning: A training perspective</code></li></ul>
+<h2>当前结论</h2>
+<ul><li>该词项已经进入当前三层匹配框架，可通过关联规则与结构化文献继续扩展。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/可见内容语义，再进入候选队列。</li></ul>
+        <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
+      </section>
+    </main>
+  </body>
+</html>
