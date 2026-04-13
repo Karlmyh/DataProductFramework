@@ -479,6 +479,27 @@
         font-size: 14px;
         line-height: 1.6;
       }
+      .policy-panel {
+        padding: 26px 28px;
+      }
+      .policy-panel p {
+        margin: 0;
+        line-height: 1.85;
+        color: var(--ink);
+      }
+      .policy-panel .policy-lead {
+        color: var(--ink);
+        font-size: 16px;
+      }
+      .policy-points {
+        margin: 16px 0 0;
+        padding-left: 20px;
+        color: var(--muted);
+      }
+      .policy-points li {
+        margin: 8px 0;
+        line-height: 1.75;
+      }
       .appendix-title {
         margin-top: 10px;
       }
@@ -498,31 +519,51 @@
   <body>
     <main class="page">
       <section class="hero">
-        <p class="eyebrow">Three-Axis Method Framework</p>
         <h1>数据产品隐私衡量框架</h1>
-        <p>
-          这套框架回答的问题是：给定一个数据产品，如何先从产品语义出发，识别它属于什么
-          <strong>数据产品类别</strong>、攻击者能看到哪些<strong>可见内容</strong>、真正要保护什么
-          <strong>攻击对象</strong>，再据此筛出候选攻击并形成风险判断。首页只负责把这个方法讲清楚；
-          规则表、词表和文献库都放到后半部分作为附录与索引。
-        </p>
-        <section class="summary-grid">
-          <article class="summary-card">
-            <div class="summary-value">12</div>
-            <div class="summary-label">Representative Signatures</div>
-          </article>
-          <article class="summary-card">
-            <div class="summary-value">67</div>
-            <div class="summary-label">Attack Match Rules</div>
-          </article>
-          <article class="summary-card">
-            <div class="summary-value">36</div>
-            <div class="summary-label">Derived Branches</div>
-          </article>
-          <article class="summary-card">
-            <div class="summary-value">12</div>
-            <div class="summary-label">Derived Leaves</div>
-          </article>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">为什么需要隐私衡量</h2>
+        <section class="panel policy-panel">
+          <p class="policy-lead">
+            面向数据要素开发利用和跨主体安全流通，数据产品正在成为连接数据资源、业务场景与人工智能能力的关键载体。随着可信数据空间、行业级数据共享和高价值数据应用不断推进，数据产品不再只是技术副产物，而正在成为支撑重大专项落地、支撑业务协同运行和支撑高质量数据供给的基础设施单元。与之相对应，围绕数据产品建立统一、可信、可落地的隐私衡量能力，已经成为支撑“能用、好用、可控”的前提条件。
+          </p>
+          <ul class="policy-points">
+            <li>数据产品的价值释放与风险控制必须同步推进，只有把隐私风险纳入统一衡量，数据产品研发、交付、验收和流通才能形成稳定边界。</li>
+            <li>当前重大试点、可信数据空间建设和能源行业数据协同场景中，流通标的物的基本性质不清、风险边界不明，已经成为制约规模化流通和高质量应用的基础瓶颈。</li>
+            <li>隐私衡量不是附属合规动作，而是数据产品设计、分级流通、持续监管和责任划分的基础能力，是形成工程化研发体系和治理体系的重要抓手。</li>
+            <li>对公司和行业层面而言，建立统一的隐私衡量框架，有助于支撑重大专项实施、可信数据空间建设和人工智能赋能业务的长期技术底座。</li>
+          </ul>
+        </section>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">现有衡量体系的问题</h2>
+        <section class="panel policy-panel">
+          <p class="policy-lead">
+            现有隐私评价方法大多围绕单点脱敏、单类攻击或单一形式化定义展开，能够回答局部问题，却难以直接服务数据产品这一完整对象。面对类型多样、接口多样、风险对象多样且持续演化的数据产品，现有口径往往缺乏统一描述对象、统一匹配逻辑和统一证据组织方式，难以支撑工程侧的持续交付与治理决策。
+          </p>
+          <ul class="policy-points">
+            <li>现有口径多数围绕单点脱敏、单类攻击或单一隐私定义展开，缺少面向“数据产品”的统一描述对象。</li>
+            <li>很多体系只能回答“保护强不强”，却不能同时回答“能支撑什么任务、暴露哪些风险、在什么条件下稳定交付”。</li>
+            <li>现有方法难以把产品类型、暴露接口、攻击对象、适用前提和文献证据纳入同一评价框架，导致规则、方法与产品之间缺少统一语言。</li>
+            <li>在工程侧，这种割裂会直接影响上线验收、产品分级、流通准入、持续监测和后续规则增补，难以满足长期科研平台和治理体系建设需要。</li>
+          </ul>
+        </section>
+      </section>
+
+      <section class="section">
+        <h2 class="section-title">我们的衡量体系的思路和目标</h2>
+        <section class="panel policy-panel">
+          <p class="policy-lead">
+            本框架从“数据产品”而不是从单一攻击树出发，以产品画像为主输入，围绕数据产品类别、可见内容、攻击对象三层主轴建立统一描述，再用少量假设和资产条件补充实际适用前提。在此基础上，通过规则层识别候选攻击语义，通过文献层连接具体方法与证据，形成面向研发、检测、验收和流通治理的统一衡量基础。
+          </p>
+          <ul class="policy-points">
+            <li>在描述层面，框架提供统一语言，把数据产品的功能目标、暴露形态、保护对象和适用条件纳入同一表示体系。</li>
+            <li>在方法层面，框架通过规则层将产品语义映射到候选攻击语义，再通过文献层连接具体方法与证据，形成可扩展、可更新的方法组织方式。</li>
+            <li>在治理层面，框架服务数据产品研发、检测、验收、分级和安全流通，为后续自动化检测、规则增补、方法接入和治理决策提供统一底座。</li>
+            <li>在长期建设层面，框架强调可扩展、可审计、可持续演进，能够随着新研究、新任务和新场景的出现持续完善，而不是停留在一次性评估口径上。</li>
+          </ul>
         </section>
       </section>
 
@@ -645,8 +686,8 @@
         <h2 class="section-title">产品中心关键词树</h2>
         <section class="panel">
           <p class="divider-note">
-            这棵树不是首页主解释器，而是产品中心浏览器。你可以从产品类别出发，直觉地看该类别下常见哪些
-            可见内容、攻击对象和规则簇；规则的细节仍然回到规则页阅读。
+            该树主要作为产品中心浏览入口，用于辅助查看不同产品类别下常见的可见内容、攻击对象和规则簇分布；
+            规则的具体语义、证据与方法仍以规则页为准。
           </p>
           <section class="coverage-tree-summary">
             <article class="summary-card">
@@ -696,7 +737,7 @@
         <h2 class="section-title appendix-title">附录</h2>
         <section class="panel">
           <p class="divider-note">
-            下面这些部分是词表、覆盖审计和文献入口，主要服务深度浏览；它们不是理解框架主逻辑的起点。
+            下面这些部分主要承接词表、覆盖审计和文献入口，用于支撑深度查阅和规则追踪，并非理解框架主逻辑的起点。
           </p>
         </section>
       </section>
