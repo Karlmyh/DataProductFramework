@@ -664,21 +664,6 @@
       </section>
 
       <section class="section">
-        <h2 class="section-title">框架边界</h2>
-        <section class="panel policy-panel">
-          <p class="policy-lead">
-            首页重点说明“产品如何被描述、攻击如何被匹配、结果如何被衡量”。更细的实现细节和代码接入，属于后续基础设施，不作为首页主阅读对象。
-          </p>
-          <ul class="policy-points">
-            <li><strong>产品层：</strong>回答数据产品是什么、以什么形式交付、暴露了什么、要保护什么。</li>
-            <li><strong>匹配层：</strong>根据产品描述锁定候选攻击，回答“这种产品可能命中哪些攻击语义”。</li>
-            <li><strong>文献层：</strong>用代表论文和已有研究证据支撑攻击方法的现实来源与适用条件。</li>
-            <li><strong>实现层：</strong>后续可接入具体攻击工具和代码，实现自动化测试与持续更新。</li>
-          </ul>
-        </section>
-      </section>
-
-      <section class="section">
         <h2 class="section-title">从三个维度细化描述数据产品</h2>
         <section class="panel table-panel compact-table">
           <div class="table-wrap">
@@ -716,7 +701,7 @@
         <h2 class="section-title">匹配流程</h2>
         <section class="panel">
           <p class="divider-note">
-            匹配流程不从抽象步骤开始，而是从具体产品出发：先明确产品属于什么、外部能看到什么、重点要保护什么，再锁定可能命中的攻击。
+            匹配流程不是只列攻击名称，而是围绕具体产品依次执行候选攻击、观察攻击现象、解释风险含义，再把多个单攻击结果聚合成该产品的最终评分。
           </p>
           <section class="example-grid">
             
@@ -725,24 +710,27 @@
             <p><strong>产品是什么：</strong>在 CIFAR-10 上训练的 ResNet-18 图像分类模型，对外提供权重和推理服务。</p>
             <p><strong>外部看到了什么：</strong>模型参数、标签输出、分数输出。</p>
             <p><strong>要保护什么：</strong>训练数据成员。</p>
-            <p><strong>对应攻击：</strong>白盒成员推断攻击。</p>
-            <p><strong>示意结果：</strong>攻击可识别约 68% 的成员属于训练集合，明显高于随机猜测，说明模型参数中仍保留了可被利用的成员痕迹。</p>
+            <p><strong>执行 A 攻击：</strong>白盒成员推断攻击，得到“约 68% 的成员可被识别为训练集样本”。这说明模型参数中仍保留了可被利用的成员痕迹。</p>
+            <p><strong>执行 B 攻击：</strong>模型反演攻击，可恢复出与飞机、汽车等类别高度相似的原型图像，说明训练分布特征仍能被反推出去。</p>
+            <p><strong>聚合方式：</strong>将成员推断和模型反演分别归一化得到单攻击暴露分数，例如 0.32 和 0.21；隐私维度按较高风险取 0.32，对外产品评分记为 0.68。</p>
           </article>
           <article class="card example-card">
             <h3>生成数据产品</h3>
             <p><strong>产品是什么：</strong>基于 Adult 收入数据生成的合成表，面向外部下载发布。</p>
             <p><strong>外部看到了什么：</strong>合成样本。</p>
             <p><strong>要保护什么：</strong>真实数据成员、敏感属性。</p>
-            <p><strong>对应攻击：</strong>可链接性攻击、属性推断攻击。</p>
-            <p><strong>示意结果：</strong>约 19% 的记录可被高置信链接回真实个体，说明合成样本并非只保留统计特征，仍可能泄露成员和属性信息。</p>
+            <p><strong>执行 A 攻击：</strong>可链接性攻击，约 19% 的记录可被高置信链接回真实个体，说明合成样本并非只保留群体统计特征。</p>
+            <p><strong>执行 B 攻击：</strong>属性推断攻击，在已知部分字段时可将收入标签推断准确率提高到约 71%，说明敏感属性仍可被借助合成样本间接恢复。</p>
+            <p><strong>聚合方式：</strong>将可链接性和属性推断分别换算成 0.19 和 0.27 的单攻击暴露分数；隐私维度取较高的 0.27，对外产品评分记为 0.73。</p>
           </article>
           <article class="card example-card">
             <h3>指数数据产品</h3>
             <p><strong>产品是什么：</strong>面向外部发布的园区月度能耗指数产品，核心交付内容是指数值和聚合统计结果。</p>
             <p><strong>外部看到了什么：</strong>指数结果、分组均值、统计汇总。</p>
             <p><strong>要保护什么：</strong>企业群体统计特征、敏感属性、底层原始记录。</p>
-            <p><strong>对应攻击：</strong>差分攻击、背景知识攻击、统计披露攻击。</p>
-            <p><strong>示意结果：</strong>攻击可将某细分群体均值重建到约 5% 误差以内，意味着指数结果对底层群体信息仍具有较强反推能力。</p>
+            <p><strong>执行 A 攻击：</strong>差分攻击，可将某细分群体均值重建到约 5% 误差以内，说明指数结果对底层群体统计仍具有较强反推能力。</p>
+            <p><strong>执行 B 攻击：</strong>背景知识攻击，在已知行业和月份信息后，可将某类企业是否处于高耗能分组的判断准确率提高到约 74%。</p>
+            <p><strong>聚合方式：</strong>将差分重构和背景知识推断分别换算成 0.27 和 0.18 的单攻击暴露分数；隐私维度按高风险取 0.27，对外产品评分记为 0.73。</p>
           </article>
     
           </section>
