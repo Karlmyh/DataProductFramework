@@ -140,6 +140,12 @@
         color: var(--muted);
         line-height: 1.6;
       }
+      .definition-panel p {
+        margin: 0;
+        color: var(--ink);
+        line-height: 1.9;
+        font-size: 16px;
+      }
       .logic-list {
         margin: 0;
         padding-left: 20px;
@@ -468,6 +474,59 @@
         line-height: 1.6;
         font-size: 14px;
       }
+      .figure-placeholder {
+        display: grid;
+        place-items: center;
+        min-height: 250px;
+        border-radius: 16px;
+        border: 1px dashed rgba(29, 43, 42, 0.16);
+        background: linear-gradient(180deg, #fffdf8 0%, #f8f1e6 100%);
+        padding: 22px;
+        text-align: center;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+      .compact-table table {
+        min-width: 0;
+      }
+      .compact-table th {
+        font-size: 13px;
+        letter-spacing: 0.02em;
+        text-transform: none;
+      }
+      .compact-table td {
+        font-size: 14px;
+      }
+      .example-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+      .example-card p {
+        margin: 10px 0 0;
+      }
+      .prompt-box {
+        margin-top: 14px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fffdf8;
+      }
+      .prompt-box summary {
+        cursor: pointer;
+        padding: 12px 14px;
+        color: var(--accent-2);
+        font-weight: 700;
+      }
+      .prompt-box pre {
+        margin: 0;
+        padding: 0 14px 14px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--muted);
+        line-height: 1.7;
+        font-size: 13px;
+        font-family: "PingFang SC", "Hiragino Sans GB", "Noto Serif CJK SC", "Songti SC", serif;
+      }
       .keyword-rule-top {
         display: flex;
         align-items: flex-start;
@@ -527,6 +586,15 @@
       </section>
 
       <section class="section">
+        <h2 class="section-title">什么是数据产品</h2>
+        <section class="panel definition-panel">
+          <p>
+            数据产品是面向特定流通、交付或服务场景，对原始数据进行组织、加工、封装后形成的可交易、可调用、可交付对象。它可以表现为统计摘要、接口输出、模型参数、合成数据，也可以表现为面向特定任务的分析结果或服务能力。在数据要素流通和行业级智能化应用中，真正被交付和被使用的并非原始数据本身，而是具有明确功能边界、暴露边界和风险边界的数据产品。因此，隐私衡量首先要回答的不是“数据是否被保护”，而是“这一数据产品作为流通标的，暴露了什么、保护了什么、在攻击下会泄露什么”。
+          </p>
+        </section>
+      </section>
+
+      <section class="section">
         <h2 class="section-title">为什么需要隐私衡量</h2>
         <section class="panel policy-panel">
           <p class="policy-lead">
@@ -534,7 +602,7 @@
           </p>
           <ul class="policy-points">
             <li><strong>数据产品成为核心载体：</strong>承接数据资源开发利用、跨主体共享流通和人工智能能力落地。</li>
-            <li><strong>流通边界亟需明确：</strong>标的物性质不清、风险边界不明，已经成为重大试点和可信数据空间建设的现实瓶颈。</li>
+            <li><strong>流通标的亟需明确：</strong>当前很多场景能讲“共享数据”，但讲不清到底交付什么、暴露什么、保护什么。</li>
             <li><strong>隐私衡量必须前置：</strong>不是事后合规检查，而是研发、交付、验收、分级和监管的基础能力。</li>
           </ul>
         </section>
@@ -544,13 +612,13 @@
         <h2 class="section-title">现有衡量体系的问题</h2>
         <section class="panel policy-panel">
           <p class="policy-lead">
-            现有体系多数是围绕特定研究问题组织起来的攻击集成平台，能够支撑局部研究，却难以直接服务数据产品这一完整对象。
+            现有工作大多是围绕某一研究主题展开的攻击研究或局部代码集成，能够回答局部问题，但尚未形成面向数据产品的统一衡量框架。
           </p>
           <ul class="policy-points">
-            <li><strong>平台偏研究集成：</strong>多数面向某一类模型、某一类任务或某一类攻击问题，适合小领域研究验证，不适合直接作为数据产品衡量底座。</li>
+            <li><strong>缺少统一平台：</strong>现有多是围绕某个研究主题形成的论文、代码或小范围实验，尚未形成面向数据产品的统一平台。</li>
             <li><strong>组织线索偏攻击手段：</strong>通常按成员推断、模型抽取、提示注入等方法线索组织，缺少以数据产品为中心的统一入口。</li>
-            <li><strong>产品语义表达不足：</strong>难以把产品类别、暴露内容、攻击对象和适用条件放进同一描述体系，产品与方法之间缺少统一映射关系。</li>
-            <li><strong>工程治理支撑不足：</strong>难以服务产品分级、上线验收、流通准入、持续更新和规则增补等实际治理流程。</li>
+            <li><strong>缺少产品中心表达：</strong>很少先回答“这是什么数据产品、暴露了什么、要防什么”，产品语义表达不足。</li>
+            <li><strong>工程治理支撑不足：</strong>难以直接服务产品分级、上线验收、流通准入、持续更新和规则增补。</li>
           </ul>
         </section>
       </section>
@@ -559,13 +627,13 @@
         <h2 class="section-title">我们的衡量体系的思路和目标</h2>
         <section class="panel policy-panel">
           <p class="policy-lead">
-            我们的思路不是先画攻击树，而是先把数据产品描述清楚，再把攻击语义、方法证据和治理需求统一组织起来。
+            我们的思路不是先从攻击树出发，而是先把数据产品描述清楚，再把攻击方法和风险衡量组织起来。具体做法是：围绕数据产品类别、可见内容和攻击对象三个维度，对数据产品进行细化描述；再据此匹配候选攻击，并结合代表方法形成风险评分。
           </p>
           <ul class="policy-points">
             <li><strong>从数据产品出发：</strong>以产品画像为输入，而不是以单一攻击树为起点。</li>
-            <li><strong>用三层主轴统一描述：</strong>数据产品类别、可见内容、攻击对象；再用少量备注条件补充适用前提。</li>
-            <li><strong>用规则层连接攻击语义：</strong>先筛候选攻击，再进入方法和证据层。</li>
-            <li><strong>面向长期治理建设：</strong>支撑研发、检测、验收、分级、安全流通和后续自动化扩展。</li>
+            <li><strong>分为三个维度细化描述：</strong>数据产品类别、可见内容、攻击对象。</li>
+            <li><strong>通过匹配连接候选攻击：</strong>根据产品描述锁定一组可适用攻击，而不是直接穷举全部攻击。</li>
+            <li><strong>能够跟随前沿研究进展更新：</strong>新攻击、新文献、新方法可以持续纳入，框架可以增量扩展。</li>
           </ul>
         </section>
       </section>
@@ -575,15 +643,15 @@
         <section class="grid">
           <article class="card">
             <h3>1. 产品层</h3>
-            <p>主输入是产品画像，核心语义由三层主轴和 tags 组成：数据产品类别、可见内容、攻击对象，以及少量假设/资产标签。</p>
+            <p>主输入是产品画像，先明确产品是什么、交付什么、暴露什么、要保护什么。</p>
           </article>
           <article class="card">
-            <h3>2. 规则层</h3>
-            <p>当前 <code>attack_rule_coverage</code> 是方法框架里的规则层真相，用来回答“这种产品会命中哪些攻击语义”。</p>
+            <h3>2. 匹配层</h3>
+            <p>根据产品描述锁定候选攻击语义和判分路径，回答“这种产品可能会命中哪些攻击”。</p>
           </article>
           <article class="card">
             <h3>3. 文献层</h3>
-            <p>规则页和方法文献库承接文献证据、代表论文、survey 引文链和 coverage 状态。</p>
+            <p>代表论文、方法证据和相关研究用来支撑每类攻击的现实来源与适用条件。</p>
           </article>
           <article class="card">
             <h3>4. 实现层</h3>
@@ -593,36 +661,69 @@
       </section>
 
       <section class="section">
-        <h2 class="section-title">三层主轴</h2>
-        <section class="grid">
-          <article class="card">
-            <h3>1. 数据产品类别</h3>
-            <p>每个产品必须且只能属于一个类别，例如 API、histogram、statistics、raw data、trained model、synthetic data、collaborative training、generative model、rag_or_agent、online decision system。</p>
-          </article>
-          <article class="card">
-            <h3>2. 可见内容</h3>
-            <p>同一个产品可以同时暴露多个可见内容，例如 binary decision、score/logit、model parameters、gradients、retrieved context、tool calls、memory entries。</p>
-          </article>
-          <article class="card">
-            <h3>3. 攻击对象</h3>
-            <p>同一个产品可以同时保护多个攻击对象，例如 member、raw record、sensitive attribute、training property、system prompt、private context、tool privilege、policy。</p>
-          </article>
-          <article class="card">
-            <h3>Tags 只做辅助筛选</h3>
-            <p>Tags 不和三层主轴并列。它们只负责把 candidate data、bounded assumption、white-box / black-box、version history、DP claim、secure aggregation 等前提并入筛选逻辑。</p>
-          </article>
+        <h2 class="section-title">从三个维度细化描述数据产品</h2>
+        <section class="panel table-panel compact-table">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>维度</th>
+                  <th>说明</th>
+                  <th>典型条目</th>
+                </tr>
+              </thead>
+              <tbody>
+        <tr>
+          <td>数据产品类别</td>
+          <td>数据产品以什么形态被交付和使用</td>
+          <td>接口服务、直方图、指数产品、原始数据、局部数据、训练模型、合成数据、协同训练、生成模型、智能体系统、在线决策系统</td>
+        </tr>
+        <tr>
+          <td>可见内容</td>
+          <td>外部可以直接看到、调用或获得什么</td>
+          <td>标签输出、分数输出、排序结果、模型参数、梯度、合成样本、检索内容、工具调用、动作决策</td>
+        </tr>
+        <tr>
+          <td>攻击对象</td>
+          <td>在攻击下希望保护的对象是什么</td>
+          <td>数据成员、原始记录、数据性质、敏感属性、模型参数、决策边界、私有上下文、检索语料、工具权限</td>
+        </tr>
+    </tbody>
+            </table>
+          </div>
         </section>
       </section>
 
       <section class="section">
         <h2 class="section-title">匹配流程</h2>
         <section class="panel">
-          <section class="flow">
-            <article class="flow-step"><strong>Step 1</strong><p>输入产品画像，先确定唯一的数据产品类别。</p></article>
-            <article class="flow-step"><strong>Step 2</strong><p>从产品字段或显式配置中归一化出可见内容、攻击对象和 tags。</p></article>
-            <article class="flow-step"><strong>Step 3</strong><p>按数据产品类别载入默认候选攻击池。</p></article>
-            <article class="flow-step"><strong>Step 4</strong><p>用可见内容、攻击对象、required tags / forbidden tags 继续筛选。</p></article>
-            <article class="flow-step"><strong>Step 5</strong><p>保留 applicable / hardness-supported / coverage-gap / contested 结果，并在有执行结果时做 max 聚合评分。</p></article>
+          <p class="divider-note">
+            匹配流程不从抽象步骤开始，而是从具体产品出发：先明确产品属于什么、外部能看到什么、重点要保护什么，再锁定可能命中的攻击。
+          </p>
+          <section class="example-grid">
+            
+          <article class="card example-card">
+            <h3>模型产品</h3>
+            <p><strong>产品是什么：</strong>训练模型、模型服务或模型导出物。</p>
+            <p><strong>外部看到了什么：</strong>标签输出、分数输出、模型参数。</p>
+            <p><strong>要保护什么：</strong>数据成员、模型参数、决策边界。</p>
+            <p><strong>可能命中的攻击：</strong>成员推断、模型抽取、模型反演、对抗样本攻击。</p>
+          </article>
+          <article class="card example-card">
+            <h3>生成数据产品</h3>
+            <p><strong>产品是什么：</strong>以合成样本为主要交付内容的数据产品。</p>
+            <p><strong>外部看到了什么：</strong>合成样本。</p>
+            <p><strong>要保护什么：</strong>数据成员、敏感属性、群体统计特征。</p>
+            <p><strong>可能命中的攻击：</strong>单点识别、可链接性攻击、属性推断、成员推断式风险审计。</p>
+          </article>
+          <article class="card example-card">
+            <h3>指数数据产品</h3>
+            <p><strong>产品是什么：</strong>以指数、均值或聚合统计结果为交付标的数据产品。</p>
+            <p><strong>外部看到了什么：</strong>聚合统计量、指数结果。</p>
+            <p><strong>要保护什么：</strong>原始记录、群体统计特征、敏感属性。</p>
+            <p><strong>可能命中的攻击：</strong>差分攻击、重构攻击、背景知识攻击、统计披露攻击。</p>
+          </article>
+    
           </section>
         </section>
       </section>
@@ -644,26 +745,6 @@
       </section>
 
       <section class="section">
-        <h2 class="section-title">如何读一个产品</h2>
-        <section class="grid">
-          <article class="card">
-            <h3>普通 predict API</h3>
-            <p><strong>产品类别：</strong><code>API</code></p>
-            <p><strong>可见内容：</strong><code>label_output / score_or_logit</code></p>
-            <p><strong>攻击对象：</strong><code>member / sensitive_attribute / decision_boundary</code></p>
-            <p><strong>常见攻击：</strong>MIA、attribute inference、model extraction。</p>
-          </article>
-          <article class="card">
-            <h3>synthetic data release</h3>
-            <p><strong>产品类别：</strong><code>synthetic_data</code></p>
-            <p><strong>可见内容：</strong><code>synthetic_samples</code></p>
-            <p><strong>攻击对象：</strong><code>member / sensitive_attribute / subgroup_statistics</code></p>
-            <p><strong>常见攻击：</strong>singling out、linkability、inference disclosure。</p>
-          </article>
-        </section>
-      </section>
-
-      <section class="section">
         <h2 class="section-title">结构示意图</h2>
         <section class="panel">
           <div class="figure-grid">
@@ -671,15 +752,91 @@
               <h3>产品层示意图</h3>
               <img src="../../figs/产品层.png" alt="产品层示意图" />
               <figcaption class="figure-caption">
-                这张图对应首页前半部分的产品层：主输入是产品画像，核心语义由数据产品类别、可见内容、攻击对象和少量备注条件组成。
+                这张图对应首页前半部分的产品层：核心关注点是数据产品是什么、以什么形式交付、外部能看到什么、需要保护什么。
               </figcaption>
             </figure>
             <figure class="figure-card">
               <h3>规则层与文献层示意图</h3>
               <img src="../../figs/匹配.png" alt="规则层与文献层示意图" />
               <figcaption class="figure-caption">
-                这张图对应规则层与文献层：规则先把产品条件映射到攻击语义，再从相关论文方法里继续筛选出真正可适用的候选方法。
+                这张图对应匹配层与文献层：先锁定候选攻击语义，再从相关论文方法里继续筛选出真正可适用的候选方法。
               </figcaption>
+            </figure>
+            <figure class="figure-card">
+              <h3>候选方法评测与分数聚合示意图</h3>
+              <div class="figure-placeholder">
+                <div>
+                  <strong>待补第三张图</strong><br/>
+                  数据产品 → 候选方法分别评测 → 单方法分数 → 聚合 → 最终衡量指标
+                </div>
+              </div>
+              <figcaption class="figure-caption">
+                这张图用于补上评分闭环：候选方法不是只列出来，而是分别作用于数据产品，得到单方法分数，再进一步聚合成最终衡量指标。
+              </figcaption>
+              <details class="prompt-box">
+                <summary>第三张图生成提示词</summary>
+                <pre>请生成一张学术风格、可直接放进研究网页或论文介绍页的二维信息图，主题是“候选方法评测与分数聚合”。整张图片只出现中文，不要出现任何英文、英文括号或英文注释；统一只用中文表达。
+
+请严格保持与前两张图一致的系列风格：
+- 横向构图
+- 白色或浅米色背景
+- 中间大圆角主框
+- 低饱和配色，极简、现代、学术、干净
+- 线条克制，边框清楚，留白充足
+- 不要人物，不要写实，不要 3D，不要复杂装饰
+- 像高质量论文方法图或研究框架图
+
+画面标题：
+候选方法评测与分数聚合
+
+整体逻辑：
+左侧是一个“数据产品”框，中间是“候选攻击方法”对该产品分别进行评测，右侧是“分数聚合”，最后得到“衡量指标”。
+
+画面结构：
+左侧一个较大的输入框，标题写“数据产品”。
+框内只放简洁中文：
+- 产品类别
+- 可见内容
+- 攻击对象
+
+从左侧输入框向中间连接到一个“候选方法区”。
+候选方法区画成多个并列的小卡片或小论文图标，每个表示一个候选攻击方法。
+每个方法卡片都朝向同一个数据产品，表现出“分别评测”的意思。
+每个方法卡片下方或旁边给一个小结果，例如：
+- 暴露分数
+- 风险得分
+- 攻击成功率
+
+中间到右侧之间，用清晰的汇聚箭头表达“聚合”。
+右侧一个较大的结果框，标题写“衡量指标”。
+结果框内用 3 个并列小块表示最终输出，例如：
+- 隐私指标
+- 稳定性指标
+- 综合判断
+
+请强调：
+- 候选方法不是只有一个，而是一组
+- 每个方法先分别得到分数
+- 最终不是直接取某一个方法，而是经过聚合形成衡量指标
+
+视觉要求：
+- 数据产品框用低饱和蓝色
+- 候选方法卡片用浅橙、浅灰、浅绿色等不同颜色
+- 每个方法的小分数可用简洁小圆点、小条形块或小数值框表示
+- 聚合区用柔和箭头或汇聚带
+- 右侧结果框用更稳定、正式的浅绿色或浅蓝灰色
+- 整体看上去像方法总览页中的第三张配图
+
+文字要求：
+- 所有文字都用简体中文
+- 不要出现英文
+- 不要乱码
+- 字号清楚，适合手机和网页阅读
+- 文字不要过多，关键词为主
+
+输出要求：
+高分辨率，横向构图，适合网页展示和汇报材料使用。</pre>
+              </details>
             </figure>
           </div>
         </section>
@@ -1055,53 +1212,6 @@
         <tr>
           <td>action_trajectory</td>
           <td>轨迹、状态-动作序列或交互日志。</td>
-        </tr>
-        </tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-
-      <section class="section">
-        <h2 class="section-title">Tags 命名空间</h2>
-        <section class="panel table-panel">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Namespace</th><th>语义</th></tr></thead>
-              <tbody>
-        <tr>
-          <td>assumption</td>
-          <td>攻击成立所需的数学或攻击模型假设。</td>
-        </tr>
-        
-        <tr>
-          <td>asset</td>
-          <td>审计资产、候选数据、辅助数据或版本历史。</td>
-        </tr>
-        
-        <tr>
-          <td>knowledge</td>
-          <td>攻击者对系统的可见性与知识前提。</td>
-        </tr>
-        
-        <tr>
-          <td>release</td>
-          <td>部署/更新/交付方式。</td>
-        </tr>
-        
-        <tr>
-          <td>defense</td>
-          <td>防护、授权或策略声明。</td>
-        </tr>
-        
-        <tr>
-          <td>modality</td>
-          <td>数据模态。</td>
-        </tr>
-        
-        <tr>
-          <td>model_family</td>
-          <td>模型族，例如 classical_ml / neural_network。</td>
         </tr>
         </tbody>
             </table>
