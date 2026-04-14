@@ -793,10 +793,10 @@
             <div class="formula-card">
               <strong>原始暴露缩放到 [0,1]</strong>
               <div class="equation-display">\[
-                \tilde{E}_a = \operatorname{clip}\left(\frac{R_a - R0_a}{R^*_a - R0_a},\, 0,\, 1\right)
+                \tilde{E}_a = \operatorname{clip}\left(\frac{R_a - R_{0,a}}{R_a^{*} - R_{0,a}},\, 0,\, 1\right)
               \]</div>
               <p class="formula-note">
-                其中，<em>R_a</em> 为当前攻击结果，<em>R0_a</em> 为 0 信息基线，<em>R^*_a</em> 为全信息参考；
+                其中，<em>R<sub>a</sub></em> 为当前攻击结果，<em>R<sub>0,a</sub></em> 为 0 信息基线，<em>R<sub>a</sub><sup>*</sup></em> 为全信息参考；
                 <em>clip(x, 0, 1) = min(1, max(0, x))</em>。
               </p>
             </div>
