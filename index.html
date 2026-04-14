@@ -4,6 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>数据产品衡量框架</title>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['\\(', '\\)']],
+          displayMath: [['\\[', '\\]']]
+        },
+        svg: {
+          fontCache: 'global'
+        }
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <style>
       :root {
         --bg: #f5efe5;
@@ -170,20 +182,20 @@
         margin-bottom: 8px;
         color: var(--ink);
       }
-      .equation-line {
-        display: block;
-        padding: 10px 12px;
+      .equation-display {
+        margin: 10px 0;
+        padding: 12px 16px;
         border-radius: 12px;
         background: #f4ecdf;
         color: var(--accent-2);
-        font-size: 14px;
-        line-height: 1.7;
-        white-space: normal;
-        word-break: break-word;
-        font-family: "Times New Roman", "STSong", serif;
+        text-align: center;
+        overflow-x: auto;
       }
-      .equation-inline {
-        font-family: "Times New Roman", "STSong", serif;
+      mjx-container[jax="SVG"][display="true"] {
+        margin: 0.55em 0 !important;
+        font-size: 132% !important;
+      }
+      mjx-container[jax="SVG"] {
         color: var(--accent-2);
       }
       .formula-note {
@@ -780,36 +792,41 @@
           <div class="formula-stack">
             <div class="formula-card">
               <strong>单攻击缩放到 [0,1]</strong>
-              <div class="equation-line">E<sub>a</sub> = clip((R<sub>a</sub> - R0<sub>a</sub>) / (R*<sub>a</sub> - R0<sub>a</sub>), 0, 1)</div>
-              <div class="equation-line">S<sub>a</sub> = 1 - E<sub>a</sub></div>
+              <div class="equation-display">\[
+                E_a = \operatorname{clip}\left(rac{R_a - R0_a}{R^*_a - R0_a},\, 0,\, 1
+ight)
+              \]</div>
+              <div class="equation-display">\[
+                S_a = 1 - E_a
+              \]</div>
               <p class="formula-note">
-                其中，<span class="equation-inline">R<sub>a</sub></span> 为当前攻击结果，
-                <span class="equation-inline">R0<sub>a</sub></span> 为 0 信息基线，
-                <span class="equation-inline">R*<sub>a</sub></span> 为全信息参考；
-                <span class="equation-inline">clip(x, 0, 1) = min(1, max(0, x))</span>。
+                其中，<em>R_a</em> 为当前攻击结果，<em>R0_a</em> 为 0 信息基线，<em>R^*_a</em> 为全信息参考；
+                <em>clip(x, 0, 1) = min(1, max(0, x))</em>。
               </p>
             </div>
             <div class="formula-card">
               <strong>按攻击家族取最大暴露</strong>
-              <div class="equation-line">E<sub>family</sub>(f) = max<sub>a∈f</sub> E<sub>a</sub></div>
+              <div class="equation-display">\[
+                E_{family}(f) = \max_{a \in f} E_a
+              \]</div>
               <p class="formula-note">同一家族下多个方法同时命中时，取暴露更高的那个结果。</p>
             </div>
             <div class="formula-card">
               <strong>按攻击对象取最大暴露</strong>
-              <div class="equation-line">E<sub>object</sub>(o) = max<sub>f: target(f)=o</sub> E<sub>family</sub>(f)</div>
+              <div class="equation-display">\[
+                E_{object}(o) = \max_{f:\,\mathrm{target}(f)=o} E_{family}(f)
+              \]</div>
               <p class="formula-note">同一攻击对象可能对应多个攻击家族，继续取最大暴露。</p>
             </div>
             <div class="formula-card">
               <strong>按评分领域取最大暴露</strong>
-              <div class="equation-line">E<sub>domain</sub>(d) = max<sub>o∈d</sub> E<sub>object</sub>(o)</div>
-              <div class="equation-line">S<sub>domain</sub>(d) = 1 - E<sub>domain</sub>(d)</div>
+              <div class="equation-display">\[
+                E_{domain}(d) = \max_{o \in d} E_{object}(o)
+              \]</div>
+              <div class="equation-display">\[
+                S_{domain}(d) = 1 - E_{domain}(d)
+              \]</div>
               <p class="formula-note">当前输出口径为隐私、稳定性等领域分数；高分更安全，低分更暴露。</p>
-            </div>
-            <div class="formula-card">
-              <strong>证据与参考口径</strong>
-              <div class="equation-line">coverage_gap → 不加分  |  contested → 不给正向结论  |  hardness_supported → 仅限严格证据</div>
-              <div class="equation-line">R*<sub>a</sub>：oracle benchmark → literature_best → theoretical_ceiling</div>
-              <p class="formula-note">规则库、方法库、文献库增量更新后，可按同一口径持续重算。</p>
             </div>
           </div>
         </section>
