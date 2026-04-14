@@ -472,8 +472,8 @@
       }
       .figure-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-        gap: 18px;
+        grid-template-columns: 1fr;
+        gap: 22px;
       }
       .figure-card {
         border: 1px solid var(--line);
@@ -649,17 +649,16 @@
       </section>
 
       <section class="section">
-        <h2 class="section-title">我们的衡量体系的思路和目标</h2>
+        <h2 class="section-title">思路和目标</h2>
         <section class="panel policy-panel">
           <p class="policy-lead">
-            数据产品输入；三个维度描述；候选攻击匹配；文献方法对齐；单攻击评分；产品评分聚合。
+            从数据产品出发，描述产品、匹配攻击、连接方法、持续更新。
           </p>
           <ul class="policy-points">
-            <li><strong>输入：</strong>数据产品。</li>
-            <li><strong>描述：</strong>数据产品类别、可见内容、攻击对象。</li>
-            <li><strong>匹配：</strong>候选攻击语义、代表方法、文献证据。</li>
-            <li><strong>输出：</strong>单攻击结果、聚合评分、产品衡量结论。</li>
-            <li><strong>更新：</strong>前沿攻击、最新文献、代表方法持续纳入。</li>
+            <li><strong>从数据产品出发：</strong>以产品画像为输入，而不是以单一攻击树为起点。</li>
+            <li><strong>分为三个维度细化描述：</strong>数据产品类别、可见内容、攻击对象。</li>
+            <li><strong>通过匹配连接候选攻击：</strong>根据产品描述锁定一组可适用攻击，而不是直接穷举全部攻击。</li>
+            <li><strong>能够跟随前沿研究进展更新：</strong>新攻击、新文献、新方法可以持续纳入，框架可以增量扩展。</li>
           </ul>
         </section>
       </section>
