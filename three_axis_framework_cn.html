@@ -652,13 +652,14 @@
         <h2 class="section-title">我们的衡量体系的思路和目标</h2>
         <section class="panel policy-panel">
           <p class="policy-lead">
-            我们的思路不是先从攻击树出发，而是先把数据产品描述清楚，再把攻击方法和风险衡量组织起来。具体做法是：围绕数据产品类别、可见内容和攻击对象三个维度，对数据产品进行细化描述；再据此匹配候选攻击，并结合代表方法形成风险评分。
+            数据产品输入；三个维度描述；候选攻击匹配；文献方法对齐；单攻击评分；产品评分聚合。
           </p>
           <ul class="policy-points">
-            <li><strong>从数据产品出发：</strong>以产品画像为输入，而不是以单一攻击树为起点。</li>
-            <li><strong>分为三个维度细化描述：</strong>数据产品类别、可见内容、攻击对象。</li>
-            <li><strong>通过匹配连接候选攻击：</strong>根据产品描述锁定一组可适用攻击，而不是直接穷举全部攻击。</li>
-            <li><strong>能够跟随前沿研究进展更新：</strong>新攻击、新文献、新方法可以持续纳入，框架可以增量扩展。</li>
+            <li><strong>输入：</strong>数据产品。</li>
+            <li><strong>描述：</strong>数据产品类别、可见内容、攻击对象。</li>
+            <li><strong>匹配：</strong>候选攻击语义、代表方法、文献证据。</li>
+            <li><strong>输出：</strong>单攻击结果、聚合评分、产品衡量结论。</li>
+            <li><strong>更新：</strong>前沿攻击、最新文献、代表方法持续纳入。</li>
           </ul>
         </section>
       </section>
@@ -741,14 +742,12 @@
         <h2 class="section-title">评分口径</h2>
         <section class="panel">
           <ol class="logic-list">
-            <li>本页分数首先用于支持治理排序与资源配置。分数越高，表示在当前证据和测试条件下，已观察到的风险暴露越低；分数越低，表示越需要优先排查、整改或追加防护。</li>
-            <li>该分数不是“合规 / 不合规”的直接裁决，也不是对“绝对安全”或“零风险”的承诺。它反映的是在既定攻击场景下、基于现有证据形成的相对风险判断。</li>
-            <li>计分遵循保守原则：同一风险维度下，只要存在一条影响更大的攻击路径，就按更严重结果计入，不用平均值稀释高风险点。聚合顺序固定为 <code>attack_family max -> attack_object max -> score_domain max</code>。</li>
-            <li>对证据不足的领域，本框架不会因为“暂时没有看到攻击”就自动给高分。<code>coverage_gap</code> 表示需要补测试、补文献或补审计资产；<code>contested</code> 表示现有结论仍有争议。</li>
-            <li>本框架尽量以当前公开研究中可实现、可复现的前沿攻击能力作为参照，因此更接近现实攻防水平。与只采用最坏情形上界的形式化口径相比，这里的评分通常不会被过度保守假设主导。</li>
-            <li>只有在存在严格证据时，系统才会保守给出正向评价；例如形式化隐私保证、密码学遮蔽、信息论界，或可证明的零泄露接口。这一类结果会标记为 <code>hardness_supported</code>。</li>
-            <li>评分框架采用配置化的规则库、方法库与文献索引，可以随着新研究、新基准和新攻击方法快速增补并重算结果，因此适合做持续更新的治理工具，而不是一次性评估。</li>
-            <li>为保证不同产品之间可比较，底层仍使用统一归一化方法：先计算攻击暴露度 <code>E = (R - R0) / (R_full - R0)</code>，其中 <code>R</code> 是当前攻击结果，<code>R0</code> 是零信息基线，<code>R_full</code> 是全信息参考；对外展示分数采用 <code>S = 1 - E</code>。<code>R_full</code> 的优先顺序固定为 <code>oracle benchmark -> literature_best -> theoretical_ceiling</code>。</li>
+            <li><strong>含义：</strong>高分更安全，低分更暴露。</li>
+            <li><strong>单攻击：</strong><code>E = (R - R0) / (R_full - R0)</code>；<code>S = 1 - E</code>。</li>
+            <li><strong>聚合：</strong><code>attack_family max -> attack_object max -> score_domain max</code>。</li>
+            <li><strong>证据：</strong><code>coverage_gap</code> 不加分；<code>contested</code> 不正向；<code>hardness_supported</code> 仅限严格证据。</li>
+            <li><strong>参考：</strong><code>oracle benchmark -> literature_best -> theoretical_ceiling</code>。</li>
+            <li><strong>更新：</strong>规则库、方法库、文献库增量更新；结果支持持续重算。</li>
           </ol>
         </section>
       </section>
@@ -758,24 +757,15 @@
         <section class="panel">
           <div class="figure-grid">
             <figure class="figure-card">
-              <h3>数据产品分类示意图</h3>
               <img src="figs/数据产品分类示意图.png" alt="数据产品分类示意图" />
               <figcaption class="figure-caption">
-                这张图对应首页前半部分的产品描述：先从卖方和原始资料出发，经过组织和加工形成数据产品，再从产品类别、可见内容和攻击对象三个维度细化描述。
+                数据产品形成、产品类别、可见内容、攻击对象。
               </figcaption>
             </figure>
             <figure class="figure-card">
-              <h3>规则层与文献层示意图</h3>
-              <img src="figs/匹配.png" alt="规则层与文献层示意图" />
-              <figcaption class="figure-caption">
-                这张图对应匹配层与文献层：先锁定候选攻击语义，再从相关论文方法里继续筛选出真正可适用的候选方法。
-              </figcaption>
-            </figure>
-            <figure class="figure-card">
-              <h3>衡量评分框架示意图</h3>
               <img src="figs/衡量评分框架.png" alt="衡量评分框架示意图" />
               <figcaption class="figure-caption">
-                这张图对应评分闭环：不同数据产品先匹配候选攻击，再分别执行攻击得到单攻击结果，最后按统一口径聚合为产品评分。
+                候选攻击执行、单攻击结果、聚合得分、产品评分。
               </figcaption>
             </figure>
           </div>
