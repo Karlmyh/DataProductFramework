@@ -1,0 +1,921 @@
+{
+  "sample_sizes": [
+    64,
+    128,
+    256,
+    512,
+    1024
+  ],
+  "query_budgets": [
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "default_sample_size": 128,
+  "default_query_budget": 32,
+  "default_case_key": "s0128_q0032",
+  "cases": {
+    "s0064_q0008": {
+      "case_key": "s0064_q0008",
+      "sample_size": 64,
+      "query_budget": 8,
+      "fragment_script": "celeba_mia_showcase_assets/s0064_q0008/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0064_q0008/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0064_q0008/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0064_q0008/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.546875,
+          "auc": 0.541015625,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5390625,
+          "auc": 0.5257568359375,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5078125,
+          "auc": 0.468505859375,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.515625,
+          "auc": 0.4705810546875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.59375,
+          "auc": 0.6221923828125,
+          "tpr_at_fpr_10pct": 0.1875
+        }
+      }
+    },
+    "s0064_q0016": {
+      "case_key": "s0064_q0016",
+      "sample_size": 64,
+      "query_budget": 16,
+      "fragment_script": "celeba_mia_showcase_assets/s0064_q0016/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0064_q0016/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0064_q0016/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0064_q0016/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5703125,
+          "auc": 0.549072265625,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5546875,
+          "auc": 0.539306640625,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.53125,
+          "auc": 0.4815673828125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.53125,
+          "auc": 0.4849853515625,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.6171875,
+          "auc": 0.62353515625,
+          "tpr_at_fpr_10pct": 0.15625
+        }
+      }
+    },
+    "s0064_q0032": {
+      "case_key": "s0064_q0032",
+      "sample_size": 64,
+      "query_budget": 32,
+      "fragment_script": "celeba_mia_showcase_assets/s0064_q0032/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0064_q0032/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0064_q0032/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0064_q0032/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5625,
+          "auc": 0.553955078125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5625,
+          "auc": 0.5606689453125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.53125,
+          "auc": 0.4769287109375,
+          "tpr_at_fpr_10pct": 0.046875
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5390625,
+          "auc": 0.4832763671875,
+          "tpr_at_fpr_10pct": 0.03125
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.609375,
+          "auc": 0.621337890625,
+          "tpr_at_fpr_10pct": 0.140625
+        }
+      }
+    },
+    "s0064_q0064": {
+      "case_key": "s0064_q0064",
+      "sample_size": 64,
+      "query_budget": 64,
+      "fragment_script": "celeba_mia_showcase_assets/s0064_q0064/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0064_q0064/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0064_q0064/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0064_q0064/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.578125,
+          "auc": 0.5653076171875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5625,
+          "auc": 0.559814453125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.53125,
+          "auc": 0.474365234375,
+          "tpr_at_fpr_10pct": 0.046875
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5390625,
+          "auc": 0.48046875,
+          "tpr_at_fpr_10pct": 0.03125
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.6171875,
+          "auc": 0.6331787109375,
+          "tpr_at_fpr_10pct": 0.15625
+        }
+      }
+    },
+    "s0064_q0128": {
+      "case_key": "s0064_q0128",
+      "sample_size": 64,
+      "query_budget": 128,
+      "fragment_script": "celeba_mia_showcase_assets/s0064_q0128/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0064_q0128/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0064_q0128/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0064_q0128/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.59375,
+          "auc": 0.5782470703125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.578125,
+          "auc": 0.56591796875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.53125,
+          "auc": 0.4744873046875,
+          "tpr_at_fpr_10pct": 0.046875
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5390625,
+          "auc": 0.4810791015625,
+          "tpr_at_fpr_10pct": 0.03125
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.625,
+          "auc": 0.6336669921875,
+          "tpr_at_fpr_10pct": 0.1875
+        }
+      }
+    },
+    "s0128_q0008": {
+      "case_key": "s0128_q0008",
+      "sample_size": 128,
+      "query_budget": 8,
+      "fragment_script": "celeba_mia_showcase_assets/s0128_q0008/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0128_q0008/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0128_q0008/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0128_q0008/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5,
+          "auc": 0.48150634765625,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.53125,
+          "auc": 0.50750732421875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.578125,
+          "auc": 0.562286376953125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5703125,
+          "auc": 0.5670166015625,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.51953125,
+          "auc": 0.499908447265625,
+          "tpr_at_fpr_10pct": 0.0234375
+        }
+      }
+    },
+    "s0128_q0016": {
+      "case_key": "s0128_q0016",
+      "sample_size": 128,
+      "query_budget": 16,
+      "fragment_script": "celeba_mia_showcase_assets/s0128_q0016/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0128_q0016/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0128_q0016/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0128_q0016/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.50390625,
+          "auc": 0.476165771484375,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.50390625,
+          "auc": 0.459716796875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.58984375,
+          "auc": 0.55389404296875,
+          "tpr_at_fpr_10pct": 0.171875
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5859375,
+          "auc": 0.56060791015625,
+          "tpr_at_fpr_10pct": 0.1796875
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.5234375,
+          "auc": 0.498046875,
+          "tpr_at_fpr_10pct": 0.015625
+        }
+      }
+    },
+    "s0128_q0032": {
+      "case_key": "s0128_q0032",
+      "sample_size": 128,
+      "query_budget": 32,
+      "fragment_script": "celeba_mia_showcase_assets/s0128_q0032/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0128_q0032/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0128_q0032/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0128_q0032/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.51171875,
+          "auc": 0.489410400390625,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.515625,
+          "auc": 0.49591064453125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5859375,
+          "auc": 0.5577392578125,
+          "tpr_at_fpr_10pct": 0.265625
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.58203125,
+          "auc": 0.56475830078125,
+          "tpr_at_fpr_10pct": 0.171875
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.5234375,
+          "auc": 0.502410888671875,
+          "tpr_at_fpr_10pct": 0.03125
+        }
+      }
+    },
+    "s0128_q0064": {
+      "case_key": "s0128_q0064",
+      "sample_size": 128,
+      "query_budget": 64,
+      "fragment_script": "celeba_mia_showcase_assets/s0128_q0064/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0128_q0064/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0128_q0064/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0128_q0064/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.51171875,
+          "auc": 0.48272705078125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5078125,
+          "auc": 0.49530029296875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5859375,
+          "auc": 0.556060791015625,
+          "tpr_at_fpr_10pct": 0.265625
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.58203125,
+          "auc": 0.56329345703125,
+          "tpr_at_fpr_10pct": 0.171875
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.52734375,
+          "auc": 0.503997802734375,
+          "tpr_at_fpr_10pct": 0.0234375
+        }
+      }
+    },
+    "s0128_q0128": {
+      "case_key": "s0128_q0128",
+      "sample_size": 128,
+      "query_budget": 128,
+      "fragment_script": "celeba_mia_showcase_assets/s0128_q0128/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0128_q0128/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0128_q0128/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0128_q0128/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.51171875,
+          "auc": 0.4979248046875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.52734375,
+          "auc": 0.50128173828125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.58984375,
+          "auc": 0.5570068359375,
+          "tpr_at_fpr_10pct": 0.265625
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5859375,
+          "auc": 0.564453125,
+          "tpr_at_fpr_10pct": 0.203125
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.52734375,
+          "auc": 0.504058837890625,
+          "tpr_at_fpr_10pct": 0.0234375
+        }
+      }
+    },
+    "s0256_q0008": {
+      "case_key": "s0256_q0008",
+      "sample_size": 256,
+      "query_budget": 8,
+      "fragment_script": "celeba_mia_showcase_assets/s0256_q0008/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0256_q0008/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0256_q0008/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0256_q0008/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.544921875,
+          "auc": 0.5351943969726562,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.53515625,
+          "auc": 0.526611328125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.54296875,
+          "auc": 0.5308990478515625,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5390625,
+          "auc": 0.5150909423828125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.53125,
+          "auc": 0.4952850341796875,
+          "tpr_at_fpr_10pct": 0.04296875
+        }
+      }
+    },
+    "s0256_q0016": {
+      "case_key": "s0256_q0016",
+      "sample_size": 256,
+      "query_budget": 16,
+      "fragment_script": "celeba_mia_showcase_assets/s0256_q0016/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0256_q0016/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0256_q0016/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0256_q0016/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.54296875,
+          "auc": 0.5444869995117188,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.546875,
+          "auc": 0.54730224609375,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.544921875,
+          "auc": 0.5350112915039062,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.54296875,
+          "auc": 0.5189590454101562,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.546875,
+          "auc": 0.5098876953125,
+          "tpr_at_fpr_10pct": 0.01953125
+        }
+      }
+    },
+    "s0256_q0032": {
+      "case_key": "s0256_q0032",
+      "sample_size": 256,
+      "query_budget": 32,
+      "fragment_script": "celeba_mia_showcase_assets/s0256_q0032/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0256_q0032/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0256_q0032/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0256_q0032/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.548828125,
+          "auc": 0.5221481323242188,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5390625,
+          "auc": 0.5262451171875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.546875,
+          "auc": 0.5331192016601562,
+          "tpr_at_fpr_10pct": 0.078125
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.544921875,
+          "auc": 0.5161819458007812,
+          "tpr_at_fpr_10pct": 0.078125
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.55078125,
+          "auc": 0.5195465087890625,
+          "tpr_at_fpr_10pct": 0.03125
+        }
+      }
+    },
+    "s0256_q0064": {
+      "case_key": "s0256_q0064",
+      "sample_size": 256,
+      "query_budget": 64,
+      "fragment_script": "celeba_mia_showcase_assets/s0256_q0064/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0256_q0064/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0256_q0064/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0256_q0064/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.55078125,
+          "auc": 0.5205154418945312,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.537109375,
+          "auc": 0.5237960815429688,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.546875,
+          "auc": 0.5320358276367188,
+          "tpr_at_fpr_10pct": 0.0859375
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.544921875,
+          "auc": 0.5152816772460938,
+          "tpr_at_fpr_10pct": 0.07421875
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.54296875,
+          "auc": 0.5115432739257812,
+          "tpr_at_fpr_10pct": 0.05859375
+        }
+      }
+    },
+    "s0256_q0128": {
+      "case_key": "s0256_q0128",
+      "sample_size": 256,
+      "query_budget": 128,
+      "fragment_script": "celeba_mia_showcase_assets/s0256_q0128/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0256_q0128/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0256_q0128/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0256_q0128/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5390625,
+          "auc": 0.5229949951171875,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.541015625,
+          "auc": 0.5269317626953125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.548828125,
+          "auc": 0.533111572265625,
+          "tpr_at_fpr_10pct": 0.0859375
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.548828125,
+          "auc": 0.51641845703125,
+          "tpr_at_fpr_10pct": 0.07421875
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.544921875,
+          "auc": 0.5167770385742188,
+          "tpr_at_fpr_10pct": 0.05859375
+        }
+      }
+    },
+    "s0512_q0008": {
+      "case_key": "s0512_q0008",
+      "sample_size": 512,
+      "query_budget": 8,
+      "fragment_script": "celeba_mia_showcase_assets/s0512_q0008/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0512_q0008/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0512_q0008/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0512_q0008/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.51953125,
+          "auc": 0.5163993835449219,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5244140625,
+          "auc": 0.5214118957519531,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5,
+          "auc": 0.4762840270996094,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5009765625,
+          "auc": 0.4818706512451172,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.517578125,
+          "auc": 0.5097408294677734,
+          "tpr_at_fpr_10pct": 0.05859375
+        }
+      }
+    },
+    "s0512_q0016": {
+      "case_key": "s0512_q0016",
+      "sample_size": 512,
+      "query_budget": 16,
+      "fragment_script": "celeba_mia_showcase_assets/s0512_q0016/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0512_q0016/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0512_q0016/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0512_q0016/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5185546875,
+          "auc": 0.5112113952636719,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.521484375,
+          "auc": 0.5201930999755859,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5048828125,
+          "auc": 0.47933387756347656,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5009765625,
+          "auc": 0.48282814025878906,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.521484375,
+          "auc": 0.5135650634765625,
+          "tpr_at_fpr_10pct": 0.048828125
+        }
+      }
+    },
+    "s0512_q0032": {
+      "case_key": "s0512_q0032",
+      "sample_size": 512,
+      "query_budget": 32,
+      "fragment_script": "celeba_mia_showcase_assets/s0512_q0032/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0512_q0032/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0512_q0032/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0512_q0032/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.521484375,
+          "auc": 0.5063705444335938,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.515625,
+          "auc": 0.5135707855224609,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5068359375,
+          "auc": 0.4810161590576172,
+          "tpr_at_fpr_10pct": 0.078125
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.501953125,
+          "auc": 0.48407554626464844,
+          "tpr_at_fpr_10pct": 0.05078125
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.5263671875,
+          "auc": 0.5094051361083984,
+          "tpr_at_fpr_10pct": 0.08984375
+        }
+      }
+    },
+    "s0512_q0064": {
+      "case_key": "s0512_q0064",
+      "sample_size": 512,
+      "query_budget": 64,
+      "fragment_script": "celeba_mia_showcase_assets/s0512_q0064/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0512_q0064/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0512_q0064/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0512_q0064/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5205078125,
+          "auc": 0.5108871459960938,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.51953125,
+          "auc": 0.5127182006835938,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5087890625,
+          "auc": 0.4810218811035156,
+          "tpr_at_fpr_10pct": 0.0859375
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.50390625,
+          "auc": 0.4846172332763672,
+          "tpr_at_fpr_10pct": 0.060546875
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.525390625,
+          "auc": 0.5092525482177734,
+          "tpr_at_fpr_10pct": 0.099609375
+        }
+      }
+    },
+    "s0512_q0128": {
+      "case_key": "s0512_q0128",
+      "sample_size": 512,
+      "query_budget": 128,
+      "fragment_script": "celeba_mia_showcase_assets/s0512_q0128/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s0512_q0128/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s0512_q0128/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s0512_q0128/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5244140625,
+          "auc": 0.5121688842773438,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5224609375,
+          "auc": 0.5149021148681641,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5087890625,
+          "auc": 0.48064613342285156,
+          "tpr_at_fpr_10pct": 0.099609375
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.50390625,
+          "auc": 0.4830760955810547,
+          "tpr_at_fpr_10pct": 0.078125
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.5234375,
+          "auc": 0.5092220306396484,
+          "tpr_at_fpr_10pct": 0.0859375
+        }
+      }
+    },
+    "s1024_q0008": {
+      "case_key": "s1024_q0008",
+      "sample_size": 1024,
+      "query_budget": 8,
+      "fragment_script": "celeba_mia_showcase_assets/s1024_q0008/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s1024_q0008/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s1024_q0008/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s1024_q0008/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5078125,
+          "auc": 0.501920223236084,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.50244140625,
+          "auc": 0.5001521110534668,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5048828125,
+          "auc": 0.49500083923339844,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.50634765625,
+          "auc": 0.4843125343322754,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.5166015625,
+          "auc": 0.5120358467102051,
+          "tpr_at_fpr_10pct": 0.11328125
+        }
+      }
+    },
+    "s1024_q0016": {
+      "case_key": "s1024_q0016",
+      "sample_size": 1024,
+      "query_budget": 16,
+      "fragment_script": "celeba_mia_showcase_assets/s1024_q0016/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s1024_q0016/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s1024_q0016/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s1024_q0016/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5068359375,
+          "auc": 0.5014538764953613,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.51708984375,
+          "auc": 0.5133256912231445,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.51416015625,
+          "auc": 0.49925804138183594,
+          "tpr_at_fpr_10pct": 0.1181640625
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.515625,
+          "auc": 0.4889225959777832,
+          "tpr_at_fpr_10pct": 0.060546875
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.51953125,
+          "auc": 0.5137042999267578,
+          "tpr_at_fpr_10pct": 0.103515625
+        }
+      }
+    },
+    "s1024_q0032": {
+      "case_key": "s1024_q0032",
+      "sample_size": 1024,
+      "query_budget": 32,
+      "fragment_script": "celeba_mia_showcase_assets/s1024_q0032/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s1024_q0032/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s1024_q0032/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s1024_q0032/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.5087890625,
+          "auc": 0.5000967979431152,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5107421875,
+          "auc": 0.5039949417114258,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.513671875,
+          "auc": 0.49982213973999023,
+          "tpr_at_fpr_10pct": 0.1162109375
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.515625,
+          "auc": 0.4897494316101074,
+          "tpr_at_fpr_10pct": 0.087890625
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.52197265625,
+          "auc": 0.5142560005187988,
+          "tpr_at_fpr_10pct": 0.1025390625
+        }
+      }
+    },
+    "s1024_q0064": {
+      "case_key": "s1024_q0064",
+      "sample_size": 1024,
+      "query_budget": 64,
+      "fragment_script": "celeba_mia_showcase_assets/s1024_q0064/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s1024_q0064/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s1024_q0064/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s1024_q0064/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.50927734375,
+          "auc": 0.49444580078125,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5234375,
+          "auc": 0.5110750198364258,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.5126953125,
+          "auc": 0.49937963485717773,
+          "tpr_at_fpr_10pct": 0.111328125
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.515625,
+          "auc": 0.4899559020996094,
+          "tpr_at_fpr_10pct": 0.083984375
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.5234375,
+          "auc": 0.5146336555480957,
+          "tpr_at_fpr_10pct": 0.1064453125
+        }
+      }
+    },
+    "s1024_q0128": {
+      "case_key": "s1024_q0128",
+      "sample_size": 1024,
+      "query_budget": 128,
+      "fragment_script": "celeba_mia_showcase_assets/s1024_q0128/celeba_mia_showcase_fragment.js",
+      "html_path": "celeba_mia_showcase_assets/s1024_q0128/celeba_mia_showcase.html",
+      "summary_path": "celeba_mia_showcase_assets/s1024_q0128/summary.json",
+      "score_csv_path": "celeba_mia_showcase_assets/s1024_q0128/target_attack_scores.csv",
+      "metrics": {
+        "label_stability": {
+          "attack_accuracy": 0.50830078125,
+          "auc": 0.49373340606689453,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "sampling_attack": {
+          "attack_accuracy": 0.5205078125,
+          "auc": 0.5116558074951172,
+          "tpr_at_fpr_10pct": 0.0
+        },
+        "transfer_attack": {
+          "attack_accuracy": 0.51318359375,
+          "auc": 0.49864959716796875,
+          "tpr_at_fpr_10pct": 0.111328125
+        },
+        "boundary_attack": {
+          "attack_accuracy": 0.5166015625,
+          "auc": 0.48876094818115234,
+          "tpr_at_fpr_10pct": 0.087890625
+        },
+        "dhattack_style": {
+          "attack_accuracy": 0.5234375,
+          "auc": 0.5147013664245605,
+          "tpr_at_fpr_10pct": 0.1123046875
+        }
+      }
+    }
+  }
+}

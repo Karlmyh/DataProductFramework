@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>成员推断攻击案例</title>
+  <style>
+    body{margin:0;padding:0;background:linear-gradient(135deg,#faf6ef 0%,#efe8db 45%,#f6f0e4 100%);font-family:'PingFang SC','Hiragino Sans GB','Noto Serif CJK SC','Songti SC',serif;line-height:1.5;}
+    
+    :root {
+      --paper: rgba(255, 252, 245, 0.92);
+      --paper-strong: #fffdfa;
+      --ink: #1f2a24;
+      --muted: #5e645d;
+      --line: #d8cdb9;
+      --truth: #315946;
+      --pred: #a64b2a;
+      --accent: #d58d42;
+      --ok: #2f6f4f;
+      --err: #b42318;
+    }
+    .dbdemo-report { display:grid; gap:18px; color:var(--ink); }
+    .dbdemo-panel, .dbdemo-attack-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 18px 36px rgba(62, 45, 22, 0.08);
+    }
+    .dbdemo-panel h2, .dbdemo-panel h3, .dbdemo-panel h4, .dbdemo-attack-card h3, .dbdemo-attack-card h4 { margin:0; }
+    .dbdemo-note, .dbdemo-footnote {
+      color: var(--muted);
+      font: 400 15px/1.6 "Avenir Next", "Segoe UI", sans-serif;
+    }
+    .dbdemo-footnote { font-size: 13px; }
+    .dbdemo-summary-grid, .dbdemo-metric-grid, .dbdemo-leaderboard-grid, .dbdemo-artifact-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .dbdemo-stat, .dbdemo-metric-card, .dbdemo-leaderboard-card, .dbdemo-artifact-card, .dbdemo-viz-box, .dbdemo-table-box {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(216, 205, 185, 0.95);
+      border-radius: 16px;
+      padding: 14px;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .dbdemo-stat span, .dbdemo-metric-card span, .dbdemo-artifact-card span {
+      display:block;
+      color:var(--muted);
+      font:600 12px/1.3 "Avenir Next","Segoe UI",sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      margin-bottom:6px;
+    }
+    .dbdemo-stat strong, .dbdemo-metric-card strong, .dbdemo-artifact-card strong {
+      display:block;
+      font:700 24px/1.1 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-attack-grid, .dbdemo-report-stack { display:grid; gap:16px; }
+    .dbdemo-attack-head {
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:baseline;
+      justify-content:space-between;
+    }
+    .dbdemo-attack-meta {
+      color: var(--muted);
+      font: 500 14px/1.5 "Avenir Next", "Segoe UI", sans-serif;
+      margin: 4px 0 0;
+    }
+    .dbdemo-status {
+      display:inline-flex;
+      align-items:center;
+      border-radius:999px;
+      padding:6px 12px;
+      font:700 12px/1 "Avenir Next","Segoe UI",sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+    .dbdemo-status-ok { background: rgba(47,111,79,0.12); color: var(--ok); }
+    .dbdemo-status-error, .dbdemo-status-not_runnable { background: rgba(180,35,24,0.10); color: var(--err); }
+    .dbdemo-metric-bar {
+      position:relative;
+      height:10px;
+      margin-top:10px;
+      border-radius:999px;
+      background:rgba(216,205,185,0.5);
+      overflow:hidden;
+    }
+    .dbdemo-metric-fill {
+      position:absolute;
+      inset:0 auto 0 0;
+      border-radius:inherit;
+      background:linear-gradient(90deg, var(--truth), #6aa07e);
+    }
+    .dbdemo-metric-fill-pred { background:linear-gradient(90deg, var(--pred), var(--accent)); }
+    .dbdemo-split {
+      display:grid;
+      gap:14px;
+      grid-template-columns:1.2fr 1fr;
+    }
+    .dbdemo-grid-2 {
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+    }
+    .dbdemo-grid-3 {
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+    }
+    .dbdemo-viz-box h4, .dbdemo-table-box h4, .dbdemo-leaderboard-card h3 { margin-bottom:10px; }
+    .dbdemo-table-box table, .dbdemo-summary-table { width:100%; border-collapse:collapse; }
+    .dbdemo-table-box th, .dbdemo-table-box td, .dbdemo-summary-table th, .dbdemo-summary-table td {
+      padding:8px 10px;
+      border-bottom:1px solid var(--line);
+      text-align:left;
+      vertical-align:top;
+      font:500 13px/1.45 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-table-box tr:last-child td, .dbdemo-summary-table tr:last-child td { border-bottom:none; }
+    .dbdemo-table-box th, .dbdemo-summary-table th {
+      font-weight:700;
+      background:rgba(49,89,70,0.08);
+    }
+    .dbdemo-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; color:var(--muted); font:600 12px/1.3 "Avenir Next","Segoe UI",sans-serif; }
+    .dbdemo-legend-item { display:inline-flex; align-items:center; gap:6px; }
+    .dbdemo-swatch { width:12px; height:12px; border-radius:3px; }
+    .dbdemo-pill-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .dbdemo-scroll-x {
+      display:block;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      overflow-x:auto;
+      overflow-y:hidden;
+      padding-bottom:2px;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior-x:contain;
+    }
+    .dbdemo-scroll-x table { min-width:max-content; }
+    .dbdemo-pill {
+      display:inline-flex;
+      border-radius:999px;
+      padding:7px 10px;
+      background:rgba(49,89,70,0.08);
+      color:var(--truth);
+      font:600 12px/1.2 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-details { margin-top:8px; }
+    .dbdemo-details summary { cursor:pointer; color:var(--pred); font:700 13px/1.4 "Avenir Next","Segoe UI",sans-serif; }
+    .dbdemo-details pre {
+      white-space:pre-wrap;
+      word-break:break-word;
+      margin:10px 0 0;
+      padding:12px;
+      border-radius:14px;
+      background:#f8f4ed;
+      border:1px solid var(--line);
+      font:500 12px/1.5 "SFMono-Regular", Menlo, Monaco, monospace;
+    }
+    .dbdemo-summary-table-wrap { overflow-x:auto; }
+    code { font-family:"SFMono-Regular", Menlo, Monaco, monospace; font-size:0.92em; }
+    @media (max-width: 1080px) {
+      .dbdemo-grid-3 { grid-template-columns:1fr; }
+    }
+    @media (max-width: 860px) {
+      .dbdemo-split, .dbdemo-grid-2 { grid-template-columns:1fr; }
+    }
+    
+    
+    .dbdemo-showcase-main { width:min(1220px,calc(100vw - 32px)); margin:0 auto; padding:32px 0 56px; }
+    .dbdemo-showcase-head { padding:8px 0 22px; }
+    .dbdemo-showcase-head p { margin:0; color:#a64b2a; font:700 12px/1.2 "Avenir Next","Segoe UI",sans-serif; text-transform:uppercase; letter-spacing:0.14em; }
+    .dbdemo-showcase-head h1 { margin:8px 0 0; font-size:clamp(32px,5vw,58px); line-height:0.96; color:#1f2a24; max-width:14ch; }
+    .dbdemo-showcase-copy { margin:12px 0 0; max-width:76ch; color:#5e645d; font:400 16px/1.6 "Avenir Next","Segoe UI",sans-serif; }
+    .dbdemo-section-intro { margin:0 0 16px; color:#5e645d; font:400 15px/1.6 "Avenir Next","Segoe UI",sans-serif; }
+    .dbdemo-showcase-grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+    .dbdemo-showcase-kicker { display:inline-flex; border-radius:999px; padding:6px 10px; background:rgba(166,75,42,0.10); color:#a64b2a; font:700 11px/1.1 "Avenir Next","Segoe UI",sans-serif; text-transform:uppercase; letter-spacing:0.08em; }
+    .dbdemo-api-note { margin-top:10px; color:#5e645d; font:500 13px/1.5 "Avenir Next","Segoe UI",sans-serif; }
+    .dbdemo-showcase-spacer { display:grid; gap:18px; }
+    .dbdemo-showcase-subpanel { display:grid; gap:16px; margin-top:16px; }
+    .dbdemo-showcase-subpanel > * { min-width:0; }
+    .dbdemo-table-box pre, .dbdemo-viz-box pre {
+      white-space:pre-wrap;
+      word-break:break-word;
+      margin:0;
+      padding:12px;
+      border-radius:14px;
+      background:#f8f4ed;
+      border:1px solid var(--line);
+      font:500 12px/1.5 "SFMono-Regular", Menlo, Monaco, monospace;
+    }
+    .dbdemo-table-box > table { min-width:0; }
+    .dbdemo-debug-card {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(216, 205, 185, 0.95);
+      border-radius: 18px;
+      padding: 16px 18px;
+    }
+    .dbdemo-debug-card span {
+      display: inline-flex;
+      margin-bottom: 8px;
+      color: #a64b2a;
+      font: 700 11px/1.1 "Avenir Next","Segoe UI",sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .dbdemo-debug-card p {
+      margin: 0;
+      color: #33403a;
+      font: 400 15px/1.65 "PingFang SC","Hiragino Sans GB","Segoe UI",sans-serif;
+    }
+    .dbdemo-setting-table td strong { font-size: 14px; }
+    .dbdemo-inline-badges { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .dbdemo-setting-badge {
+      display:inline-flex;
+      border-radius:999px;
+      padding:4px 8px;
+      font:700 11px/1 "Avenir Next","Segoe UI",sans-serif;
+      letter-spacing:0.04em;
+    }
+    .dbdemo-setting-badge.good { background:#e8f3ea; color:#2f6a3d; }
+    .dbdemo-setting-badge.warm { background:#fff2df; color:#a64b2a; }
+    .dbdemo-method-bar-chart { display:grid; gap:10px; }
+    .dbdemo-method-bar-row {
+      display:grid;
+      gap:12px;
+      grid-template-columns:minmax(0, 1.35fr) minmax(140px, 2fr) auto;
+      align-items:center;
+    }
+    .dbdemo-method-bar-label {
+      min-width:0;
+      display:grid;
+      gap:2px;
+    }
+    .dbdemo-method-bar-label strong {
+      color:#1f2a24;
+      font:700 13px/1.35 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-method-bar-label span {
+      color:#6f746e;
+      font:500 11px/1.35 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-method-bar-track {
+      position:relative;
+      height:12px;
+      border-radius:999px;
+      background:rgba(216,205,185,0.5);
+      overflow:hidden;
+    }
+    .dbdemo-method-bar-track.overflow { box-shadow:inset 0 0 0 1px rgba(166,75,42,0.18); }
+    .dbdemo-method-bar-fill {
+      position:absolute;
+      inset:0 auto 0 0;
+      border-radius:inherit;
+      background:linear-gradient(90deg, var(--truth), #6aa07e);
+    }
+    .dbdemo-method-bar-fill.pred { background:linear-gradient(90deg, var(--pred), var(--accent)); }
+    .dbdemo-method-bar-fill.best { box-shadow:inset 0 0 0 1px rgba(31,42,36,0.16); filter:saturate(1.15); }
+    .dbdemo-method-bar-fill.overflow {
+      background:repeating-linear-gradient(135deg, #a64b2a 0 8px, #d67b49 8px 16px);
+    }
+    .dbdemo-method-bar-value {
+      min-width:68px;
+      text-align:right;
+      color:#33403a;
+      font:700 12px/1.2 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-method-bar-value.best { color:#1f2a24; }
+    .dbdemo-method-bar-flag {
+      display:inline-flex;
+      margin-left:6px;
+      padding:2px 6px;
+      border-radius:999px;
+      background:#fff2df;
+      color:#a64b2a;
+      font:700 10px/1.1 "Avenir Next","Segoe UI",sans-serif;
+      letter-spacing:0.04em;
+      vertical-align:middle;
+    }
+    .dbdemo-pair-value {
+      color:#1f2a24;
+      font:700 14px/1.35 "SFMono-Regular", Menlo, Monaco, monospace;
+    }
+    .dbdemo-pair-subtle {
+      margin-top:4px;
+      color:#6f746e;
+      font:500 12px/1.35 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-context-panel {
+      display:grid;
+      gap:12px;
+      margin:4px 0 18px;
+      padding:14px;
+      border-radius:18px;
+      border:1px solid rgba(216,205,185,0.95);
+      background:rgba(248,244,237,0.88);
+    }
+    .dbdemo-context-title {
+      color:#a64b2a;
+      font:700 12px/1.2 "Avenir Next","Segoe UI",sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.10em;
+    }
+    .dbdemo-context-grid {
+      display:grid;
+      gap:10px;
+      grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    }
+    .dbdemo-context-card {
+      border-radius:14px;
+      padding:12px 14px;
+      background:rgba(255,255,255,0.86);
+      border:1px solid rgba(216,205,185,0.82);
+    }
+    .dbdemo-context-card span {
+      display:block;
+      color:#6a7069;
+      font:700 11px/1.2 "Avenir Next","Segoe UI",sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.07em;
+    }
+    .dbdemo-context-card strong {
+      display:block;
+      margin-top:8px;
+      color:#1f2a24;
+      font-size:15px;
+      line-height:1.32;
+    }
+    .dbdemo-context-query span {
+      display:block;
+      margin-bottom:8px;
+      color:#6a7069;
+      font:700 11px/1.2 "Avenir Next","Segoe UI",sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.07em;
+    }
+    .dbdemo-context-query pre {
+      white-space:pre-wrap;
+      word-break:break-word;
+      margin:0;
+      padding:12px;
+      border-radius:14px;
+      background:#fff;
+      border:1px solid rgba(216,205,185,0.82);
+      font:500 12px/1.5 "SFMono-Regular", Menlo, Monaco, monospace;
+    }
+    .dbdemo-context-note {
+      margin:8px 0 0;
+      color:#6f746e;
+      font:500 12px/1.45 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-full-row-table td {
+      vertical-align: top;
+      min-width: 112px;
+    }
+    .dbdemo-full-row-table td:first-child,
+    .dbdemo-full-row-table th:first-child {
+      min-width: 180px;
+    }
+    .dbdemo-breakthrough-panel {
+      background:
+        radial-gradient(circle at top right, rgba(46, 111, 79, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.86));
+    }
+    .dbdemo-breakthrough-strip {
+      display:grid;
+      gap:12px;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      margin:18px 0 16px;
+    }
+    .dbdemo-breakthrough-chip {
+      border-radius:18px;
+      border:1px solid rgba(216,205,185,0.95);
+      background:rgba(255,255,255,0.82);
+      padding:14px 16px;
+      box-shadow:0 14px 40px rgba(56,44,24,0.06);
+    }
+    .dbdemo-breakthrough-chip span {
+      display:block;
+      color:#6a7069;
+      font:700 11px/1.2 "Avenir Next","Segoe UI",sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+    .dbdemo-breakthrough-chip strong {
+      display:block;
+      margin-top:8px;
+      color:#183126;
+      font-size:22px;
+      line-height:1.12;
+    }
+    .dbdemo-breakthrough-grid {
+      display:grid;
+      gap:18px;
+      grid-template-columns:repeat(auto-fit,minmax(460px,1fr));
+    }
+    .dbdemo-breakthrough-card {
+      border-radius:24px;
+      border:1px solid rgba(216,205,185,0.95);
+      background:rgba(255,255,255,0.88);
+      padding:18px;
+      display:grid;
+      gap:16px;
+      box-shadow:0 22px 52px rgba(56,44,24,0.07);
+    }
+    .dbdemo-breakthrough-head p {
+      margin:0;
+      color:#a64b2a;
+      font:700 12px/1.2 "Avenir Next","Segoe UI",sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.12em;
+    }
+    .dbdemo-breakthrough-head h3 {
+      margin:8px 0 0;
+      color:#1f2a24;
+      font-size:24px;
+      line-height:1.08;
+    }
+    .dbdemo-budget-grid {
+      display:grid;
+      gap:18px;
+      grid-template-columns:repeat(auto-fit,minmax(520px,1fr));
+    }
+    .dbdemo-budget-card {
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(216, 205, 185, 0.95);
+      border-radius: 22px;
+      padding: 18px;
+      display:grid;
+      gap:16px;
+      box-shadow: 0 18px 48px rgba(56, 44, 24, 0.08);
+    }
+    .dbdemo-budget-head {
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-end;
+      flex-wrap:wrap;
+    }
+    .dbdemo-budget-head p {
+      margin:0;
+      color:#a64b2a;
+      font:700 12px/1.2 "Avenir Next","Segoe UI",sans-serif;
+      text-transform:uppercase;
+      letter-spacing:0.12em;
+    }
+    .dbdemo-budget-head h3 {
+      margin:6px 0 6px;
+      color:#1f2a24;
+      font-size:26px;
+      line-height:1.02;
+    }
+    .dbdemo-budget-head span {
+      color:#5e645d;
+      font:500 14px/1.55 "Avenir Next","Segoe UI",sans-serif;
+    }
+    .dbdemo-budget-summary-grid {
+      grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    }
+    .dbdemo-budget-visuals {
+      display:grid;
+      gap:14px;
+    }
+    @media (max-width: 680px) {
+      .dbdemo-budget-grid {
+        grid-template-columns:1fr;
+      }
+      .dbdemo-breakthrough-grid {
+        grid-template-columns:1fr;
+      }
+    }
+    
+    .dbdemo-controller-panel{margin-bottom:18px;display:grid;gap:14px;}
+    .dbdemo-controller-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+    .dbdemo-controller-label{display:grid;gap:8px;color:#5e645d;font:600 13px/1.45 "Avenir Next","Segoe UI",sans-serif;}
+    .dbdemo-controller-label select{appearance:none;border:1px solid rgba(216,205,185,0.95);border-radius:14px;background:#fffaf3;padding:12px 14px;color:#1f2a24;font:600 15px/1.2 "Avenir Next","Segoe UI",sans-serif;}
+    .dbdemo-controller-meta{margin:0;color:#5e645d;font:500 14px/1.6 "Avenir Next","Segoe UI",sans-serif;}
+    .dbdemo-controller-status{margin:0;color:#1f2a24;font:600 14px/1.55 "Avenir Next","Segoe UI",sans-serif;}
+    .dbdemo-loading-box{display:grid;place-items:center;min-height:220px;color:#5e645d;font:500 15px/1.6 "Avenir Next","Segoe UI",sans-serif;}
+    .dbdemo-figure{display:block;width:100%;height:auto;border-radius:18px;border:1px solid rgba(216,205,185,0.95);background:#fffaf3;}
+  </style>
+</head>
+<body>
+  <main class="dbdemo-showcase-main">
+    <section class="dbdemo-panel dbdemo-controller-panel">
+      <span class="dbdemo-showcase-kicker">Controls</span>
+      <h2>结果切换</h2>
+      <div class="dbdemo-controller-grid">
+        <label class="dbdemo-controller-label">样本个数
+          <select id="sample-size-select"><option value='64'>64</option><option value='128' selected>128</option><option value='256'>256</option><option value='512'>512</option><option value='1024'>1024</option></select>
+        </label>
+        <label class="dbdemo-controller-label">query 个数
+          <select id="query-budget-select"><option value='8'>8</option><option value='16'>16</option><option value='32' selected>32</option><option value='64'>64</option><option value='128'>128</option></select>
+        </label>
+      </div>
+      <p class="dbdemo-controller-meta">选择后，下面的场景设定、方法目录和效果展示会整体切到对应 case。当前统一支持样本档位 64/128/256/512/1024，以及 query 档位 8/16/32/64/128。</p>
+      <p id="case-status" class="dbdemo-controller-status">正在加载默认结果…</p>
+    </section>
+    <div id="showcase-root" class="dbdemo-loading-box">正在载入结果…</div>
+  </main>
+  <script>
+    const SHOWCASE_MANIFEST = {"sample_sizes": [64, 128, 256, 512, 1024], "query_budgets": [8, 16, 32, 64, 128], "default_sample_size": 128, "default_query_budget": 32, "default_case_key": "s0128_q0032", "cases": {"s0064_q0008": {"case_key": "s0064_q0008", "sample_size": 64, "query_budget": 8, "fragment_script": "celeba_mia_showcase_assets/s0064_q0008/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0064_q0008/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0064_q0008/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0064_q0008/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.546875, "auc": 0.541015625, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5390625, "auc": 0.5257568359375, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5078125, "auc": 0.468505859375, "tpr_at_fpr_10pct": 0.0}, "boundary_attack": {"attack_accuracy": 0.515625, "auc": 0.4705810546875, "tpr_at_fpr_10pct": 0.0}, "dhattack_style": {"attack_accuracy": 0.59375, "auc": 0.6221923828125, "tpr_at_fpr_10pct": 0.1875}}}, "s0064_q0016": {"case_key": "s0064_q0016", "sample_size": 64, "query_budget": 16, "fragment_script": "celeba_mia_showcase_assets/s0064_q0016/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0064_q0016/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0064_q0016/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0064_q0016/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5703125, "auc": 0.549072265625, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5546875, "auc": 0.539306640625, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.53125, "auc": 0.4815673828125, "tpr_at_fpr_10pct": 0.0}, "boundary_attack": {"attack_accuracy": 0.53125, "auc": 0.4849853515625, "tpr_at_fpr_10pct": 0.0}, "dhattack_style": {"attack_accuracy": 0.6171875, "auc": 0.62353515625, "tpr_at_fpr_10pct": 0.15625}}}, "s0064_q0032": {"case_key": "s0064_q0032", "sample_size": 64, "query_budget": 32, "fragment_script": "celeba_mia_showcase_assets/s0064_q0032/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0064_q0032/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0064_q0032/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0064_q0032/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5625, "auc": 0.553955078125, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5625, "auc": 0.5606689453125, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.53125, "auc": 0.4769287109375, "tpr_at_fpr_10pct": 0.046875}, "boundary_attack": {"attack_accuracy": 0.5390625, "auc": 0.4832763671875, "tpr_at_fpr_10pct": 0.03125}, "dhattack_style": {"attack_accuracy": 0.609375, "auc": 0.621337890625, "tpr_at_fpr_10pct": 0.140625}}}, "s0064_q0064": {"case_key": "s0064_q0064", "sample_size": 64, "query_budget": 64, "fragment_script": "celeba_mia_showcase_assets/s0064_q0064/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0064_q0064/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0064_q0064/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0064_q0064/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.578125, "auc": 0.5653076171875, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5625, "auc": 0.559814453125, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.53125, "auc": 0.474365234375, "tpr_at_fpr_10pct": 0.046875}, "boundary_attack": {"attack_accuracy": 0.5390625, "auc": 0.48046875, "tpr_at_fpr_10pct": 0.03125}, "dhattack_style": {"attack_accuracy": 0.6171875, "auc": 0.6331787109375, "tpr_at_fpr_10pct": 0.15625}}}, "s0064_q0128": {"case_key": "s0064_q0128", "sample_size": 64, "query_budget": 128, "fragment_script": "celeba_mia_showcase_assets/s0064_q0128/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0064_q0128/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0064_q0128/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0064_q0128/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.59375, "auc": 0.5782470703125, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.578125, "auc": 0.56591796875, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.53125, "auc": 0.4744873046875, "tpr_at_fpr_10pct": 0.046875}, "boundary_attack": {"attack_accuracy": 0.5390625, "auc": 0.4810791015625, "tpr_at_fpr_10pct": 0.03125}, "dhattack_style": {"attack_accuracy": 0.625, "auc": 0.6336669921875, "tpr_at_fpr_10pct": 0.1875}}}, "s0128_q0008": {"case_key": "s0128_q0008", "sample_size": 128, "query_budget": 8, "fragment_script": "celeba_mia_showcase_assets/s0128_q0008/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0128_q0008/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0128_q0008/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0128_q0008/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5, "auc": 0.48150634765625, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.53125, "auc": 0.50750732421875, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.578125, "auc": 0.562286376953125, "tpr_at_fpr_10pct": 0.0}, "boundary_attack": {"attack_accuracy": 0.5703125, "auc": 0.5670166015625, "tpr_at_fpr_10pct": 0.0}, "dhattack_style": {"attack_accuracy": 0.51953125, "auc": 0.499908447265625, "tpr_at_fpr_10pct": 0.0234375}}}, "s0128_q0016": {"case_key": "s0128_q0016", "sample_size": 128, "query_budget": 16, "fragment_script": "celeba_mia_showcase_assets/s0128_q0016/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0128_q0016/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0128_q0016/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0128_q0016/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.50390625, "auc": 0.476165771484375, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.50390625, "auc": 0.459716796875, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.58984375, "auc": 0.55389404296875, "tpr_at_fpr_10pct": 0.171875}, "boundary_attack": {"attack_accuracy": 0.5859375, "auc": 0.56060791015625, "tpr_at_fpr_10pct": 0.1796875}, "dhattack_style": {"attack_accuracy": 0.5234375, "auc": 0.498046875, "tpr_at_fpr_10pct": 0.015625}}}, "s0128_q0032": {"case_key": "s0128_q0032", "sample_size": 128, "query_budget": 32, "fragment_script": "celeba_mia_showcase_assets/s0128_q0032/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0128_q0032/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0128_q0032/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0128_q0032/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.51171875, "auc": 0.489410400390625, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.515625, "auc": 0.49591064453125, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5859375, "auc": 0.5577392578125, "tpr_at_fpr_10pct": 0.265625}, "boundary_attack": {"attack_accuracy": 0.58203125, "auc": 0.56475830078125, "tpr_at_fpr_10pct": 0.171875}, "dhattack_style": {"attack_accuracy": 0.5234375, "auc": 0.502410888671875, "tpr_at_fpr_10pct": 0.03125}}}, "s0128_q0064": {"case_key": "s0128_q0064", "sample_size": 128, "query_budget": 64, "fragment_script": "celeba_mia_showcase_assets/s0128_q0064/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0128_q0064/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0128_q0064/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0128_q0064/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.51171875, "auc": 0.48272705078125, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5078125, "auc": 0.49530029296875, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5859375, "auc": 0.556060791015625, "tpr_at_fpr_10pct": 0.265625}, "boundary_attack": {"attack_accuracy": 0.58203125, "auc": 0.56329345703125, "tpr_at_fpr_10pct": 0.171875}, "dhattack_style": {"attack_accuracy": 0.52734375, "auc": 0.503997802734375, "tpr_at_fpr_10pct": 0.0234375}}}, "s0128_q0128": {"case_key": "s0128_q0128", "sample_size": 128, "query_budget": 128, "fragment_script": "celeba_mia_showcase_assets/s0128_q0128/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0128_q0128/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0128_q0128/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0128_q0128/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.51171875, "auc": 0.4979248046875, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.52734375, "auc": 0.50128173828125, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.58984375, "auc": 0.5570068359375, "tpr_at_fpr_10pct": 0.265625}, "boundary_attack": {"attack_accuracy": 0.5859375, "auc": 0.564453125, "tpr_at_fpr_10pct": 0.203125}, "dhattack_style": {"attack_accuracy": 0.52734375, "auc": 0.504058837890625, "tpr_at_fpr_10pct": 0.0234375}}}, "s0256_q0008": {"case_key": "s0256_q0008", "sample_size": 256, "query_budget": 8, "fragment_script": "celeba_mia_showcase_assets/s0256_q0008/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0256_q0008/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0256_q0008/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0256_q0008/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.544921875, "auc": 0.5351943969726562, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.53515625, "auc": 0.526611328125, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.54296875, "auc": 0.5308990478515625, "tpr_at_fpr_10pct": 0.0}, "boundary_attack": {"attack_accuracy": 0.5390625, "auc": 0.5150909423828125, "tpr_at_fpr_10pct": 0.0}, "dhattack_style": {"attack_accuracy": 0.53125, "auc": 0.4952850341796875, "tpr_at_fpr_10pct": 0.04296875}}}, "s0256_q0016": {"case_key": "s0256_q0016", "sample_size": 256, "query_budget": 16, "fragment_script": "celeba_mia_showcase_assets/s0256_q0016/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0256_q0016/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0256_q0016/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0256_q0016/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.54296875, "auc": 0.5444869995117188, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.546875, "auc": 0.54730224609375, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.544921875, "auc": 0.5350112915039062, "tpr_at_fpr_10pct": 0.0}, "boundary_attack": {"attack_accuracy": 0.54296875, "auc": 0.5189590454101562, "tpr_at_fpr_10pct": 0.0}, "dhattack_style": {"attack_accuracy": 0.546875, "auc": 0.5098876953125, "tpr_at_fpr_10pct": 0.01953125}}}, "s0256_q0032": {"case_key": "s0256_q0032", "sample_size": 256, "query_budget": 32, "fragment_script": "celeba_mia_showcase_assets/s0256_q0032/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0256_q0032/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0256_q0032/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0256_q0032/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.548828125, "auc": 0.5221481323242188, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5390625, "auc": 0.5262451171875, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.546875, "auc": 0.5331192016601562, "tpr_at_fpr_10pct": 0.078125}, "boundary_attack": {"attack_accuracy": 0.544921875, "auc": 0.5161819458007812, "tpr_at_fpr_10pct": 0.078125}, "dhattack_style": {"attack_accuracy": 0.55078125, "auc": 0.5195465087890625, "tpr_at_fpr_10pct": 0.03125}}}, "s0256_q0064": {"case_key": "s0256_q0064", "sample_size": 256, "query_budget": 64, "fragment_script": "celeba_mia_showcase_assets/s0256_q0064/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0256_q0064/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0256_q0064/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0256_q0064/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.55078125, "auc": 0.5205154418945312, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.537109375, "auc": 0.5237960815429688, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.546875, "auc": 0.5320358276367188, "tpr_at_fpr_10pct": 0.0859375}, "boundary_attack": {"attack_accuracy": 0.544921875, "auc": 0.5152816772460938, "tpr_at_fpr_10pct": 0.07421875}, "dhattack_style": {"attack_accuracy": 0.54296875, "auc": 0.5115432739257812, "tpr_at_fpr_10pct": 0.05859375}}}, "s0256_q0128": {"case_key": "s0256_q0128", "sample_size": 256, "query_budget": 128, "fragment_script": "celeba_mia_showcase_assets/s0256_q0128/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0256_q0128/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0256_q0128/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0256_q0128/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5390625, "auc": 0.5229949951171875, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.541015625, "auc": 0.5269317626953125, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.548828125, "auc": 0.533111572265625, "tpr_at_fpr_10pct": 0.0859375}, "boundary_attack": {"attack_accuracy": 0.548828125, "auc": 0.51641845703125, "tpr_at_fpr_10pct": 0.07421875}, "dhattack_style": {"attack_accuracy": 0.544921875, "auc": 0.5167770385742188, "tpr_at_fpr_10pct": 0.05859375}}}, "s0512_q0008": {"case_key": "s0512_q0008", "sample_size": 512, "query_budget": 8, "fragment_script": "celeba_mia_showcase_assets/s0512_q0008/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0512_q0008/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0512_q0008/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0512_q0008/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.51953125, "auc": 0.5163993835449219, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5244140625, "auc": 0.5214118957519531, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5, "auc": 0.4762840270996094, "tpr_at_fpr_10pct": 0.0}, "boundary_attack": {"attack_accuracy": 0.5009765625, "auc": 0.4818706512451172, "tpr_at_fpr_10pct": 0.0}, "dhattack_style": {"attack_accuracy": 0.517578125, "auc": 0.5097408294677734, "tpr_at_fpr_10pct": 0.05859375}}}, "s0512_q0016": {"case_key": "s0512_q0016", "sample_size": 512, "query_budget": 16, "fragment_script": "celeba_mia_showcase_assets/s0512_q0016/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0512_q0016/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0512_q0016/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0512_q0016/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5185546875, "auc": 0.5112113952636719, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.521484375, "auc": 0.5201930999755859, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5048828125, "auc": 0.47933387756347656, "tpr_at_fpr_10pct": 0.0}, "boundary_attack": {"attack_accuracy": 0.5009765625, "auc": 0.48282814025878906, "tpr_at_fpr_10pct": 0.0}, "dhattack_style": {"attack_accuracy": 0.521484375, "auc": 0.5135650634765625, "tpr_at_fpr_10pct": 0.048828125}}}, "s0512_q0032": {"case_key": "s0512_q0032", "sample_size": 512, "query_budget": 32, "fragment_script": "celeba_mia_showcase_assets/s0512_q0032/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0512_q0032/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0512_q0032/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0512_q0032/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.521484375, "auc": 0.5063705444335938, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.515625, "auc": 0.5135707855224609, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5068359375, "auc": 0.4810161590576172, "tpr_at_fpr_10pct": 0.078125}, "boundary_attack": {"attack_accuracy": 0.501953125, "auc": 0.48407554626464844, "tpr_at_fpr_10pct": 0.05078125}, "dhattack_style": {"attack_accuracy": 0.5263671875, "auc": 0.5094051361083984, "tpr_at_fpr_10pct": 0.08984375}}}, "s0512_q0064": {"case_key": "s0512_q0064", "sample_size": 512, "query_budget": 64, "fragment_script": "celeba_mia_showcase_assets/s0512_q0064/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0512_q0064/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0512_q0064/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0512_q0064/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5205078125, "auc": 0.5108871459960938, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.51953125, "auc": 0.5127182006835938, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5087890625, "auc": 0.4810218811035156, "tpr_at_fpr_10pct": 0.0859375}, "boundary_attack": {"attack_accuracy": 0.50390625, "auc": 0.4846172332763672, "tpr_at_fpr_10pct": 0.060546875}, "dhattack_style": {"attack_accuracy": 0.525390625, "auc": 0.5092525482177734, "tpr_at_fpr_10pct": 0.099609375}}}, "s0512_q0128": {"case_key": "s0512_q0128", "sample_size": 512, "query_budget": 128, "fragment_script": "celeba_mia_showcase_assets/s0512_q0128/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s0512_q0128/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s0512_q0128/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s0512_q0128/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5244140625, "auc": 0.5121688842773438, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5224609375, "auc": 0.5149021148681641, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5087890625, "auc": 0.48064613342285156, "tpr_at_fpr_10pct": 0.099609375}, "boundary_attack": {"attack_accuracy": 0.50390625, "auc": 0.4830760955810547, "tpr_at_fpr_10pct": 0.078125}, "dhattack_style": {"attack_accuracy": 0.5234375, "auc": 0.5092220306396484, "tpr_at_fpr_10pct": 0.0859375}}}, "s1024_q0008": {"case_key": "s1024_q0008", "sample_size": 1024, "query_budget": 8, "fragment_script": "celeba_mia_showcase_assets/s1024_q0008/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s1024_q0008/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s1024_q0008/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s1024_q0008/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5078125, "auc": 0.501920223236084, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.50244140625, "auc": 0.5001521110534668, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5048828125, "auc": 0.49500083923339844, "tpr_at_fpr_10pct": 0.0}, "boundary_attack": {"attack_accuracy": 0.50634765625, "auc": 0.4843125343322754, "tpr_at_fpr_10pct": 0.0}, "dhattack_style": {"attack_accuracy": 0.5166015625, "auc": 0.5120358467102051, "tpr_at_fpr_10pct": 0.11328125}}}, "s1024_q0016": {"case_key": "s1024_q0016", "sample_size": 1024, "query_budget": 16, "fragment_script": "celeba_mia_showcase_assets/s1024_q0016/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s1024_q0016/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s1024_q0016/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s1024_q0016/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5068359375, "auc": 0.5014538764953613, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.51708984375, "auc": 0.5133256912231445, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.51416015625, "auc": 0.49925804138183594, "tpr_at_fpr_10pct": 0.1181640625}, "boundary_attack": {"attack_accuracy": 0.515625, "auc": 0.4889225959777832, "tpr_at_fpr_10pct": 0.060546875}, "dhattack_style": {"attack_accuracy": 0.51953125, "auc": 0.5137042999267578, "tpr_at_fpr_10pct": 0.103515625}}}, "s1024_q0032": {"case_key": "s1024_q0032", "sample_size": 1024, "query_budget": 32, "fragment_script": "celeba_mia_showcase_assets/s1024_q0032/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s1024_q0032/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s1024_q0032/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s1024_q0032/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.5087890625, "auc": 0.5000967979431152, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5107421875, "auc": 0.5039949417114258, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.513671875, "auc": 0.49982213973999023, "tpr_at_fpr_10pct": 0.1162109375}, "boundary_attack": {"attack_accuracy": 0.515625, "auc": 0.4897494316101074, "tpr_at_fpr_10pct": 0.087890625}, "dhattack_style": {"attack_accuracy": 0.52197265625, "auc": 0.5142560005187988, "tpr_at_fpr_10pct": 0.1025390625}}}, "s1024_q0064": {"case_key": "s1024_q0064", "sample_size": 1024, "query_budget": 64, "fragment_script": "celeba_mia_showcase_assets/s1024_q0064/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s1024_q0064/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s1024_q0064/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s1024_q0064/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.50927734375, "auc": 0.49444580078125, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5234375, "auc": 0.5110750198364258, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.5126953125, "auc": 0.49937963485717773, "tpr_at_fpr_10pct": 0.111328125}, "boundary_attack": {"attack_accuracy": 0.515625, "auc": 0.4899559020996094, "tpr_at_fpr_10pct": 0.083984375}, "dhattack_style": {"attack_accuracy": 0.5234375, "auc": 0.5146336555480957, "tpr_at_fpr_10pct": 0.1064453125}}}, "s1024_q0128": {"case_key": "s1024_q0128", "sample_size": 1024, "query_budget": 128, "fragment_script": "celeba_mia_showcase_assets/s1024_q0128/celeba_mia_showcase_fragment.js", "html_path": "celeba_mia_showcase_assets/s1024_q0128/celeba_mia_showcase.html", "summary_path": "celeba_mia_showcase_assets/s1024_q0128/summary.json", "score_csv_path": "celeba_mia_showcase_assets/s1024_q0128/target_attack_scores.csv", "metrics": {"label_stability": {"attack_accuracy": 0.50830078125, "auc": 0.49373340606689453, "tpr_at_fpr_10pct": 0.0}, "sampling_attack": {"attack_accuracy": 0.5205078125, "auc": 0.5116558074951172, "tpr_at_fpr_10pct": 0.0}, "transfer_attack": {"attack_accuracy": 0.51318359375, "auc": 0.49864959716796875, "tpr_at_fpr_10pct": 0.111328125}, "boundary_attack": {"attack_accuracy": 0.5166015625, "auc": 0.48876094818115234, "tpr_at_fpr_10pct": 0.087890625}, "dhattack_style": {"attack_accuracy": 0.5234375, "auc": 0.5147013664245605, "tpr_at_fpr_10pct": 0.1123046875}}}}};
+    const CASE_CACHE = Object.create(null);
+    const LOADED_SCRIPTS = new Set();
+    let pendingCaseKey = null;
+
+    function caseKey(sampleSize, queryBudget) {
+      return `s${String(sampleSize).padStart(4, '0')}_q${String(queryBudget).padStart(4, '0')}`;
+    }
+
+    function updateStatus(text) {
+      const node = document.getElementById('case-status');
+      if (node) node.textContent = text;
+    }
+
+    function updateUrl(sampleSize, queryBudget) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('sample_size', String(sampleSize));
+      url.searchParams.set('query_budget', String(queryBudget));
+      window.history.replaceState(null, '', url.toString());
+    }
+
+    function renderCase(caseKeyValue) {
+      const root = document.getElementById('showcase-root');
+      const meta = SHOWCASE_MANIFEST.cases[caseKeyValue];
+      if (!root || !meta || !CASE_CACHE[caseKeyValue]) return;
+      root.className = '';
+      root.innerHTML = CASE_CACHE[caseKeyValue];
+      if (sampleSelect) sampleSelect.value = String(meta.sample_size);
+      if (budgetSelect) budgetSelect.value = String(meta.query_budget);
+      updateStatus(`当前结果：样本 ${meta.sample_size}，query ${meta.query_budget}。`);
+    }
+
+    window.__celebaMiaShowcaseRegister = function(caseKeyValue, fragmentHtml) {
+      CASE_CACHE[caseKeyValue] = String(fragmentHtml || '');
+      if (pendingCaseKey === caseKeyValue) renderCase(caseKeyValue);
+    };
+
+    function loadCase(sampleSize, queryBudget) {
+      const key = caseKey(sampleSize, queryBudget);
+      const meta = SHOWCASE_MANIFEST.cases[key];
+      const root = document.getElementById('showcase-root');
+      if (!meta) {
+        if (root) {
+          root.className = 'dbdemo-loading-box';
+          root.textContent = '当前没有找到这组结果。';
+        }
+        updateStatus('当前没有找到这组结果。');
+        return;
+      }
+      pendingCaseKey = key;
+      updateUrl(sampleSize, queryBudget);
+      if (CASE_CACHE[key]) {
+        renderCase(key);
+        return;
+      }
+      if (root && !root.innerHTML.trim()) {
+        root.className = 'dbdemo-loading-box';
+        root.textContent = '正在载入结果…';
+      }
+      updateStatus(`正在载入：样本 ${sampleSize}，query ${queryBudget}…`);
+      if (!LOADED_SCRIPTS.has(key)) {
+        const script = document.createElement('script');
+        script.src = meta.fragment_script;
+        script.async = true;
+        script.dataset.caseKey = key;
+        script.onerror = function() {
+          if (root) {
+            root.className = 'dbdemo-loading-box';
+            root.textContent = '载入失败，请检查对应结果文件是否存在。';
+          }
+          updateStatus(`载入失败：样本 ${sampleSize}，query ${queryBudget}。`);
+        };
+        document.body.appendChild(script);
+        LOADED_SCRIPTS.add(key);
+      }
+    }
+
+    function readInitialSelection() {
+      const url = new URL(window.location.href);
+      return {
+        sampleSize: Number(url.searchParams.get('sample_size') || SHOWCASE_MANIFEST.default_sample_size),
+        queryBudget: Number(url.searchParams.get('query_budget') || SHOWCASE_MANIFEST.default_query_budget),
+      };
+    }
+
+    const sampleSelect = document.getElementById('sample-size-select');
+    const budgetSelect = document.getElementById('query-budget-select');
+    const initial = readInitialSelection();
+    if (sampleSelect) sampleSelect.value = String(initial.sampleSize);
+    if (budgetSelect) budgetSelect.value = String(initial.queryBudget);
+    function onSelectionChange() {
+      loadCase(Number(sampleSelect.value), Number(budgetSelect.value));
+    }
+    if (sampleSelect) sampleSelect.addEventListener('change', onSelectionChange);
+    if (budgetSelect) budgetSelect.addEventListener('change', onSelectionChange);
+    loadCase(initial.sampleSize, initial.queryBudget);
+  </script>
+</body>
+</html>
