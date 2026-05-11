@@ -1,56 +1,62 @@
 {
-  "dataset_name": "celeba_public_faces",
-  "product_label_name": "smiling",
+  "dataset_name": "casia_facev5_real_chinese_faces",
+  "dataset_display_name": "CASIA-FaceV5 real Chinese faces",
+  "product_label_name": "subject_cohort",
+  "class_names": {
+    "0": "subject_group_a",
+    "1": "subject_group_b"
+  },
+  "data_source_note": "Real CASIA-FaceV5 Chinese face photographs. CASIA-FaceV5 provides identities but no CelebA-style smiling attribute, so this demo uses a deterministic binary subject-cohort label while keeping the membership-inference display flow unchanged.",
   "attack_family": "single-target pretrained label-only oracle-threshold MIA",
   "prepared_encoder_model": "torchvision/resnet50-imagenet1k_v2",
-  "prepared_feature_backend": "resnet50_imagenet1k_v2_penultimate_l2",
+  "prepared_feature_backend": "manifest_images_rgb",
   "target_train_size": 512,
   "target_test_size": 512,
-  "public_reference_size": 2310,
+  "public_reference_size": 1476,
   "query_count_per_candidate": 8,
   "input_size": 112,
   "target_head_summary": {
     "epochs_ran": 18.0,
-    "final_train_loss": 0.4967808872461319,
-    "train_accuracy": 0.794921875,
-    "eval_accuracy": 0.7265625
+    "final_train_loss": 0.16537628415971994,
+    "train_accuracy": 0.96875,
+    "eval_accuracy": 0.876953125
   },
   "surrogate_head_summary": {
     "epochs_ran": 9.0,
-    "final_train_loss": 0.12298749488540542,
-    "train_accuracy": 0.9502164502164502,
-    "eval_accuracy": 0.9502164502164502
+    "final_train_loss": 0.0762904194312367,
+    "train_accuracy": 0.9850948509485095,
+    "eval_accuracy": 0.9850948509485095
   },
   "method_metrics": {
     "label_stability": {
       "oracle_threshold": 0.625,
-      "target_attack_accuracy": 0.51953125,
-      "target_attack_precision": 0.5144927536231884,
-      "target_attack_auc": 0.5163993835449219,
+      "target_attack_accuracy": 0.5283203125,
+      "target_attack_precision": 0.5248713550600344,
+      "target_attack_auc": 0.5323295593261719,
       "target_tpr_at_fpr_10pct": 0.0,
-      "member_mean_score": 0.767578125,
-      "nonmember_mean_score": 0.74658203125,
+      "member_mean_score": 0.712646484375,
+      "nonmember_mean_score": 0.672607421875,
       "roc_curve": {
         "fpr": [
           0.0,
-          0.51953125,
-          0.580078125,
-          0.654296875,
-          0.716796875,
-          0.775390625,
-          0.83984375,
-          0.88671875,
+          0.43359375,
+          0.486328125,
+          0.541015625,
+          0.611328125,
+          0.705078125,
+          0.771484375,
+          0.83203125,
           1.0
         ],
         "tpr": [
           0.0,
-          0.54296875,
-          0.6171875,
-          0.693359375,
-          0.73828125,
-          0.791015625,
-          0.853515625,
-          0.904296875,
+          0.482421875,
+          0.53125,
+          0.59765625,
+          0.666015625,
+          0.73046875,
+          0.81640625,
+          0.876953125,
           1.0
         ]
       },
@@ -61,31 +67,31 @@
     },
     "sampling_attack": {
       "oracle_threshold": 0.8571428656578064,
-      "target_attack_accuracy": 0.5244140625,
-      "target_attack_precision": 0.5201288244766505,
-      "target_attack_auc": 0.5214118957519531,
+      "target_attack_accuracy": 0.5283203125,
+      "target_attack_precision": 0.5271028037383177,
+      "target_attack_auc": 0.5349979400634766,
       "target_tpr_at_fpr_10pct": 0.0,
-      "member_mean_score": 0.7859933376312256,
-      "nonmember_mean_score": 0.7661830186843872,
+      "member_mean_score": 0.7653459310531616,
+      "nonmember_mean_score": 0.7260044813156128,
       "roc_curve": {
         "fpr": [
           0.0,
-          0.58203125,
-          0.634765625,
-          0.658203125,
-          0.728515625,
-          0.791015625,
-          0.96875,
+          0.494140625,
+          0.548828125,
+          0.603515625,
+          0.685546875,
+          0.77734375,
+          0.97265625,
           1.0
         ],
         "tpr": [
           0.0,
-          0.630859375,
-          0.662109375,
-          0.689453125,
+          0.55078125,
+          0.603515625,
+          0.654296875,
           0.734375,
-          0.814453125,
-          0.970703125,
+          0.826171875,
+          0.98828125,
           1.0
         ]
       },
@@ -95,32 +101,32 @@
       "kind": "paper-inspired repeated-query boundary proxy"
     },
     "transfer_attack": {
-      "oracle_threshold": 1.0,
-      "target_attack_accuracy": 0.5,
-      "target_attack_precision": 0.0,
-      "target_attack_auc": 0.4762840270996094,
+      "oracle_threshold": 0.1428571492433548,
+      "target_attack_accuracy": 0.5283203125,
+      "target_attack_precision": 0.5151515151515151,
+      "target_attack_auc": 0.5093402862548828,
       "target_tpr_at_fpr_10pct": 0.0,
-      "member_mean_score": 0.6283482313156128,
-      "nonmember_mean_score": 0.6501116156578064,
+      "member_mean_score": 0.6721540093421936,
+      "nonmember_mean_score": 0.6565290689468384,
       "roc_curve": {
         "fpr": [
           0.0,
-          0.236328125,
-          0.3828125,
-          0.55078125,
-          0.6875,
-          0.794921875,
-          0.8984375,
+          0.24609375,
+          0.4140625,
+          0.546875,
+          0.681640625,
+          0.80078125,
+          0.90625,
           1.0
         ],
         "tpr": [
           0.0,
-          0.1953125,
-          0.33203125,
-          0.51953125,
-          0.68359375,
-          0.78125,
-          0.88671875,
+          0.216796875,
+          0.419921875,
+          0.548828125,
+          0.701171875,
+          0.85546875,
+          0.962890625,
           1.0
         ]
       },
@@ -130,32 +136,32 @@
       "kind": "paper-inspired transfer-style adaptation"
     },
     "boundary_attack": {
-      "oracle_threshold": 0.4285714328289032,
-      "target_attack_accuracy": 0.5009765625,
-      "target_attack_precision": 0.5007173601147776,
-      "target_attack_auc": 0.4818706512451172,
+      "oracle_threshold": 0.2857142984867096,
+      "target_attack_accuracy": 0.5302734375,
+      "target_attack_precision": 0.5182567726737338,
+      "target_attack_auc": 0.5236835479736328,
       "target_tpr_at_fpr_10pct": 0.0,
-      "member_mean_score": 0.6233258843421936,
-      "nonmember_mean_score": 0.6403459310531616,
+      "member_mean_score": 0.6796875,
+      "nonmember_mean_score": 0.6509486436843872,
       "roc_curve": {
         "fpr": [
           0.0,
-          0.216796875,
-          0.359375,
-          0.541015625,
-          0.6796875,
-          0.7890625,
-          0.896484375,
+          0.22265625,
+          0.404296875,
+          0.544921875,
+          0.68359375,
+          0.798828125,
+          0.90234375,
           1.0
         ],
         "tpr": [
           0.0,
-          0.1875,
-          0.32421875,
-          0.515625,
-          0.681640625,
-          0.7734375,
-          0.880859375,
+          0.21875,
+          0.427734375,
+          0.568359375,
+          0.720703125,
+          0.859375,
+          0.962890625,
           1.0
         ]
       },
@@ -165,44 +171,46 @@
       "kind": "paper-inspired boundary-distance adaptation"
     },
     "dhattack_style": {
-      "oracle_threshold": 0.44056951999664307,
-      "target_attack_accuracy": 0.517578125,
-      "target_attack_precision": 0.5276073619631901,
-      "target_attack_auc": 0.5097408294677734,
-      "target_tpr_at_fpr_10pct": 0.05859375,
-      "member_mean_score": 0.05293138697743416,
-      "nonmember_mean_score": 0.020200368016958237,
+      "oracle_threshold": 0.32783573865890503,
+      "target_attack_accuracy": 0.5322265625,
+      "target_attack_precision": 0.5390070921985816,
+      "target_attack_auc": 0.5312252044677734,
+      "target_tpr_at_fpr_10pct": 0.025390625,
+      "member_mean_score": 0.050324730575084686,
+      "nonmember_mean_score": -0.07931175827980042,
       "roc_curve": {
         "fpr": [
           0.0,
-          0.001953125,
-          0.001953125,
-          0.060546875,
-          0.171875,
-          0.30078125,
-          0.474609375,
-          0.61328125,
-          0.681640625,
-          0.830078125,
-          0.861328125,
-          0.93359375,
+          0.02734375,
+          0.140625,
+          0.248046875,
+          0.380859375,
+          0.54296875,
+          0.603515625,
+          0.71875,
+          0.76171875,
+          0.81640625,
+          0.8515625,
+          0.896484375,
+          0.9296875,
           0.958984375,
           1.0
         ],
         "tpr": [
           0.0,
-          0.001953125,
-          0.00390625,
-          0.05859375,
-          0.166015625,
-          0.3359375,
-          0.490234375,
-          0.619140625,
-          0.703125,
-          0.82421875,
-          0.861328125,
-          0.94140625,
-          0.958984375,
+          0.025390625,
+          0.126953125,
+          0.265625,
+          0.4453125,
+          0.57421875,
+          0.650390625,
+          0.763671875,
+          0.802734375,
+          0.876953125,
+          0.908203125,
+          0.9375,
+          0.96484375,
+          0.970703125,
           1.0
         ]
       },
@@ -214,55 +222,44 @@
   },
   "dh_public_stats": {
     "0": {
-      "mean": 0.41676226258277893,
-      "std": 0.16728276176548004
+      "mean": 0.738095223903656,
+      "std": 0.2579100595245361
     },
     "1": {
-      "mean": 0.6245972514152527,
-      "std": 0.20357391400432587
+      "mean": 0.6422947645187378,
+      "std": 0.2195945696363449
     }
   },
   "fixed_anchor_by_label": {
-    "0": 116,
-    "1": 1060
+    "0": 1194,
+    "1": 269
   },
   "alignment": {
-    "prepared_dataset_summary": {
-      "n_records": 3334,
-      "n_users": 160,
-      "n_features": 2048,
-      "avg_bag_size": 20.8375,
-      "median_bag_size": 22.0,
-      "max_bag_size": 30,
-      "label_cardinality": 2,
-      "has_labels": true
+    "dataset_name": "casia_facev5_real_chinese_faces",
+    "dataset_display_name": "CASIA-FaceV5 real Chinese faces",
+    "product_label_name": "subject_cohort",
+    "class_names": {
+      "0": "subject_group_a",
+      "1": "subject_group_b"
     },
-    "prepared_train_summary": {
-      "n_records": 2468,
-      "n_users": 120,
-      "n_features": 2048,
-      "avg_bag_size": 20.566666666666666,
-      "median_bag_size": 21.5,
-      "max_bag_size": 30,
-      "label_cardinality": 2,
-      "has_labels": true
-    },
-    "prepared_test_summary": {
-      "n_records": 866,
-      "n_users": 40,
-      "n_features": 2048,
-      "avg_bag_size": 21.65,
-      "median_bag_size": 22.5,
-      "max_bag_size": 30,
-      "label_cardinality": 2,
-      "has_labels": true
-    },
+    "source_note": "Real CASIA-FaceV5 Chinese face photographs. CASIA-FaceV5 provides identities but no CelebA-style smiling attribute, so this demo uses a deterministic binary subject-cohort label while keeping the membership-inference display flow unchanged.",
     "prepared_encoder_model": "torchvision/resnet50-imagenet1k_v2",
-    "prepared_feature_backend": "resnet50_imagenet1k_v2_penultimate_l2",
-    "aligned_records": 3334,
-    "aligned_users": 160,
-    "alignment_verified_users": 160,
-    "alignment_verified_records": 3334
+    "prepared_feature_backend": "manifest_images_rgb",
+    "prepared_dataset_summary": {
+      "n_records": 2500,
+      "n_users": 500,
+      "image_shape": [
+        128,
+        128,
+        3
+      ],
+      "class_counts": {
+        "0": 1250,
+        "1": 1250
+      }
+    },
+    "prepared_train_summary": {},
+    "prepared_test_summary": {}
   },
   "notes": [
     "Target model = frozen pretrained ResNet50 backbone + trainable linear head on top.",
