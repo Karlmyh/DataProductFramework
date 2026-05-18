@@ -141,7 +141,7 @@ a:hover { text-decoration: underline; }
 <h2>词项定义</h2>
 <ul><li><code>term</code>: action_trajectory</li><li><code>中文标签</code>: action_trajectory</li><li><code>semantic_definition</code>: 轨迹、状态-动作序列或交互日志。</li></ul>
 <h2>当前规则覆盖</h2>
-<ul><li><code>related_rule_count</code>: 1</li><li><code>structured_paper_count</code>: 1</li><li><code>manual_search_lead_count</code>: 4</li></ul>
+<ul><li><code>related_rule_count</code>: 1</li><li><code>structured_paper_count</code>: 1</li><li><code>manual_search_lead_count</code>: 2</li></ul>
 <h2>关联规则</h2>
 <ul><li><code>privacy/online_decision_bandit_rl/trajectory/interaction/member_or_update/membership_inference/trajectory_gap</code></li></ul>
 <h2>结构化文献</h2>
@@ -149,16 +149,9 @@ a:hover { text-decoration: underline; }
 <h3>rl_security_privacy_survey2022</h3>
 <ul><li><code>title</code>: <a href="https://opus.lib.uts.edu.au/handle/10453/166417" target="_blank" rel="noopener">A Survey of Security and Privacy Issues in Reinforcement Learning</a></li><li><code>fit_note</code>: Broad RL / bandit security survey anchor.</li></ul>
 <h2>额外检索线索</h2>
-<ul><li><code>2019</code> <a href="https://experts.illinois.edu/en/publications/how-you-act-tells-a-lot-privacy-leaking-attack-on-deep-reinforcem" target="_blank" rel="noopener">How you act tells a lot: Privacy-leaking attack on deep reinforcement learning</a> (AAMAS)</li><li>最接近 <code>action_trajectory</code> 的直接隐私攻击锚点，明确从行为/轨迹恢复环境与私有训练信息。</li><li><code>2024</code> <a href="https://www.sciencedirect.com/science/article/pii/S0950705124006381" target="_blank" rel="noopener">Privacy preservation in deep reinforcement learning: A training perspective</a> (Knowledge-Based Systems)</li><li>更偏 defense / training 视角，但系统讨论了轨迹、策略和训练环境之间的隐私耦合，可作为长尾补充。</li><li><code>2023</code> <a href="https://www.tandfonline.com/doi/abs/10.1080/09540091.2023.2211240" target="_blank" rel="noopener">Empirical study of privacy inference attack against deep reinforcement learning models</a> (Journal of Intelligent &amp; Fuzzy Systems)</li><li>这篇工作把轨迹/行为泄露路线做成更系统的攻击实验，是 <code>action_trajectory</code> 页很值得挂上的 concrete extension。</li></ul>
-<h2>滚雪球补充建议</h2>
-<ul><li><code>action_trajectory</code> 这个对象页的核心不是“又一个 RL 攻击”，而是它把行为日志本身变成了隐私载体。</li><li>后续最值得继续查的是：</li><li><code>trajectory privacy</code></li><li><code>behavior leakage</code></li><li><code>environment inference from policy behavior</code></li><li><code>membership inference from trajectories</code></li></ul>
-<h2>survey 引文滚雪球</h2>
-<ul><li>对 <code>action_trajectory</code> 最值得继续沿引文链补的是：</li><li><code>RL security/privacy survey 2022 -&gt; How you act tells a lot 2019 -&gt; empirical trajectory/privacy papers 2023+</code></li><li>这条链已经足够把：</li><li><code>行为日志</code></li><li><code>轨迹级隐私</code></li><li><code>环境/成员推断</code></li></ul>
-<p>连成一个稳定对象，而不是零散 attack note。</p>
-<h2>当前可见文献簇</h2>
-<ul><li><code>survey / taxonomy</code></li><li><code>A Survey of Security and Privacy Issues in Reinforcement Learning</code></li><li><code>trajectory privacy attack</code></li><li><code>How you act tells a lot</code></li><li><code>Empirical study of privacy inference attack against deep reinforcement learning models</code></li><li><code>training / defense perspective</code></li><li><code>Privacy preservation in deep reinforcement learning: A training perspective</code></li></ul>
+<ul><li><code>2019</code> <a href="https://experts.illinois.edu/en/publications/how-you-act-tells-a-lot-privacy-leaking-attack-on-deep-reinforcem" target="_blank" rel="noopener">How you act tells a lot: Privacy-leaking attack on deep reinforcement learning</a> (AAMAS)</li><li>最接近 <code>action_trajectory</code> 的直接隐私攻击锚点，明确从行为/轨迹恢复环境与私有训练信息。</li><li><code>2024</code> <a href="https://www.sciencedirect.com/science/article/pii/S0950705124006381" target="_blank" rel="noopener">Privacy preservation in deep reinforcement learning: A training perspective</a> (Knowledge-Based Systems)</li><li>更偏 defense / training 视角，但系统讨论了轨迹、策略和训练环境之间的隐私耦合，可作为长尾补充。</li></ul>
 <h2>当前结论</h2>
-<ul><li>该词项已经进入当前三层匹配框架，可通过关联规则与结构化文献继续扩展。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/可见内容语义，再进入候选队列。</li></ul>
+<ul><li>该词项已经进入当前三层匹配框架，可通过关联规则与结构化文献继续扩展。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/服务形式语义，再进入候选队列。</li></ul>
         <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
       </section>
     </main>

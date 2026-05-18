@@ -141,21 +141,15 @@ a:hover { text-decoration: underline; }
 <h2>词项定义</h2>
 <ul><li><code>term</code>: subgroup_statistics</li><li><code>中文标签</code>: subgroup_statistics</li><li><code>semantic_definition</code>: 群体统计量、分组比例或官方统计属性。</li></ul>
 <h2>当前规则覆盖</h2>
-<ul><li><code>related_rule_count</code>: 0</li><li><code>structured_paper_count</code>: 0</li><li><code>manual_search_lead_count</code>: 5</li></ul>
+<ul><li><code>related_rule_count</code>: 0</li><li><code>structured_paper_count</code>: 0</li><li><code>manual_search_lead_count</code>: 2</li></ul>
 <h2>关联规则</h2>
 <ul><li>当前 canonical 规则表中还没有直接以该词项为筛选条件的规则。</li></ul>
 <h2>结构化文献</h2>
 <ul><li>当前结构化库里还没有直接通过规则映射到该词项的论文。</li></ul>
 <h2>额外检索线索</h2>
-<ul><li><code>2017</code> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5409873/" target="_blank" rel="noopener">A review of statistical disclosure control techniques employed by web-based data query systems</a> (J Public Health Management and Practice)</li><li>强调 subgroup statistics 在交互式 query 系统里会因 differencing / suppression flaw 泄露。</li><li><code>2003</code> <a href="https://weizmann.esploro.exlibrisgroup.com/esploro/outputs/conferenceProceeding/Revealing-information-while-preserving-privacy/993346366703596" target="_blank" rel="noopener">Revealing Information while Preserving Privacy</a> (PODS)</li><li>虽然不是专写 subgroup statistics，但它是 subgroup/aggregate reconstruction 的奠基文献。</li><li><code>2011</code> <a href="https://doi.org/10.1214/11-SS074" target="_blank" rel="noopener">Data confidentiality: A review of methods for statistical disclosure limitation and methods for assessing privacy</a> (Statistics Surveys)</li><li>统计领域的高价值综述，适合沿其参考文献继续追 subgroup statistics、表格发布和 disclosure limitation。</li><li><code>2009</code> <a href="https://www.sciencedirect.com/science/article/abs/pii/S0169716108000151" target="_blank" rel="noopener">Statistical Disclosure Control for Survey Data</a> (Handbook of Statistics)</li><li>更直接地讨论总量、均值、比例和表格发布中的 confidentiality 风险，是 <code>subgroup_statistics</code> 的统计学主干文献。</li><li><code>2018</code> <a href="https://queue.acm.org/detail.cfm?id=3295691" target="_blank" rel="noopener">Understanding Database Reconstruction Attacks on Public Data</a> (ACM Queue)</li><li>这篇文章很适合补在 <code>subgroup_statistics</code> 页，因为它把聚合表、公开统计与重构攻击之间的关系讲得非常直观。</li></ul>
-<h2>滚雪球补充建议</h2>
-<ul><li>对这个词项，最有效的滚雪球方式不是搜 <code>subgroup statistics</code> 本身，而是顺着以下关键词继续：</li><li><code>differencing attack</code></li><li><code>cell suppression</code></li><li><code>table disclosure</code></li><li><code>statistical disclosure control</code></li><li><code>interactive query confidentiality</code></li><li>这类论文经常不显式使用当前词表里的英文名，但语义上非常贴近，后续规则扩表时需要人工对齐。</li></ul>
-<h2>survey 引文滚雪球</h2>
-<ul><li>对 <code>subgroup_statistics</code> 最值得继续沿引文链补的是：</li><li><code>Statistical Disclosure Control for Survey Data 2009 -&gt; Data confidentiality review 2011 -&gt; web-based query systems review 2017</code></li><li><code>Dinur &amp; Nissim 2003 -&gt; Understanding Database Reconstruction Attacks on Public Data 2018</code></li><li>这两条链正好对应：</li><li><code>统计学 / official statistics 主线</code></li><li><code>攻击与重构主线</code></li></ul>
-<h2>当前可见文献簇</h2>
-<ul><li><code>survey / statistical disclosure control</code></li><li><code>Statistical Disclosure Control for Survey Data</code></li><li><code>Data confidentiality: A review of methods for statistical disclosure limitation</code></li><li><code>A review of statistical disclosure control techniques employed by web-based data query systems</code></li><li><code>reconstruction / differencing</code></li><li><code>Revealing Information while Preserving Privacy</code></li><li><code>Understanding Database Reconstruction Attacks on Public Data</code></li></ul>
+<ul><li><code>2017</code> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5409873/" target="_blank" rel="noopener">A review of statistical disclosure control techniques employed by web-based data query systems</a> (J Public Health Management and Practice)</li><li>强调 subgroup statistics 在交互式 query 系统里会因 differencing / suppression flaw 泄露。</li><li><code>2003</code> <a href="https://weizmann.esploro.exlibrisgroup.com/esploro/outputs/conferenceProceeding/Revealing-information-while-preserving-privacy/993346366703596" target="_blank" rel="noopener">Revealing Information while Preserving Privacy</a> (PODS)</li><li>虽然不是专写 subgroup statistics，但它是 subgroup/aggregate reconstruction 的奠基文献。</li></ul>
 <h2>当前结论</h2>
-<ul><li>该词项目前仍是词表层语义，尚未在 canonical 规则表中形成直接匹配入口。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/可见内容语义，再进入候选队列。</li></ul>
+<ul><li>该词项目前仍是词表层语义，尚未在 canonical 规则表中形成直接匹配入口。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/服务形式语义，再进入候选队列。</li></ul>
         <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
       </section>
     </main>

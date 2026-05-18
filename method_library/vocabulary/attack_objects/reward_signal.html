@@ -141,7 +141,7 @@ a:hover { text-decoration: underline; }
 <h2>词项定义</h2>
 <ul><li><code>term</code>: reward_signal</li><li><code>中文标签</code>: reward_signal</li><li><code>semantic_definition</code>: 奖励反馈、价值信号或 online reward。</li></ul>
 <h2>当前规则覆盖</h2>
-<ul><li><code>related_rule_count</code>: 1</li><li><code>structured_paper_count</code>: 1</li><li><code>manual_search_lead_count</code>: 4</li></ul>
+<ul><li><code>related_rule_count</code>: 1</li><li><code>structured_paper_count</code>: 1</li><li><code>manual_search_lead_count</code>: 2</li></ul>
 <h2>关联规则</h2>
 <ul><li><code>stability/online_decision_bandit_rl/bandit/reward_channel/regret/poisoning/reward_poisoning</code></li></ul>
 <h2>结构化文献</h2>
@@ -149,15 +149,9 @@ a:hover { text-decoration: underline; }
 <h3>rl_security_privacy_survey2022</h3>
 <ul><li><code>title</code>: <a href="https://opus.lib.uts.edu.au/handle/10453/166417" target="_blank" rel="noopener">A Survey of Security and Privacy Issues in Reinforcement Learning</a></li><li><code>fit_note</code>: Broad RL / bandit security survey anchor.</li></ul>
 <h2>额外检索线索</h2>
-<ul><li><code>2021</code> <a href="https://neurips.cc/virtual/2021/36415" target="_blank" rel="noopener">Reward Poisoning in Reinforcement Learning: Attacks Against Unknown Learners in Unknown Environments</a> (NeurIPS StratML Workshop / CoRR)</li><li>最贴近 <code>reward_signal</code> 的黑盒 reward poisoning 锚点，说明即使未知 learner / environment 也可操纵奖励通道。</li><li><code>2023</code> <a href="https://www.sciencedirect.com/science/article/pii/S0925231223007014" target="_blank" rel="noopener">Reward poisoning attacks in deep reinforcement learning based on exploration strategies</a> (Neurocomputing)</li><li>补充白盒/探索驱动 reward poisoning，和现有 survey 锚点形成 survey + concrete attack 组合。</li><li><code>2018</code> <a href="https://experts.arizona.edu/en/publications/data-poisoning-attacks-in-contextual-bandits/" target="_blank" rel="noopener">Data poisoning attacks in contextual bandits</a> (GameSec)</li><li>虽然更偏 contextual bandit，但它把奖励通道操纵写成了明确的优化型攻击，是 <code>reward_signal</code> 很好的早期具体锚点。</li></ul>
-<h2>滚雪球补充建议</h2>
-<ul><li>这个词项最值得沿 survey 往下追的是：</li><li><code>reward manipulation</code></li><li><code>reward shaping attack</code></li><li><code>poisoned feedback channel</code></li><li>目前 <code>reward_signal</code> 已经足够证明是独立攻击对象，不应继续被当成普通 <code>score_or_logit</code> 的一个别名。</li></ul>
-<h2>survey 引文滚雪球</h2>
-<ul><li>对 <code>reward_signal</code> 最值得继续沿引文链补的是：</li><li><code>RL security/privacy survey 2022 -&gt; reward poisoning 2021 -&gt; exploration-strategy reward poisoning 2023</code></li><li><code>contextual bandit poisoning 2018 -&gt; reward manipulation / feedback channel variants</code></li></ul>
-<h2>当前可见文献簇</h2>
-<ul><li><code>survey / taxonomy</code></li><li><code>A Survey of Security and Privacy Issues in Reinforcement Learning</code></li><li><code>reward poisoning</code></li><li><code>Reward Poisoning in Reinforcement Learning</code></li><li><code>Reward poisoning attacks in deep reinforcement learning based on exploration strategies</code></li><li><code>bandit / feedback-channel precursor</code></li><li><code>Data poisoning attacks in contextual bandits</code></li></ul>
+<ul><li><code>2021</code> <a href="https://neurips.cc/virtual/2021/36415" target="_blank" rel="noopener">Reward Poisoning in Reinforcement Learning: Attacks Against Unknown Learners in Unknown Environments</a> (NeurIPS StratML Workshop / CoRR)</li><li>最贴近 <code>reward_signal</code> 的黑盒 reward poisoning 锚点，说明即使未知 learner / environment 也可操纵奖励通道。</li><li><code>2023</code> <a href="https://www.sciencedirect.com/science/article/pii/S0925231223007014" target="_blank" rel="noopener">Reward poisoning attacks in deep reinforcement learning based on exploration strategies</a> (Neurocomputing)</li><li>补充白盒/探索驱动 reward poisoning，和现有 survey 锚点形成 survey + concrete attack 组合。</li></ul>
 <h2>当前结论</h2>
-<ul><li>该词项已经进入当前三层匹配框架，可通过关联规则与结构化文献继续扩展。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/可见内容语义，再进入候选队列。</li></ul>
+<ul><li>该词项已经进入当前三层匹配框架，可通过关联规则与结构化文献继续扩展。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/服务形式语义，再进入候选队列。</li></ul>
         <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
       </section>
     </main>

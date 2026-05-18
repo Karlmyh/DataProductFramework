@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>可见内容：`model_architecture`</title>
+    <title>服务形式：`model_architecture`</title>
     <style>
 :root {
   --bg: #f5efe5;
@@ -135,27 +135,21 @@ a:hover { text-decoration: underline; }
           <a class="crumb" href="../../../index.html">返回首页</a>
           <a class="crumb" href="../../index.html">方法文献库索引</a>
         </nav>
-        <h1>可见内容：`model_architecture`</h1>
+        <h1>服务形式：`model_architecture`</h1>
         <p class="meta"><code>method_library/vocabulary/visible_contents/model_architecture.html</code></p>
-        <h1>可见内容：<code>model_architecture</code></h1>
+        <h1>服务形式：<code>model_architecture</code></h1>
 <h2>词项定义</h2>
 <ul><li><code>term</code>: model_architecture</li><li><code>中文标签</code>: model_architecture</li><li><code>semantic_definition</code>: 网络结构或模型架构信息。</li></ul>
 <h2>当前规则覆盖</h2>
-<ul><li><code>related_rule_count</code>: 0</li><li><code>structured_paper_count</code>: 0</li><li><code>manual_search_lead_count</code>: 6</li></ul>
+<ul><li><code>related_rule_count</code>: 0</li><li><code>structured_paper_count</code>: 0</li><li><code>manual_search_lead_count</code>: 2</li></ul>
 <h2>关联规则</h2>
 <ul><li>当前 canonical 规则表中还没有直接以该词项为筛选条件的规则。</li></ul>
 <h2>结构化文献</h2>
 <ul><li>当前结构化库里还没有直接通过规则映射到该词项的论文。</li></ul>
 <h2>额外检索线索</h2>
-<ul><li><code>2021</code> <a href="https://doi.org/10.1049/cit2.12026" target="_blank" rel="noopener">Side channel attacks for architecture extraction of neural networks</a> (CAAI Transactions on Intelligence Technology)</li><li>architecture object 的直接锚点，系统讨论架构抽取而不仅是参数窃取。</li><li><code>2021</code> <a href="https://doi.org/10.3390/app11156790" target="_blank" rel="noopener">Physical Side-Channel Attacks on Embedded Neural Networks: A Survey</a> (Applied Sciences)</li><li>补充说明 architecture extraction 常出现在 side-channel / hardware 视角，目前框架里仍是长尾对象。</li><li><code>2020</code> <a href="https://doi.org/10.1145/3373376.3378460" target="_blank" rel="noopener">DeepSniffer: A DNN model extraction framework based on learning architectural hints</a> (ASPLOS)</li><li>survey 里反复被引用的代表性 architecture extraction 工作，直接从硬件执行痕迹恢复完整网络结构。</li><li><code>2018</code> <a href="https://www.usenix.org/conference/usenixsecurity18/presentation/hua" target="_blank" rel="noopener">CSI Neural Network: Using Side-channels to Recover Your Artificial Neural Network Information</a> (USENIX Security)</li><li>比 DeepSniffer 更早的奠基型 side-channel 架构恢复工作，适合放在 architecture-visible 的历史基础位置。</li><li><code>2023</code> <a href="https://repositum.tuwien.at/handle/20.500.12708/189837" target="_blank" rel="noopener">I Know What You Trained Last Summer: A Survey on Stealing Machine Learning Models and Defences</a> (ACM Computing Surveys)</li><li>这篇 survey 明确把 architecture stealing、training hyperparameter stealing 和 exact property extraction 放到统一框架里，是 <code>model_architecture</code> 页非常好的总锚点。</li><li><code>2018</code> <a href="https://www.ieee-security.org/TC/SP2018/program.html" target="_blank" rel="noopener">Stealing Hyperparameters in Machine Learning</a> (IEEE S&amp;P)</li><li>虽然更偏 hyperparameter，但它清楚说明了“模型结构信息”本身就是可窃取资产，能补 architecture 线和 model stealing 线之间的桥梁。</li></ul>
-<h2>滚雪球补充建议</h2>
-<ul><li>这个词项目前最值得继续顺藤摸瓜的两条线是：</li><li><code>side-channel -&gt; architecture extraction -&gt; adversarial transfer</code></li><li><code>model stealing -&gt; hyperparameter stealing -&gt; architecture hints</code></li><li>如果下一轮继续扩，可以优先把 <code>DeepSniffer</code> 和 <code>CSI Neural Network</code> 的引文链再展开，看哪些文章能稳定落在 <code>trained_model + model_architecture + model_architecture_object</code> 这一组合上。</li></ul>
-<h2>survey 引文滚雪球</h2>
-<ul><li>对 <code>model_architecture</code> 最值得继续沿引文链补的是：</li><li><code>I Know What You Trained Last Summer 2023 -&gt; architecture extraction references -&gt; side-channel subfamily</code></li><li><code>CSI Neural Network 2018 -&gt; DeepSniffer 2020 -&gt; architecture extraction survey 2021</code></li><li>这两条链正好对应：</li><li><code>MLaaS / model stealing 语境</code></li><li><code>硬件侧信道 / execution trace 语境</code></li></ul>
-<h2>当前可见文献簇</h2>
-<ul><li><code>survey / taxonomy</code></li><li><code>I Know What You Trained Last Summer</code></li><li><code>Physical Side-Channel Attacks on Embedded Neural Networks: A Survey</code></li><li><code>side-channel architecture recovery</code></li><li><code>CSI Neural Network</code></li><li><code>DeepSniffer</code></li><li><code>Side channel attacks for architecture extraction of neural networks</code></li><li><code>exact property extraction bridge</code></li><li><code>Stealing Hyperparameters in Machine Learning</code></li></ul>
+<ul><li><code>2021</code> <a href="https://doi.org/10.1049/cit2.12026" target="_blank" rel="noopener">Side channel attacks for architecture extraction of neural networks</a> (CAAI Transactions on Intelligence Technology)</li><li>architecture object 的直接锚点，系统讨论架构抽取而不仅是参数窃取。</li><li><code>2021</code> <a href="https://doi.org/10.3390/app11156790" target="_blank" rel="noopener">Physical Side-Channel Attacks on Embedded Neural Networks: A Survey</a> (Applied Sciences)</li><li>补充说明 architecture extraction 常出现在 side-channel / hardware 视角，目前框架里仍是长尾对象。</li></ul>
 <h2>当前结论</h2>
-<ul><li>该词项目前仍是词表层语义，尚未在 canonical 规则表中形成直接匹配入口。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/可见内容语义，再进入候选队列。</li></ul>
+<ul><li>该词项目前仍是词表层语义，尚未在 canonical 规则表中形成直接匹配入口。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/服务形式语义，再进入候选队列。</li></ul>
         <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
       </section>
     </main>

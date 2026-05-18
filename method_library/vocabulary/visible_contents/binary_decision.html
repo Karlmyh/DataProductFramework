@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>可见内容：`binary_decision`</title>
+    <title>服务形式：`binary_decision`</title>
     <style>
 :root {
   --bg: #f5efe5;
@@ -135,25 +135,21 @@ a:hover { text-decoration: underline; }
           <a class="crumb" href="../../../index.html">返回首页</a>
           <a class="crumb" href="../../index.html">方法文献库索引</a>
         </nav>
-        <h1>可见内容：`binary_decision`</h1>
+        <h1>服务形式：`binary_decision`</h1>
         <p class="meta"><code>method_library/vocabulary/visible_contents/binary_decision.html</code></p>
-        <h1>可见内容：<code>binary_decision</code></h1>
+        <h1>服务形式：<code>binary_decision</code></h1>
 <h2>词项定义</h2>
 <ul><li><code>term</code>: binary_decision</li><li><code>中文标签</code>: binary_decision</li><li><code>semantic_definition</code>: 0/1 判定或阈值核验结果。</li></ul>
 <h2>当前规则覆盖</h2>
-<ul><li><code>related_rule_count</code>: 0</li><li><code>structured_paper_count</code>: 0</li><li><code>manual_search_lead_count</code>: 9</li></ul>
+<ul><li><code>related_rule_count</code>: 0</li><li><code>structured_paper_count</code>: 0</li><li><code>manual_search_lead_count</code>: 3</li></ul>
 <h2>关联规则</h2>
 <ul><li>当前 canonical 规则表中还没有直接以该词项为筛选条件的规则。</li></ul>
 <h2>结构化文献</h2>
 <ul><li>当前结构化库里还没有直接通过规则映射到该词项的论文。</li></ul>
 <h2>额外检索线索</h2>
-<ul><li><code>2021</code> <a href="https://proceedings.mlr.press/v139/choquette-choo21a.html" target="_blank" rel="noopener">Label-Only Membership Inference Attacks</a> (ICML)</li><li>直接对应 hard-label / binary decision 场景，是当前 <code>binary_decision</code> 词项最关键的奠基锚点。</li><li><code>2021</code> <a href="https://publications.cispa.saarland/3486/" target="_blank" rel="noopener">Membership Leakage in Label-Only Exposures</a> (CCS)</li><li>把离散判定输出明确推进到 decision-based / boundary-based MIA 场景，说明仅有 top-1 label 也可泄露成员信息。</li><li><code>2024</code> <a href="https://link.springer.com/article/10.1007/s11063-024-11682-1" target="_blank" rel="noopener">Label-Only Membership Inference Attack Based on Model Explanation</a> (Neural Processing Letters)</li><li>说明只有离散输出时仍可通过边界/解释恢复成员信息，支持后续把 binary decision 与 label-only 风险绑定得更紧。</li><li><code>2021</code> <a href="https://doi.org/10.1145/3474369.3486876" target="_blank" rel="noopener">Differential Privacy Defenses and Sampling Attacks for Membership Inference</a> (AISec)</li><li>明确把“只看 predicted class label”作为攻击设置本身来研究，说明 binary decision 场景下重复查询会显著放大风险。</li><li><code>2022</code> <a href="https://doi.org/10.1109/ACCESS.2022.3175824" target="_blank" rel="noopener">Black-Box Based Limited Query Membership Inference Attack</a> (IEEE Access)</li><li>补充了 query budget 受限下的成员推断路线，适合解释 binary decision 场景为什么不应被粗暴视为“信息太少所以安全”。</li><li><code>2024</code> <a href="https://openreview.net/forum?id=7WsivwyHrS&amp;noteId=QjoAoa8UVW" target="_blank" rel="noopener">You Only Query Once: An Efficient Label-Only Membership Inference Attack</a> (ICLR)</li><li>进一步把 <code>binary_decision</code> 暴露下的攻击压缩到单次查询，直接打破“需要大量 probe 才危险”的乐观假设。</li><li><code>2024</code> <a href="https://proceedings.neurips.cc/paper_files/paper/2024/hash/71f88122d414cfeb455ac0ed932fbe1f-Abstract-Conference.html" target="_blank" rel="noopener">OSLO: One-Shot Label-Only Membership Inference Attacks</a> (NeurIPS)</li><li>把 one-shot 场景做成系统化成员推断，说明 <code>binary_decision</code> 已经足以支持独立、现实的攻击家族。</li><li><code>2022</code> <a href="https://academic.oup.com/comjnl/article/65/11/2969/6746755" target="_blank" rel="noopener">Evaluating Membership Inference Through Adversarial Robustness</a> (The Computer Journal)</li><li>这篇工作把 adversarial robustness 明确拿来作为成员推断信号来评估，是从“决策边界距离”走向“可比较风险测量”的一个重要桥梁。</li><li><code>2025</code> <a href="https://www.mdpi.com/2076-3417/15/9/5086" target="_blank" rel="noopener">Graph-Level Label-Only Membership Inference Attack Against Graph Neural Networks</a> (Applied Sciences)</li><li>虽然它不属于当前 <code>API</code> 主线，但它说明 <code>binary_decision</code> 风险已经扩展到图分类场景，label-only 家族并不是只在经典图像分类上成立。</li></ul>
-<h2>survey 引文滚雪球</h2>
-<ul><li>对 <code>binary_decision</code> 最值得追的链条是：</li><li><code>Choquette-Choo 2021 -&gt; Rahimian et al. 2021 -&gt; Zhang et al. 2022 -&gt; YOQO 2024 -&gt; OSLO 2024 -&gt; Ma et al. 2024</code></li><li>这条链几乎完整覆盖了：</li><li>决策边界距离</li><li>重复查询放大</li><li>查询预算受限</li><li>单次查询</li><li>解释辅助恢复</li><li>以及后续的跨域扩展与风险评估</li><li>它已经足够支持把 <code>binary_decision</code> 视为潜在候选规则，而不是仅仅挂在词表里。</li></ul>
-<h2>当前可见文献簇</h2>
-<ul><li><code>boundary-distance / transfer / boundary attack</code></li><li><code>Label-Only Membership Inference Attacks</code></li><li><code>Membership Leakage in Label-Only Exposures</code></li><li><code>repeated-query / limited-query</code></li><li><code>Differential Privacy Defenses and Sampling Attacks for Membership Inference</code></li><li><code>Black-Box Based Limited Query Membership Inference Attack</code></li><li><code>one-shot / ultra-low-query</code></li><li><code>You Only Query Once</code></li><li><code>OSLO</code></li><li><code>explanation-assisted</code></li><li><code>Label-Only Membership Inference Attack Based on Model Explanation</code></li><li><code>cross-domain / evaluation</code></li><li><code>Evaluating Membership Inference Through Adversarial Robustness</code></li><li><code>Graph-Level Label-Only Membership Inference Attack Against Graph Neural Networks</code></li></ul>
+<ul><li><code>2021</code> <a href="https://proceedings.mlr.press/v139/choquette-choo21a.html" target="_blank" rel="noopener">Label-Only Membership Inference Attacks</a> (ICML)</li><li>直接对应 hard-label / binary decision 场景，是当前 <code>binary_decision</code> 词项最关键的奠基锚点。</li><li><code>2021</code> <a href="https://publications.cispa.saarland/3486/" target="_blank" rel="noopener">Membership Leakage in Label-Only Exposures</a> (CCS)</li><li>把离散判定输出明确推进到 decision-based / boundary-based MIA 场景，说明仅有 top-1 label 也可泄露成员信息。</li><li><code>2024</code> <a href="https://link.springer.com/article/10.1007/s11063-024-11682-1" target="_blank" rel="noopener">Label-Only Membership Inference Attack Based on Model Explanation</a> (Neural Processing Letters)</li><li>说明只有离散输出时仍可通过边界/解释恢复成员信息，支持后续把 binary decision 与 label-only 风险绑定得更紧。</li></ul>
 <h2>当前结论</h2>
-<ul><li>该词项目前仍是词表层语义，尚未在 canonical 规则表中形成直接匹配入口。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/可见内容语义，再进入候选队列。</li></ul>
+<ul><li>该词项目前仍是词表层语义，尚未在 canonical 规则表中形成直接匹配入口。</li><li>已补充额外检索线索，后续若这些论文稳定支持独立规则或独立对象/服务形式语义，再进入候选队列。</li></ul>
         <p class="footer">该页面由本地 Markdown 自动导出为静态 HTML，适合直接部署到 GitHub Pages。</p>
       </section>
     </main>
