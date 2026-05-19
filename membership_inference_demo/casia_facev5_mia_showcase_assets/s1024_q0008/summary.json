@@ -17,22 +17,70 @@
   "input_size": 112,
   "target_head_summary": {
     "epochs_ran": 18.0,
-    "final_train_loss": 0.09433659981004894,
-    "train_accuracy": 0.98046875,
-    "eval_accuracy": 0.9326171875
+    "final_train_loss": 0.16403575761554143,
+    "train_accuracy": 0.9485677083333334,
+    "eval_accuracy": 0.8994140625,
+    "epochs_ran_std": 0.0,
+    "epochs_ran_values": [
+      18.0,
+      18.0,
+      18.0
+    ],
+    "final_train_loss_std": 0.060433318100925,
+    "final_train_loss_values": [
+      0.09433659981004894,
+      0.19593466073274612,
+      0.2018360123038292
+    ],
+    "train_accuracy_std": 0.027901901971483987,
+    "train_accuracy_values": [
+      0.98046875,
+      0.9365234375,
+      0.9287109375
+    ],
+    "eval_accuracy_std": 0.029556144434417102,
+    "eval_accuracy_values": [
+      0.9326171875,
+      0.8759765625,
+      0.8896484375
+    ]
   },
   "surrogate_head_summary": {
     "epochs_ran": 9.0,
-    "final_train_loss": 0.15578933811820714,
-    "train_accuracy": 0.9446902654867256,
-    "eval_accuracy": 0.9446902654867256
+    "final_train_loss": 0.49416827601669117,
+    "train_accuracy": 0.859882005899705,
+    "eval_accuracy": 0.859882005899705,
+    "epochs_ran_std": 0.0,
+    "epochs_ran_values": [
+      9.0,
+      9.0,
+      9.0
+    ],
+    "final_train_loss_std": 0.2937035985431915,
+    "final_train_loss_values": [
+      0.15578933811820714,
+      0.6830192450928477,
+      0.6436962448390184
+    ],
+    "train_accuracy_std": 0.07365407210707293,
+    "train_accuracy_values": [
+      0.9446902654867256,
+      0.8230088495575221,
+      0.8119469026548672
+    ],
+    "eval_accuracy_std": 0.07365407210707293,
+    "eval_accuracy_values": [
+      0.9446902654867256,
+      0.8230088495575221,
+      0.8119469026548672
+    ]
   },
   "method_metrics": {
     "label_stability": {
       "oracle_threshold": 0.75,
-      "target_attack_accuracy": 0.51318359375,
+      "target_attack_accuracy": 0.5099283854166666,
       "target_attack_precision": 0.513595166163142,
-      "target_attack_auc": 0.5066299438476562,
+      "target_attack_auc": 0.5024202664693197,
       "target_tpr_at_fpr_10pct": 0.0,
       "member_mean_score": 0.640625,
       "nonmember_mean_score": 0.63427734375,
@@ -63,13 +111,31 @@
       "display_name": "Label Stability",
       "paper_title": "Label-Only Membership Inference Attacks",
       "venue": "ICML 2021",
-      "kind": "paper-aligned adaptation"
+      "kind": "paper-aligned adaptation",
+      "target_attack_accuracy_std": 0.003176956591136578,
+      "target_attack_accuracy_values": [
+        0.51318359375,
+        0.5068359375,
+        0.509765625
+      ],
+      "target_attack_auc_std": 0.009025724357320566,
+      "target_attack_auc_values": [
+        0.5066299438476562,
+        0.49205875396728516,
+        0.5085721015930176
+      ],
+      "target_tpr_at_fpr_10pct_std": 0.0,
+      "target_tpr_at_fpr_10pct_values": [
+        0.0,
+        0.0,
+        0.0
+      ]
     },
     "sampling_attack": {
       "oracle_threshold": 0.8571428656578064,
-      "target_attack_accuracy": 0.51025390625,
+      "target_attack_accuracy": 0.51123046875,
       "target_attack_precision": 0.5102840352595495,
-      "target_attack_auc": 0.5117335319519043,
+      "target_attack_auc": 0.5089125633239746,
       "target_tpr_at_fpr_10pct": 0.0,
       "member_mean_score": 0.726980984210968,
       "nonmember_mean_score": 0.7155412435531616,
@@ -98,13 +164,31 @@
       "display_name": "Sampling Attack",
       "paper_title": "Differential Privacy Defenses and Sampling Attacks for Membership Inference",
       "venue": "AISec 2021",
-      "kind": "paper-inspired repeated-query boundary proxy"
+      "kind": "paper-inspired repeated-query boundary proxy",
+      "target_attack_accuracy_std": 0.0025837415147115144,
+      "target_attack_accuracy_values": [
+        0.51025390625,
+        0.50927734375,
+        0.51416015625
+      ],
+      "target_attack_auc_std": 0.007159774445259918,
+      "target_attack_auc_values": [
+        0.5117335319519043,
+        0.5007719993591309,
+        0.5142321586608887
+      ],
+      "target_tpr_at_fpr_10pct_std": 0.0,
+      "target_tpr_at_fpr_10pct_values": [
+        0.0,
+        0.0,
+        0.0
+      ]
     },
     "transfer_attack": {
       "oracle_threshold": 0.7142857313156128,
-      "target_attack_accuracy": 0.51806640625,
+      "target_attack_accuracy": 0.5159505208333334,
       "target_attack_precision": 0.5296950240770465,
-      "target_attack_auc": 0.5166134834289551,
+      "target_attack_auc": 0.5118406613667806,
       "target_tpr_at_fpr_10pct": 0.0,
       "member_mean_score": 0.6291853189468384,
       "nonmember_mean_score": 0.6130022406578064,
@@ -133,13 +217,31 @@
       "display_name": "Transfer Attack",
       "paper_title": "Membership Leakage in Label-Only Exposures",
       "venue": "CCS 2021",
-      "kind": "paper-inspired transfer-style adaptation"
+      "kind": "paper-inspired transfer-style adaptation",
+      "target_attack_accuracy_std": 0.001973365177894229,
+      "target_attack_accuracy_values": [
+        0.51806640625,
+        0.51416015625,
+        0.515625
+      ],
+      "target_attack_auc_std": 0.00719085083145298,
+      "target_attack_auc_values": [
+        0.5166134834289551,
+        0.5035700798034668,
+        0.5153384208679199
+      ],
+      "target_tpr_at_fpr_10pct_std": 0.0,
+      "target_tpr_at_fpr_10pct_values": [
+        0.0,
+        0.0,
+        0.0
+      ]
     },
     "boundary_attack": {
       "oracle_threshold": 0.1428571492433548,
-      "target_attack_accuracy": 0.5078125,
+      "target_attack_accuracy": 0.5164388020833334,
       "target_attack_precision": 0.5041666666666667,
-      "target_attack_auc": 0.49550533294677734,
+      "target_attack_auc": 0.5076217651367188,
       "target_tpr_at_fpr_10pct": 0.0,
       "member_mean_score": 0.6001673936843872,
       "nonmember_mean_score": 0.603515625,
@@ -168,14 +270,32 @@
       "display_name": "Boundary Attack",
       "paper_title": "Membership Leakage in Label-Only Exposures",
       "venue": "CCS 2021",
-      "kind": "paper-inspired boundary-distance adaptation"
+      "kind": "paper-inspired boundary-distance adaptation",
+      "target_attack_accuracy_std": 0.009345623190075257,
+      "target_attack_accuracy_values": [
+        0.5078125,
+        0.5263671875,
+        0.51513671875
+      ],
+      "target_attack_auc_std": 0.012582828623691034,
+      "target_attack_auc_values": [
+        0.49550533294677734,
+        0.5206241607666016,
+        0.5067358016967773
+      ],
+      "target_tpr_at_fpr_10pct_std": 0.0,
+      "target_tpr_at_fpr_10pct_values": [
+        0.0,
+        0.0,
+        0.0
+      ]
     },
     "dhattack_style": {
       "oracle_threshold": -2.239896774291992,
-      "target_attack_accuracy": 0.5068359375,
+      "target_attack_accuracy": 0.515625,
       "target_attack_precision": 0.5035035035035035,
-      "target_attack_auc": 0.4852323532104492,
-      "target_tpr_at_fpr_10pct": 0.0400390625,
+      "target_attack_auc": 0.5050179163614908,
+      "target_tpr_at_fpr_10pct": 0.048502604166666664,
       "member_mean_score": -0.020667560398578644,
       "nonmember_mean_score": 0.0028107017278671265,
       "roc_curve": {
@@ -217,7 +337,25 @@
       "display_name": "DHAttack-style",
       "paper_title": "Enhanced Label-Only Membership Inference Attacks with Fewer Queries",
       "venue": "USENIX Security 2025",
-      "kind": "lightweight fixed-direction adaptation"
+      "kind": "lightweight fixed-direction adaptation",
+      "target_attack_accuracy_std": 0.01650795068786813,
+      "target_attack_accuracy_values": [
+        0.5068359375,
+        0.50537109375,
+        0.53466796875
+      ],
+      "target_attack_auc_std": 0.028478574425954906,
+      "target_attack_auc_values": [
+        0.4852323532104492,
+        0.49216365814208984,
+        0.5376577377319336
+      ],
+      "target_tpr_at_fpr_10pct_std": 0.03304958371483608,
+      "target_tpr_at_fpr_10pct_values": [
+        0.0400390625,
+        0.0849609375,
+        0.0205078125
+      ]
     }
   },
   "dh_public_stats": {
@@ -264,6 +402,26 @@
   "notes": [
     "Target model = frozen pretrained ResNet50 backbone + trainable linear head on top.",
     "Thresholds are chosen oracle-style on the target train/test split, per the current demo protocol.",
-    "Transfer / Boundary / DHAttack-style are lightweight project-side adaptations aligned to the cited ideas, not official artifact reproductions."
-  ]
+    "Transfer / Boundary / DHAttack-style are lightweight project-side adaptations aligned to the cited ideas, not official artifact reproductions.",
+    "Displayed scalar metrics are 3-run Monte Carlo means over seeds 7, 11, and 13.",
+    "Diagnostic histograms, ROC figures, and target score strips remain the seed-7 visualization sample."
+  ],
+  "monte_carlo": {
+    "repetitions": 3,
+    "seeds": [
+      7,
+      11,
+      13
+    ],
+    "source_summaries": [
+      "/Users/mayuheng/Desktop/DataProductModeling/attack-plateform/DataProductFramework/membership_inference_demo/casia_facev5_mia_showcase_assets/s1024_q0008/summary.json",
+      "/Users/mayuheng/Desktop/DataProductModeling/attack-plateform/Attack-Plateform/outputs/casia_facev5_mia_mc3_remote_20260519/seed_0011/s1024_q0008/summary.json",
+      "/Users/mayuheng/Desktop/DataProductModeling/attack-plateform/Attack-Plateform/outputs/casia_facev5_mia_mc3_remote_20260519/seed_0013/s1024_q0008/summary.json"
+    ],
+    "visual_diagnostic_seed": 7,
+    "best_mean_auc_method": "transfer_attack",
+    "best_mean_auc": 0.5118406613667806,
+    "risk_mia": 0.023681322733561272,
+    "homepage_score": 0.05920330683390318
+  }
 }
