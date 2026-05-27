@@ -5,6 +5,7 @@
 - `index.html`: 主页面
 - `three_axis_framework_cn.html`: 主页面别名
 - `method_library/**/*.html`: 规则页、词表页、索引页与核验页
+- `*_demo/`: 可直接打开的交互式演示页面
 - `.nojekyll`: 让 GitHub Pages 不忽略下划线目录
 
 ## 推荐部署方式

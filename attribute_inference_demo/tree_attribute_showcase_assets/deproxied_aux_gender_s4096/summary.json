@@ -36857,7 +36857,7 @@
       "candidate_label_outputs": "{\"gender=Female\": \"<=50K\", \"gender=Male\": \">50K\"}",
       "fredrikson_confidence_outputs": "{\"gender=Female\": {\"alpha\": 1.0, \"margin\": 0.025719331037253823, \"p_observed\": 0.5128596655186269, \"prior_probability\": 0.40348837209302324, \"score\": 0.5128596655186269}, \"gender=Male\": {\"alpha\": 1.0, \"margin\": -0.28101642802800975, \"p_observed\": 0.35949178598599496, \"prior_probability\": 0.5965116279069768, \"score\": 0.35949178598599496}}",
       "csmia_confidence_outputs": "{\"gender=Female\": {\"alpha\": 1.0, \"margin\": 0.025719331037253823, \"p_observed\": 0.5128596655186269, \"prior_probability\": 0.40348837209302324, \"score\": 0.025719331037253823}, \"gender=Male\": {\"alpha\": 1.0, \"margin\": -0.28101642802800975, \"p_observed\": 0.35949178598599496, \"prior_probability\": 0.5965116279069768, \"score\": -0.28101642802800975}}",
-      "bayes_calibrated_confidence_outputs": "{\"gender=Female\": {\"alpha\": 2.0, \"margin\": 0.025719331037253823, \"p_observed\": 0.5128596655186269, \"prior_probability\": 0.40348837209302324, \"score\": -2.2431136647580443}, \"gender=Male\": {\"alpha\": 2.0, \"margin\": -0.28101642802800975, \"p_observed\": 0.35949178598599496, \"prior_probability\": 0.5965116279069768, \"score\": -2.562784445119941}}"
+      "bayes_calibrated_confidence_outputs": "{\"gender=Female\": {\"alpha\": 2.0, \"margin\": 0.025719331037253823, \"p_observed\": 0.5128596655186269, \"prior_probability\": 0.40348837209302324, \"score\": -2.243113664758044}, \"gender=Male\": {\"alpha\": 2.0, \"margin\": -0.28101642802800975, \"p_observed\": 0.35949178598599496, \"prior_probability\": 0.5965116279069768, \"score\": -2.562784445119941}}"
     },
     {
       "sample_index": 1584,
@@ -42814,7 +42814,7 @@
       "candidate_label_outputs": "{\"gender=Female\": \"<=50K\", \"gender=Male\": \"<=50K\"}",
       "fredrikson_confidence_outputs": "{\"gender=Female\": {\"alpha\": 1.0, \"margin\": -0.524090894822563, \"p_observed\": 0.23795455258871864, \"prior_probability\": 0.1390946502057613, \"score\": 0.23795455258871864}, \"gender=Male\": {\"alpha\": 1.0, \"margin\": -0.17298097523221934, \"p_observed\": 0.41350951238389044, \"prior_probability\": 0.8609053497942387, \"score\": 0.41350951238389044}}",
       "csmia_confidence_outputs": "{\"gender=Female\": {\"alpha\": 1.0, \"margin\": -0.524090894822563, \"p_observed\": 0.23795455258871864, \"prior_probability\": 0.1390946502057613, \"score\": -0.524090894822563}, \"gender=Male\": {\"alpha\": 1.0, \"margin\": -0.17298097523221934, \"p_observed\": 0.41350951238389044, \"prior_probability\": 0.8609053497942387, \"score\": -0.17298097523221934}}",
-      "bayes_calibrated_confidence_outputs": "{\"gender=Female\": {\"alpha\": 2.0, \"margin\": -0.524090894822563, \"p_observed\": 0.23795455258871864, \"prior_probability\": 0.1390946502057613, \"score\": -4.84395179896072}, \"gender=Male\": {\"alpha\": 2.0, \"margin\": -0.17298097523221934, \"p_observed\": 0.41350951238389044, \"prior_probability\": 0.8609053497942387, \"score\": -1.9159202316038395}}"
+      "bayes_calibrated_confidence_outputs": "{\"gender=Female\": {\"alpha\": 2.0, \"margin\": -0.524090894822563, \"p_observed\": 0.23795455258871864, \"prior_probability\": 0.1390946502057613, \"score\": -4.84395179896072}, \"gender=Male\": {\"alpha\": 2.0, \"margin\": -0.17298097523221934, \"p_observed\": 0.41350951238389044, \"prior_probability\": 0.8609053497942387, \"score\": -1.9159202316038393}}"
     },
     {
       "sample_index": 1843,
@@ -64825,7 +64825,7 @@
       "candidate_label_outputs": "{\"gender=Female\": \"<=50K\", \"gender=Male\": \"<=50K\"}",
       "fredrikson_confidence_outputs": "{\"gender=Female\": {\"alpha\": 1.0, \"margin\": -0.8431611650948513, \"p_observed\": 0.07841941745257446, \"prior_probability\": 0.129565816678153, \"score\": 0.07841941745257446}, \"gender=Male\": {\"alpha\": 1.0, \"margin\": -0.6212158384968035, \"p_observed\": 0.18939208075159844, \"prior_probability\": 0.870434183321847, \"score\": 0.18939208075159844}}",
       "csmia_confidence_outputs": "{\"gender=Female\": {\"alpha\": 1.0, \"margin\": -0.8431611650948513, \"p_observed\": 0.07841941745257446, \"prior_probability\": 0.129565816678153, \"score\": -0.8431611650948513}, \"gender=Male\": {\"alpha\": 1.0, \"margin\": -0.6212158384968035, \"p_observed\": 0.18939208075159844, \"prior_probability\": 0.870434183321847, \"score\": -0.6212158384968035}}",
-      "bayes_calibrated_confidence_outputs": "{\"gender=Female\": {\"alpha\": 2.0, \"margin\": -0.8431611650948513, \"p_observed\": 0.07841941745257446, \"prior_probability\": 0.129565816678153, \"score\": -7.134933711458958}, \"gender=Male\": {\"alpha\": 2.0, \"margin\": -0.6212158384968035, \"p_observed\": 0.18939208075159844, \"prior_probability\": 0.870434183321847, \"score\": -3.4666349533294656}}"
+      "bayes_calibrated_confidence_outputs": "{\"gender=Female\": {\"alpha\": 2.0, \"margin\": -0.8431611650948513, \"p_observed\": 0.07841941745257446, \"prior_probability\": 0.129565816678153, \"score\": -7.134933711458959}, \"gender=Male\": {\"alpha\": 2.0, \"margin\": -0.6212158384968035, \"p_observed\": 0.18939208075159844, \"prior_probability\": 0.870434183321847, \"score\": -3.4666349533294656}}"
     },
     {
       "sample_index": 2800,
