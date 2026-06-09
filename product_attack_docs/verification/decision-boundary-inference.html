@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>核验类：决策边界推断</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <header class="topbar"><div class="topbar-inner"><a class="brand" href="../index.html">产品攻击文档</a><nav class="topnav"><a href="../verification/index.html">03-04</a><a href="../indicator/index.html">03-05</a><a href="../knowledge/index.html">03-06</a><a href="../model/index.html">03-07</a></nav></div></header>
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">03-04 核验类</p>
+      <h2>本类攻击</h2>
+      <a href="hard-label-attribute-inference.html">属性推断</a>
+      <a href="verification-membership-inference.html">成员推断</a>
+      <a class="active" href="decision-boundary-inference.html">决策边界推断</a>
+      <h2>返回</h2><a href="index.html">核验类目录</a><a href="../index.html">总目录</a>
+    </aside>
+    <main class="content">
+      
+      <h1>逼近核验阈值和业务规则。</h1>
+      <section class="section">
+        <h2>适用产品</h2>
+        <div class="topic"><h3>服务方式</h3><p>资格核验、风控命中、准入判断、规则筛查。只要能重复提交相近输入，就有边界推断面。</p></div>
+        <div class="topic"><h3>攻击对象</h3><p>决策边界、业务阈值、规则逻辑和可规避条件。它属于稳定性和模型机密性风险。</p></div>
+      </section>
+      <section class="section">
+        <h2>攻击思路</h2>
+        <div class="topic"><h3>局部搜索</h3><p>固定大部分字段，只沿一个字段或少数字段变化，观察 标签翻转位置。</p></div>
+        <div class="topic"><h3>替代模型</h3><p>收集查询输入和 硬标签，训练一个替代模型近似核验函数。替代模型可以用于解释边界和生成规避样本。</p></div>
+        <div class="topic"><h3>版本差分</h3><p>如果核验规则持续更新，比较不同版本的输出差异可以定位阈值移动或策略变化。</p></div>
+      </section>
+      <section class="section">
+        <h2>评估口径</h2>
+        <div class="topic"><h3>指标</h3><p>边界误差、一致率、查询预算、规避成功率。只有高一致性或低边界误差，才应写成实质规则泄露。</p></div>
+      </section>
+      <section class="section">
+        <h2>文献</h2>
+        <div class="topic"><h3>基础来源</h3><p>Florian Tramèr, Fan Zhang, Ari Juels, Michael K. Reiter, Thomas Ristenpart. Stealing Machine Learning Models via Prediction APIs. 25th USENIX Security Symposium, 2016, pp. 601-618.</p><p>Tribhuvanesh Orekondy, Bernt Schiele, Mario Fritz. Knockoff Nets: Stealing Functionality of Black-Box Models. IEEE/CVF Conference on Computer Vision and Pattern Recognition, 2019, pp. 4954-4963.</p><p>Ian J. Goodfellow, Jonathon Shlens, Christian Szegedy. Explaining and Harnessing Adversarial Examples. International Conference on Learning Representations, 2015.</p><p>Aleksander Madry, Aleksandar Makelov, Ludwig Schmidt, Dimitris Tsipras, Adrian Vladu. Towards Deep Learning Models Resistant to Adversarial Attacks. International Conference on Learning Representations, 2018.</p></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

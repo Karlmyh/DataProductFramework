@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>03-07 模型类数据产品</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">产品攻击文档</a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="../verification/index.html">03-04</a>
+        <a href="../indicator/index.html">03-05</a>
+        <a href="../knowledge/index.html">03-06</a>
+        <a href="../model/index.html">03-07</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">产品攻击文档</p>
+      <h2>产品目录</h2>
+      <a href="../index.html">概览</a>
+      <a href="../verification/index.html">03-04 核验类</a>
+      <a href="../indicator/index.html">03-05 指标型</a>
+      <a href="../knowledge/index.html">03-06 数据库类</a>
+      <a class="active" href="index.html">03-07 模型类</a>
+      <h2>本类攻击</h2>
+      <a href="label-only-membership-inference.html">仅标签成员推断</a>
+      <a href="score-membership-inference.html">评分成员推断</a>
+      <a href="white-box-membership-inference.html">白盒成员推断</a>
+      <a href="model-extraction.html">模型抽取</a>
+      <a href="model-inversion.html">模型反演</a>
+      <a href="property-inference.html">训练属性推断</a>
+      <a href="adversarial-examples.html">对抗样本</a>
+    </aside>
+
+    <main class="content">
+      
+      <h1>模型类数据产品。</h1>
+
+      <section class="section">
+        <h2>服务方式</h2>
+        <div class="topic"><h3>硬标签预测接口</h3><p>只返回离散标签。适合仅标签成员推断和边界距离攻击。</p></div>
+        <div class="topic"><h3>评分或后验概率接口</h3><p>返回概率、对数几率、损失或置信度。适合评分成员推断、模型反演和训练属性推断。</p></div>
+        <div class="topic"><h3>导出模型或参数</h3><p>暴露参数、结构或可离线运行模型。适合白盒成员推断、模型抽取和鲁棒性测试。</p></div>
+        <div class="topic"><h3>可重复查询服务</h3><p>允许大量查询。适合替代模型训练、边界采样和对抗样本搜索。</p></div>
+      </section>
+
+      <section class="section doc-index">
+        <h2>攻击内容</h2>
+        <div class="topic"><h3>仅标签成员推断</h3><p>用扰动稳定性和边界距离判断候选是否属于训练集。<a href="label-only-membership-inference.html">打开页面</a></p></div>
+        <div class="topic"><h3>评分成员推断</h3><p>用后验概率、损失或熵 区分成员与非成员。<a href="score-membership-inference.html">打开页面</a></p></div>
+        <div class="topic"><h3>白盒成员推断</h3><p>利用参数、梯度、损失地形或中间表示判断成员关系。<a href="white-box-membership-inference.html">打开页面</a></p></div>
+        <div class="topic"><h3>模型抽取</h3><p>用查询结果训练替代模型，复制预测函数或决策边界。<a href="model-extraction.html">打开页面</a></p></div>
+        <div class="topic"><h3>模型反演</h3><p>利用评分、对数几率或参数恢复隐藏属性、原型或输入特征。<a href="model-inversion.html">打开页面</a></p></div>
+        <div class="topic"><h3>训练属性推断</h3><p>判断训练集是否具有某个群体性质或分布特征。<a href="property-inference.html">打开页面</a></p></div>
+        <div class="topic"><h3>对抗样本</h3><p>构造小扰动输入破坏模型预测，衡量模型服务稳定性。<a href="adversarial-examples.html">打开页面</a></p></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

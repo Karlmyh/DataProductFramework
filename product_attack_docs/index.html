@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>产品目录式攻击文档</title>
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html">产品攻击文档</a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="verification/index.html">03-04</a>
+        <a href="indicator/index.html">03-05</a>
+        <a href="knowledge/index.html">03-06</a>
+        <a href="model/index.html">03-07</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">产品攻击文档</p>
+      <h2>产品目录</h2>
+      <a class="active" href="index.html">概览</a>
+      <a href="verification/index.html">03-04 核验类</a>
+      <a href="indicator/index.html">03-05 指标型</a>
+      <a href="knowledge/index.html">03-06 数据库类</a>
+      <a href="model/index.html">03-07 模型类</a>
+    </aside>
+
+    <main class="content">
+      
+      <h1>数据产品安全衡量框架</h1>
+
+      <section class="section">
+        <h2>现行产品分类标准</h2>
+        <div class="topic">
+          <h3>分类逻辑</h3>
+          <p>当前框架采用“产品类别、服务方式、攻击对象”的三层口径。产品类别说明它交付什么，服务方式说明它如何对外开放，攻击对象说明需要衡量的风险目标。</p>
+        </div>
+        <div class="topic">
+          <h3>四类重点产品</h3>
+          <p>本目录聚焦专业数据产品中的四个重点类别：03-04 核验类、03-05 指标型、03-06 数据库类、03-07 模型类。它们分别覆盖判断接口、评分接口、查询接口和模型接口。</p>
+        </div>
+        <div class="topic">
+          <h3>当前重点攻击覆盖</h3>
+          <p>当前主要攻击覆盖集中在四类产品的高风险输出面：核验结果、分数与置信度、查询响应、模型标签、模型分数和模型参数。未纳入本目录的合成数据、协同训练、生成模型、检索增强和智能体产品，可作为后续扩展目录。</p>
+        </div>
+      </section>
+
+      <section class="section doc-index">
+        <h2>一级产品目录</h2>
+        <div class="topic">
+          <h3>03-04 核验类数据产品</h3>
+          <p>返回通过、拒绝、命中或未命中的判断接口。攻击内容包括属性推断、成员推断和决策边界推断。<a href="verification/index.html">查看目录</a></p>
+        </div>
+        <div class="topic">
+          <h3>03-05 指标型数据产品</h3>
+          <p>返回评分、置信度、概率、评级或分段指标。攻击内容包括属性推断、成员推断、模型反演、训练属性推断和排序泄露。<a href="indicator/index.html">查看目录</a></p>
+        </div>
+        <div class="topic">
+          <h3>03-06 数据库类数据产品</h3>
+          <p>通过查询接口交付结构化事实。攻击内容包括区间查询重建、差分重建、线性系统重建、背景知识属性披露和查询组合风险。<a href="knowledge/index.html">查看目录</a></p>
+        </div>
+        <div class="topic">
+          <h3>03-07 模型类数据产品</h3>
+          <p>交付训练后的模型能力。攻击内容包括仅标签成员推断、评分成员推断、白盒成员推断、模型抽取、模型反演、训练属性推断和对抗样本。<a href="model/index.html">查看目录</a></p>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

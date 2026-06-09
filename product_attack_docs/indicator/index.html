@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>03-05 指标型数据产品</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">产品攻击文档</a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="../verification/index.html">03-04</a>
+        <a href="../indicator/index.html">03-05</a>
+        <a href="../knowledge/index.html">03-06</a>
+        <a href="../model/index.html">03-07</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">产品攻击文档</p>
+      <h2>产品目录</h2>
+      <a href="../index.html">概览</a>
+      <a href="../verification/index.html">03-04 核验类</a>
+      <a class="active" href="index.html">03-05 指标型</a>
+      <a href="../knowledge/index.html">03-06 数据库类</a>
+      <a href="../model/index.html">03-07 模型类</a>
+      <h2>本类攻击</h2>
+      <a href="score-attribute-inference.html">评分属性推断</a>
+      <a href="score-membership-inference.html">评分成员推断</a>
+      <a href="confidence-model-inversion.html">置信度模型反演</a>
+      <a href="property-inference.html">训练属性推断</a>
+      <a href="rank-segment-leakage.html">排序与分段泄露</a>
+    </aside>
+
+    <main class="content">
+      
+      <h1>指标型数据产品。</h1>
+
+      <section class="section">
+        <h2>服务方式</h2>
+        <div class="topic">
+          <h3>评分或置信度接口</h3>
+          <p>接口返回分数、概率、对数几率、置信度或风险值。它直接支持候选排序和阈值判断。</p>
+        </div>
+        <div class="topic">
+          <h3>排序型指标服务</h3>
+          <p>接口返回排序、等级或 前 K 名。即使没有绝对分数，相对位置也可能泄露成员、属性或边界信息。</p>
+        </div>
+        <div class="topic">
+          <h3>分段评分发布</h3>
+          <p>接口只返回区间、评级或分段。分段会降低精度，但仍可能通过重复查询暴露阈值。</p>
+        </div>
+      </section>
+
+      <section class="section doc-index">
+        <h2>攻击内容</h2>
+        <div class="topic"><h3>评分属性推断</h3><p>用评分比较隐藏属性候选。<a href="score-attribute-inference.html">打开页面</a></p></div>
+        <div class="topic"><h3>评分成员推断</h3><p>用置信度、损失或熵 判断候选是否属于训练集。<a href="score-membership-inference.html">打开页面</a></p></div>
+        <div class="topic"><h3>置信度模型反演</h3><p>用连续输出优化或恢复隐藏输入属性、原型或局部记录。<a href="confidence-model-inversion.html">打开页面</a></p></div>
+        <div class="topic"><h3>训练属性推断</h3><p>用分数模式判断训练集的群体性质。<a href="property-inference.html">打开页面</a></p></div>
+        <div class="topic"><h3>排序与分段泄露</h3><p>从排序、前 K 名、等级或分段阈值中推断边界和相对敏感性。<a href="rank-segment-leakage.html">打开页面</a></p></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

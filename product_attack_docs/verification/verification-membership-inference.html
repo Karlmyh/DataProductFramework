@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>核验类：成员推断</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <header class="topbar"><div class="topbar-inner"><a class="brand" href="../index.html">产品攻击文档</a><nav class="topnav"><a href="../verification/index.html">03-04</a><a href="../indicator/index.html">03-05</a><a href="../knowledge/index.html">03-06</a><a href="../model/index.html">03-07</a></nav></div></header>
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">03-04 核验类</p>
+      <h2>本类攻击</h2>
+      <a href="hard-label-attribute-inference.html">属性推断</a>
+      <a class="active" href="verification-membership-inference.html">成员推断</a>
+      <a href="decision-boundary-inference.html">决策边界推断</a>
+      <h2>返回</h2><a href="index.html">核验类目录</a><a href="../index.html">总目录</a>
+    </aside>
+    <main class="content">
+      
+      <h1>通过核验行为判断训练成员。</h1>
+      <section class="section">
+        <h2>适用产品</h2>
+        <div class="topic"><h3>服务方式</h3><p>硬标签核验、批量核验、版本化核验。输出可以很短，但可被重复观察。</p></div>
+        <div class="topic"><h3>攻击对象</h3><p>成员身份。问题不是对象属于哪个类别，而是对象是否曾经参与训练、校准、黑名单构建或规则学习。</p></div>
+      </section>
+      <section class="section">
+        <h2>攻击思路</h2>
+        <div class="topic"><h3>稳定性差异</h3><p>训练成员通常更靠近模型熟悉区域。小幅修改输入后，如果核验结果仍稳定，可能形成成员信号。</p></div>
+        <div class="topic"><h3>边界距离</h3><p>攻击者沿某些字段方向移动样本，观察 硬标签 何时翻转。距离边界更远的候选可能更像成员。</p></div>
+        <div class="topic"><h3>错误模式</h3><p>成员和非成员在错误率、拒绝率或阈值附近的表现可能不同。该信号必须和类别先验分开评估。</p></div>
+      </section>
+      <section class="section">
+        <h2>评估口径</h2>
+        <div class="topic"><h3>指标</h3><p>曲线下面积、攻击优势、固定误报率下的真正率、查询次数。核验场景尤其需要说明攻击者能否重复查询和构造邻近对象。</p></div>
+      </section>
+      <section class="section">
+        <h2>文献</h2>
+        <div class="topic"><h3>基础来源</h3><p>Reza Shokri, Marco Stronati, Congzheng Song, Vitaly Shmatikov. Membership Inference Attacks Against Machine Learning Models. 2017 IEEE Symposium on Security and Privacy, 2017, pp. 3-18.</p><p>Samuel Yeom, Irene Giacomelli, Matt Fredrikson, Somesh Jha. Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting. 31st IEEE Computer Security Foundations Symposium, 2018, pp. 268-282.</p><p>Christopher A. Choquette-Choo, Florian Tramèr, Nicholas Carlini, Nicolas Papernot. Label-Only Membership Inference Attacks. Proceedings of the 38th International Conference on Machine Learning, 2021, PMLR 139:1964-1974.</p><p>Jun Niu, Peng Liu, Xiaoyan Zhu, Kuo Shen, Yuecong Wang, Haotian Chi, Yulong Shen, Xiaohong Jiang, Jianfeng Ma, Yuqing Zhang. A Survey on Membership Inference Attacks and Defenses in Machine Learning. Journal of Information and Intelligence, 2024, 2(5): 404-454.</p></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

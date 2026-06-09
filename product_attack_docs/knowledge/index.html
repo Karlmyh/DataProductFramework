@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>03-06 数据库类数据产品</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">产品攻击文档</a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="../verification/index.html">03-04</a>
+        <a href="../indicator/index.html">03-05</a>
+        <a href="../knowledge/index.html">03-06</a>
+        <a href="../model/index.html">03-07</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">产品攻击文档</p>
+      <h2>产品目录</h2>
+      <a href="../index.html">概览</a>
+      <a href="../verification/index.html">03-04 核验类</a>
+      <a href="../indicator/index.html">03-05 指标型</a>
+      <a class="active" href="index.html">03-06 数据库类</a>
+      <a href="../model/index.html">03-07 模型类</a>
+      <h2>本类攻击</h2>
+      <a href="range-query-reconstruction.html">区间查询重建</a>
+      <a href="aggregate-query-differencing.html">差分重建</a>
+      <a href="averaging-linear-reconstruction.html">平均与线性系统重建</a>
+      <a href="background-attribute-disclosure.html">背景知识属性披露</a>
+      <a href="query-composition-risk.html">查询组合风险</a>
+    </aside>
+
+    <main class="content">
+      
+      <h1>数据库类数据产品。</h1>
+
+      <section class="section">
+        <h2>服务方式</h2>
+        <div class="topic"><h3>区间查询服务</h3><p>提交区间条件，返回记录片段、命中集合或响应量。查询重叠会暴露隐藏维度。</p></div>
+        <div class="topic"><h3>聚合查询服务</h3><p>提交计数、求和、平均值或比例查询。多个聚合结果可以形成差分或线性系统。</p></div>
+        <div class="topic"><h3>微数据或局部数据发布</h3><p>发布局部字段、遮蔽字段或样本子集。辅助知识会放大链接和属性披露风险。</p></div>
+        <div class="topic"><h3>带审计的查询接口</h3><p>带阈值、噪声、预算或审计的查询接口。这里需要区分经验缓解和严格隐私保证。</p></div>
+      </section>
+
+      <section class="section doc-index">
+        <h2>攻击内容</h2>
+        <div class="topic"><h3>区间查询重建</h3><p>从查询模式、访问模式或响应量泄露恢复隐藏字段。<a href="range-query-reconstruction.html">打开页面</a></p></div>
+        <div class="topic"><h3>差分重建</h3><p>构造相邻聚合查询，让结果相减后暴露目标个体或小群体。<a href="aggregate-query-differencing.html">打开页面</a></p></div>
+        <div class="topic"><h3>平均与线性系统重建</h3><p>用大量聚合查询组成方程组，恢复记录级信息。<a href="averaging-linear-reconstruction.html">打开页面</a></p></div>
+        <div class="topic"><h3>背景知识属性披露</h3><p>结合准标识符和辅助数据推断敏感属性。<a href="background-attribute-disclosure.html">打开页面</a></p></div>
+        <div class="topic"><h3>查询组合风险</h3><p>单次查询安全不代表多次查询安全；组合会消耗预算并放大泄露。<a href="query-composition-risk.html">打开页面</a></p></div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
