@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>攻击指标与统一尺度</title>
+  <link rel="stylesheet" href="docs.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="index.html">产品攻击文档</a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="verification/index.html">03-04</a>
+        <a href="indicator/index.html">03-05</a>
+        <a href="knowledge/index.html">03-06</a>
+        <a href="model/index.html">03-07</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">产品攻击文档</p>
+      <h2>文档树</h2>
+      <div class="nav-tree">
+        <a href="index.html">概览</a>
+        <a class="active" href="metrics-normalization.html">指标统一尺度</a>
+        <details class="nav-group" open>
+          <summary>03-04 核验类</summary>
+          <div class="nav-children">
+            <a href="verification/index.html">核验类目录</a>
+            <a href="verification/hard-label-attribute-inference.html">属性推断</a>
+            <a href="verification/verification-membership-inference.html">成员推断</a>
+            <a href="verification/decision-boundary-inference.html">决策边界推断</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-05 指标型</summary>
+          <div class="nav-children">
+            <a href="indicator/index.html">指标型目录</a>
+            <a href="indicator/score-attribute-inference.html">评分属性推断</a>
+            <a href="indicator/score-membership-inference.html">评分成员推断</a>
+            <a href="indicator/confidence-model-inversion.html">置信度模型反演</a>
+            <a href="indicator/property-inference.html">训练属性推断</a>
+            <a href="indicator/rank-segment-leakage.html">排序与分段泄露</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-06 数据库类</summary>
+          <div class="nav-children">
+            <a href="knowledge/index.html">数据库类目录</a>
+            <a href="knowledge/range-query-reconstruction.html">区间查询重建</a>
+            <a href="knowledge/aggregate-query-differencing.html">差分重建</a>
+            <a href="knowledge/averaging-linear-reconstruction.html">平均与线性系统重建</a>
+            <a href="knowledge/background-attribute-disclosure.html">背景知识属性披露</a>
+            <a href="knowledge/query-composition-risk.html">查询组合风险</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-07 模型类</summary>
+          <div class="nav-children">
+            <a href="model/index.html">模型类目录</a>
+            <a href="model/label-only-membership-inference.html">仅标签成员推断</a>
+            <a href="model/score-membership-inference.html">评分成员推断</a>
+            <a href="model/white-box-membership-inference.html">白盒成员推断</a>
+            <a href="model/model-extraction.html">模型抽取</a>
+            <a href="model/model-inversion.html">模型反演</a>
+            <a href="model/property-inference.html">训练属性推断（说明）</a>
+            <a href="model/adversarial-examples.html">对抗样本（说明）</a>
+          </div>
+        </details>
+      </div>
+    </aside>
+    <main class="content">
+      <h1>攻击指标与统一尺度</h1>
+
+      <section class="section">
+        <h2>基本原则</h2>
+        <div class="topic">
+          <h3>保留原始指标</h3>
+          <p>统一分数只用于横向比较。报告中仍应保留原始 AUC、TPR@FPR、balanced accuracy、重建率、误差、fidelity、query budget 和样本规模。</p>
+        </div>
+        <div class="topic">
+          <h3>统一方向</h3>
+          <p>所有归一化结果都写成 0 到 1 的风险分，0 表示没有超过基线的攻击收益，1 表示在该指标定义下接近完全成功。</p>
+        </div>
+        <div class="topic">
+          <h3>先减基线</h3>
+          <p>只把超过随机猜测、条件先验、公共数据先验或无查询基线的部分算作接口新增泄露。基线本来能推断出的部分，不应计入产品接口风险。</p>
+        </div>
+        <div class="topic">
+          <h3>固定约束</h3>
+          <p>不同攻击比较时必须同时写明查询预算、误报约束、样本规模、随机种子、可见输出和攻击者先验。没有这些约束，统一分数容易误导。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>常用指标</h2>
+        <div class="topic">
+          <h3>推断类攻击</h3>
+          <p>属性推断、成员推断、训练属性推断通常使用 AUC、balanced accuracy、attack accuracy、TPR@固定 FPR、相对条件先验提升和子群提升。类别不平衡时优先使用 AUC 或 balanced accuracy。</p>
+        </div>
+        <div class="topic">
+          <h3>重建类攻击</h3>
+          <p>数据库重构、差分重建、线性系统重建通常使用 exact reconstruction rate、字段恢复率、precision、recall、MAE/RMSE 降低比例和重建误差。只报告误差时要说明误差越低风险越高。</p>
+        </div>
+        <div class="topic">
+          <h3>边界和阈值攻击</h3>
+          <p>决策边界推断、排序和分段泄露通常使用阈值误差、边界距离误差、rank correlation、top-k overlap 和分段命中率。它们需要用误差降低或相关性提升来转换成风险分。</p>
+        </div>
+        <div class="topic">
+          <h3>模型抽取</h3>
+          <p>模型抽取使用 target agreement、fidelity、surrogate accuracy、transfer success 和 query budget。用于安全风险比较时，优先看 surrogate 与目标模型输出的一致率，而不是 surrogate 在公开测试集上的任务准确率。</p>
+        </div>
+        <div class="topic">
+          <h3>模型反演</h3>
+          <p>模型反演使用属性恢复率、原型可识别率、重建误差、目标类别置信度和人工或自动识别成功率。模型 confidence 只能作为诊断信号，不能单独等同于真实隐私泄露。</p>
+        </div>
+      </section>
+
+      <section class="section doc-index">
+        <h2>当前攻击页对应指标</h2>
+        <div class="topic">
+          <h3>核验类</h3>
+          <p>属性推断用 balanced accuracy、相对先验提升和子群提升；成员推断用 AUC、TPR@固定 FPR 和 balanced accuracy；决策边界推断用阈值误差、边界距离误差和查询次数。</p>
+        </div>
+        <div class="topic">
+          <h3>指标型</h3>
+          <p>评分属性推断用 balanced accuracy 和 prior lift；评分成员推断用 AUC、TPR@固定 FPR 和分数分布分离度；置信度模型反演用恢复率、重建误差和相对先验提升；训练属性推断用 AUC、balanced accuracy 或分布检验 power；排序与分段泄露用 rank correlation、top-k overlap 和阈值误差。</p>
+        </div>
+        <div class="topic">
+          <h3>数据库类</h3>
+          <p>区间查询重建、差分重建和线性系统重建用 exact reconstruction rate、字段恢复率、precision/recall 与误差降低；背景知识属性披露用 balanced accuracy、条件先验提升和校准误差；查询组合风险用新增恢复率、最大单点风险和组合后的边际提升。</p>
+        </div>
+        <div class="topic">
+          <h3>模型类</h3>
+          <p>仅标签成员推断用 AUC、TPR@固定 FPR、attack accuracy 和 query budget；评分成员推断用 AUC、balanced accuracy、TPR@固定 FPR；白盒成员推断用 AUC、balanced accuracy、TPR@固定 FPR 和信号消融；模型抽取用 target agreement、fidelity、surrogate accuracy 和 query budget；模型反演用恢复成功率、原型可识别率、重建误差和目标置信度。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>归一化公式</h2>
+        <div class="topic">
+          <h3>高值代表高风险的指标</h3>
+          <p>使用 <code>risk = clamp((value - baseline) / (max_value - baseline), 0, 1)</code>。例如恢复率、fidelity、target agreement、balanced accuracy 和 attack success rate 都可以用这个形式。</p>
+        </div>
+        <div class="topic">
+          <h3>低值代表高风险的误差指标</h3>
+          <p>使用 <code>risk = clamp((baseline_error - attack_error) / baseline_error, 0, 1)</code>。例如重建误差、阈值误差、边界距离误差和属性估计误差。</p>
+        </div>
+        <div class="topic">
+          <h3>AUC</h3>
+          <p>二分类推断的随机基线是 0.5，使用 <code>risk_auc = clamp((AUC - 0.5) / 0.5, 0, 1)</code>。AUC 低于或等于 0.5 时，统一风险分记为 0。</p>
+        </div>
+        <div class="topic">
+          <h3>Balanced accuracy</h3>
+          <p>二分类 balanced accuracy 的随机基线也是 0.5，使用 <code>risk_ba = clamp((BA - 0.5) / 0.5, 0, 1)</code>。普通 accuracy 只有在类别均衡或已经减去多数类先验时才适合这样处理。</p>
+        </div>
+        <div class="topic">
+          <h3>TPR@固定 FPR</h3>
+          <p>当误报率固定为 <code>f</code> 时，使用 <code>risk_low_fpr = clamp((TPR_at_f - f) / (1 - f), 0, 1)</code>。这样可以避免把随机排序在同一误报率下的命中写成泄露。</p>
+        </div>
+        <div class="topic">
+          <h3>模型抽取 fidelity</h3>
+          <p>使用 <code>risk_fidelity = clamp((agreement - baseline_agreement) / (1 - baseline_agreement), 0, 1)</code>。baseline agreement 可以是多数类模型、随机标签模型或不查询目标模型的公开数据 surrogate。</p>
+        </div>
+        <div class="topic">
+          <h3>重建率和恢复率</h3>
+          <p>如果指标本身是 exact recovery rate、field recovery rate 或 identification success rate，且基线已经为 0，可以直接使用该比例。若存在公共先验恢复率，应先按高值公式减去先验。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>汇总规则</h2>
+        <div class="topic">
+          <h3>先选主指标</h3>
+          <p>成员和属性推断优先用 AUC 或低误报 TPR；重建攻击优先用 exact recovery 或误差降低；模型抽取优先用 target agreement；模型反演优先用恢复成功率或可识别率。</p>
+        </div>
+        <div class="topic">
+          <h3>再报辅助指标</h3>
+          <p>query budget、运行时间、样本规模、置信区间、不同 seed 的标准差和攻击者先验不并入主风险分，但必须作为解释条件同时报告。</p>
+        </div>
+        <div class="topic">
+          <h3>多个指标不要随意平均</h3>
+          <p>同一攻击有多个归一化指标时，默认使用预先指定的主指标作为该攻击分数。若要衡量最坏暴露面，可以取最大值；若要做综合评分，权重必须在评估前固定。</p>
+        </div>
+        <div class="topic">
+          <h3>解释区间</h3>
+          <p>0 到 0.1 可写作接近基线，0.1 到 0.3 可写作弱泄露，0.3 到 0.6 可写作中等泄露，0.6 到 0.8 可写作强泄露，0.8 到 1 可写作接近完全成功。区间只是展示口径，不替代业务风险判断。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

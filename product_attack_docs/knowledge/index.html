@@ -13,7 +13,7 @@
       <nav class="topnav" aria-label="顶部导航">
         <a href="../verification/index.html">03-04</a>
         <a href="../indicator/index.html">03-05</a>
-        <a href="../knowledge/index.html">03-06</a>
+        <a href="index.html">03-06</a>
         <a href="../model/index.html">03-07</a>
       </nav>
     </div>
@@ -22,39 +22,101 @@
   <div class="doc-shell">
     <aside class="sidebar">
       <p class="sidebar-title">产品攻击文档</p>
-      <h2>产品目录</h2>
-      <a href="../index.html">概览</a>
-      <a href="../verification/index.html">03-04 核验类</a>
-      <a href="../indicator/index.html">03-05 指标型</a>
-      <a class="active" href="index.html">03-06 数据库类</a>
-      <a href="../model/index.html">03-07 模型类</a>
-      <h2>本类攻击</h2>
-      <a href="range-query-reconstruction.html">区间查询重建</a>
-      <a href="aggregate-query-differencing.html">差分重建</a>
-      <a href="averaging-linear-reconstruction.html">平均与线性系统重建</a>
-      <a href="background-attribute-disclosure.html">背景知识属性披露</a>
-      <a href="query-composition-risk.html">查询组合风险</a>
+      <h2>文档树</h2>
+      <div class="nav-tree">
+        <a href="../index.html">概览</a>
+        <a href="../metrics-normalization.html">指标统一尺度</a>
+        <details class="nav-group" open>
+          <summary>03-04 核验类</summary>
+          <div class="nav-children">
+            <a href="../verification/index.html">核验类目录</a>
+            <a href="../verification/hard-label-attribute-inference.html">属性推断</a>
+            <a href="../verification/verification-membership-inference.html">成员推断</a>
+            <a href="../verification/decision-boundary-inference.html">决策边界推断</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-05 指标型</summary>
+          <div class="nav-children">
+            <a href="../indicator/index.html">指标型目录</a>
+            <a href="../indicator/score-attribute-inference.html">评分属性推断</a>
+            <a href="../indicator/score-membership-inference.html">评分成员推断</a>
+            <a href="../indicator/confidence-model-inversion.html">置信度模型反演</a>
+            <a href="../indicator/property-inference.html">训练属性推断</a>
+            <a href="../indicator/rank-segment-leakage.html">排序与分段泄露</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-06 数据库类</summary>
+          <div class="nav-children">
+            <a class="active" href="index.html">数据库类目录</a>
+            <a href="range-query-reconstruction.html">区间查询重建</a>
+            <a href="aggregate-query-differencing.html">差分重建</a>
+            <a href="averaging-linear-reconstruction.html">平均与线性系统重建</a>
+            <a href="background-attribute-disclosure.html">背景知识属性披露</a>
+            <a href="query-composition-risk.html">查询组合风险</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-07 模型类</summary>
+          <div class="nav-children">
+            <a href="../model/index.html">模型类目录</a>
+            <a href="../model/label-only-membership-inference.html">仅标签成员推断</a>
+            <a href="../model/score-membership-inference.html">评分成员推断</a>
+            <a href="../model/white-box-membership-inference.html">白盒成员推断</a>
+            <a href="../model/model-extraction.html">模型抽取</a>
+            <a href="../model/model-inversion.html">模型反演</a>
+            <a href="../model/property-inference.html">训练属性推断（说明）</a>
+            <a href="../model/adversarial-examples.html">对抗样本（说明）</a>
+          </div>
+        </details>
+      </div>
     </aside>
-
     <main class="content">
-      
       <h1>数据库类数据产品</h1>
 
       <section class="section">
         <h2>服务方式</h2>
-        <div class="topic"><h3>结构化事实服务</h3><p>以数据库、事实库、实体表或关系表交付结构化知识。重点是底层事实资产，而不是单次查询动作。</p></div>
-        <div class="topic"><h3>记录或事实检索服务</h3><p>返回记录片段、字段摘要、实体事实或关系信息。返回内容越接近原始记录，重建和链接风险越高。</p></div>
-        <div class="topic"><h3>微数据或局部数据发布</h3><p>发布局部字段、遮蔽字段或样本子集。辅助知识会放大链接和属性披露风险。</p></div>
-        <div class="topic"><h3>带审计的查询接口</h3><p>带阈值、噪声、预算或审计的查询接口。这里需要区分经验缓解和严格隐私保证。</p></div>
+        <div class="topic">
+          <h3>结构化事实服务</h3>
+          <p>以数据库、事实库、实体表或关系表交付结构化知识。重点是底层事实资产，而不是单次查询动作。</p>
+        </div>
+        <div class="topic">
+          <h3>记录或事实检索服务</h3>
+          <p>返回记录片段、字段摘要、实体事实或关系信息。返回内容越接近原始记录，重建和链接风险越高。</p>
+        </div>
+        <div class="topic">
+          <h3>微数据或局部数据发布</h3>
+          <p>发布局部字段、遮蔽字段或样本子集。辅助知识会放大链接和属性披露风险。</p>
+        </div>
+        <div class="topic">
+          <h3>带审计的查询接口</h3>
+          <p>带阈值、噪声、预算或审计的查询接口。这里需要区分经验缓解和严格隐私保证。</p>
+        </div>
       </section>
 
       <section class="section doc-index">
         <h2>攻击内容</h2>
-        <div class="topic"><h3>区间查询重建</h3><p>从查询模式、访问模式或响应量泄露恢复隐藏字段。<a href="range-query-reconstruction.html">打开页面</a></p></div>
-        <div class="topic"><h3>差分重建</h3><p>构造相邻聚合查询，让结果相减后暴露目标个体或小群体。<a href="aggregate-query-differencing.html">打开页面</a></p></div>
-        <div class="topic"><h3>平均与线性系统重建</h3><p>用大量聚合查询组成方程组，恢复记录级信息。<a href="averaging-linear-reconstruction.html">打开页面</a></p></div>
-        <div class="topic"><h3>背景知识属性披露</h3><p>结合准标识符和辅助数据推断敏感属性。<a href="background-attribute-disclosure.html">打开页面</a></p></div>
-        <div class="topic"><h3>查询组合风险</h3><p>单次查询安全不代表多次查询安全；组合会消耗预算并放大泄露。<a href="query-composition-risk.html">打开页面</a></p></div>
+        <div class="topic">
+          <h3>区间查询重建</h3>
+          <p>从查询模式、访问模式或响应量泄露恢复隐藏字段。<a href="range-query-reconstruction.html">打开页面</a></p>
+        </div>
+        <div class="topic">
+          <h3>差分重建</h3>
+          <p>构造相邻聚合查询，让结果相减后暴露目标个体或小群体。<a href="aggregate-query-differencing.html">打开页面</a></p>
+        </div>
+        <div class="topic">
+          <h3>平均与线性系统重建</h3>
+          <p>用大量聚合查询组成方程组，恢复记录级信息。<a href="averaging-linear-reconstruction.html">打开页面</a></p>
+        </div>
+        <div class="topic">
+          <h3>背景知识属性披露</h3>
+          <p>结合准标识符和辅助数据推断敏感属性。<a href="background-attribute-disclosure.html">打开页面</a></p>
+        </div>
+        <div class="topic">
+          <h3>查询组合风险</h3>
+          <p>单次查询安全不代表多次查询安全；组合会消耗预算并放大泄露。<a href="query-composition-risk.html">打开页面</a></p>
+        </div>
       </section>
     </main>
   </div>

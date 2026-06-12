@@ -111,6 +111,38 @@ a:hover {
   font-weight: 650;
 }
 
+.nav-tree {
+  margin-top: 4px;
+}
+
+.nav-group {
+  margin: 7px 0 2px;
+}
+
+.nav-group summary {
+  cursor: pointer;
+  padding: 6px 0;
+  color: #424245;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+.nav-group summary::marker {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.nav-children {
+  margin-left: 9px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+}
+
+.nav-children a {
+  font-size: 13.5px;
+}
+
 .content {
   min-width: 0;
   padding: 56px 0 84px 56px;

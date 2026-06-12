@@ -1,7 +1,134 @@
-<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>模型类：评分成员推断</title><link rel="stylesheet" href="../docs.css"></head>
-<body><header class="topbar"><div class="topbar-inner"><a class="brand" href="../index.html">产品攻击文档</a><nav class="topnav"><a href="../verification/index.html">03-04</a><a href="../indicator/index.html">03-05</a><a href="../knowledge/index.html">03-06</a><a href="../model/index.html">03-07</a></nav></div></header>
-<div class="doc-shell"><aside class="sidebar"><p class="sidebar-title">03-07 模型类</p><h2>本类攻击</h2><a href="label-only-membership-inference.html">仅标签成员推断</a><a class="active" href="score-membership-inference.html">评分成员推断</a><a href="white-box-membership-inference.html">白盒成员推断</a><a href="model-extraction.html">模型抽取</a><a href="model-inversion.html">模型反演</a><a href="property-inference.html">训练属性推断</a><a href="adversarial-examples.html">对抗样本</a><h2>返回</h2><a href="index.html">模型类目录</a><a href="../index.html">总目录</a></aside>
-<main class="content"><h1>用后验概率区分成员和非成员</h1><section class="section"><h2>适用产品</h2><div class="topic"><h3>服务方式</h3><p>评分、后验概率、对数几率、损失或可离线计算分数的模型。</p></div><div class="topic"><h3>攻击对象</h3><p>训练成员关系，尤其是高置信度、高过拟合或稀有样本。</p></div></section>
-<section class="section"><h2>攻击思路</h2><div class="topic"><h3>阈值攻击</h3><p>用置信度、熵或损失阈值判断成员。</p></div><div class="topic"><h3>影子模型</h3><p>用参考模型学习成员和非成员输出分布。</p></div><div class="topic"><h3>似然比校准</h3><p>为单个样本建立参考分布，用似然比 判断成员关系。</p></div></section>
-<section class="section"><h2>评估口径</h2><div class="topic"><h3>指标</h3><p>曲线下面积、固定误报率下的真正率、先验基线、参考模型数量和校准集来源。</p></div></section>
-<section class="section"><h2>文献</h2><div class="topic"><h3>基础来源</h3><p>Reza Shokri, Marco Stronati, Congzheng Song, Vitaly Shmatikov. Membership Inference Attacks Against Machine Learning Models. 2017 IEEE Symposium on Security and Privacy, 2017, pp. 3-18.</p><p>Samuel Yeom, Irene Giacomelli, Matt Fredrikson, Somesh Jha. Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting. 31st IEEE Computer Security Foundations Symposium, 2018, pp. 268-282.</p><p>Nicholas Carlini, Steve Chien, Milad Nasr, Shuang Song, Andreas Terzis, Florian Tramèr. Membership Inference Attacks From First Principles. 2022 IEEE Symposium on Security and Privacy, 2022, pp. 1897-1914.</p><p>Jun Niu, Peng Liu, Xiaoyan Zhu, Kuo Shen, Yuecong Wang, Haotian Chi, Yulong Shen, Xiaohong Jiang, Jianfeng Ma, Yuqing Zhang. A Survey on Membership Inference Attacks and Defenses in Machine Learning. Journal of Information and Intelligence, 2024, 2(5): 404-454.</p></div></section></main></div></body></html>
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>模型类：评分成员推断</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">产品攻击文档</a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="../verification/index.html">03-04</a>
+        <a href="../indicator/index.html">03-05</a>
+        <a href="../knowledge/index.html">03-06</a>
+        <a href="index.html">03-07</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">产品攻击文档</p>
+      <h2>文档树</h2>
+      <div class="nav-tree">
+        <a href="../index.html">概览</a>
+        <a href="../metrics-normalization.html">指标统一尺度</a>
+        <details class="nav-group" open>
+          <summary>03-04 核验类</summary>
+          <div class="nav-children">
+            <a href="../verification/index.html">核验类目录</a>
+            <a href="../verification/hard-label-attribute-inference.html">属性推断</a>
+            <a href="../verification/verification-membership-inference.html">成员推断</a>
+            <a href="../verification/decision-boundary-inference.html">决策边界推断</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-05 指标型</summary>
+          <div class="nav-children">
+            <a href="../indicator/index.html">指标型目录</a>
+            <a href="../indicator/score-attribute-inference.html">评分属性推断</a>
+            <a href="../indicator/score-membership-inference.html">评分成员推断</a>
+            <a href="../indicator/confidence-model-inversion.html">置信度模型反演</a>
+            <a href="../indicator/property-inference.html">训练属性推断</a>
+            <a href="../indicator/rank-segment-leakage.html">排序与分段泄露</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-06 数据库类</summary>
+          <div class="nav-children">
+            <a href="../knowledge/index.html">数据库类目录</a>
+            <a href="../knowledge/range-query-reconstruction.html">区间查询重建</a>
+            <a href="../knowledge/aggregate-query-differencing.html">差分重建</a>
+            <a href="../knowledge/averaging-linear-reconstruction.html">平均与线性系统重建</a>
+            <a href="../knowledge/background-attribute-disclosure.html">背景知识属性披露</a>
+            <a href="../knowledge/query-composition-risk.html">查询组合风险</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-07 模型类</summary>
+          <div class="nav-children">
+            <a href="index.html">模型类目录</a>
+            <a href="label-only-membership-inference.html">仅标签成员推断</a>
+            <a class="active" href="score-membership-inference.html">评分成员推断</a>
+            <a href="white-box-membership-inference.html">白盒成员推断</a>
+            <a href="model-extraction.html">模型抽取</a>
+            <a href="model-inversion.html">模型反演</a>
+            <a href="property-inference.html">训练属性推断（说明）</a>
+            <a href="adversarial-examples.html">对抗样本（说明）</a>
+          </div>
+        </details>
+      </div>
+    </aside>
+    <main class="content">
+      <h1>评分成员推断</h1>
+
+      <section class="section">
+        <h2>适用产品</h2>
+        <div class="topic">
+          <h3>服务方式</h3>
+          <p>预测接口返回 posterior score、confidence、logit、margin、loss 相关分数或类别概率。</p>
+        </div>
+        <div class="topic">
+          <h3>攻击对象</h3>
+          <p>训练数据成员关系。风险通常随过拟合程度、分数精度和训练/评估分布差异增加。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>攻击思路</h2>
+        <div class="topic">
+          <h3>分数构造</h3>
+          <p>把真实标签对应 loss、最大置信度、margin 和 entropy 转换为候选样本的成员分数。</p>
+        </div>
+        <div class="topic">
+          <h3>阈值校准</h3>
+          <p>用公共 shadow model、保留集或审计集估计阈值，再在目标接口上评估成员与非成员的可分性。</p>
+        </div>
+        <div class="topic">
+          <h3>间接性</h3>
+          <p>接口没有返回“是否训练成员”字段；攻击依赖输出分数分布和泛化差距。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>评估口径</h2>
+        <div class="topic">
+          <h3>指标</h3>
+          <p>AUC、balanced accuracy、TPR@10%FPR、成员/非成员分数分布。应同时报告标准模型和过拟合模型，避免把弱信号写成强风险。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Demo 入口</h2>
+        <div class="topic">
+          <h3>公开数据 demo</h3>
+          <p>对应 demo：<a href="../../model_attack_demo/model_attack_showcase.html">打开模型攻击 suite</a>，查看其中的 score membership inference 部分。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>文献</h2>
+        <div class="topic">
+          <h3>基础来源</h3>
+          <p>Reza Shokri, Marco Stronati, Congzheng Song, Vitaly Shmatikov. <a href="https://arxiv.org/abs/1610.05820">Membership Inference Attacks Against Machine Learning Models</a>. 2017 IEEE Symposium on Security and Privacy, 2017, pp. 3-18.</p>
+          <p>Samuel Yeom, Irene Giacomelli, Matt Fredrikson, Somesh Jha. <a href="https://arxiv.org/abs/1709.01604">Privacy Risk in Machine Learning: Analyzing the Connection to Overfitting</a>. 31st IEEE Computer Security Foundations Symposium, 2018, pp. 268-282.</p>
+          <p>Nicholas Carlini, Steve Chien, Milad Nasr, Shuang Song, Andreas Terzis, Florian Tramèr. <a href="https://arxiv.org/abs/2112.03570">Membership Inference Attacks From First Principles</a>. 2022 IEEE Symposium on Security and Privacy, 2022, pp. 1897-1914.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,7 +1,126 @@
-<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>数据库类：差分重建</title><link rel="stylesheet" href="../docs.css"></head>
-<body><header class="topbar"><div class="topbar-inner"><a class="brand" href="../index.html">产品攻击文档</a><nav class="topnav"><a href="../verification/index.html">03-04</a><a href="../indicator/index.html">03-05</a><a href="../knowledge/index.html">03-06</a><a href="../model/index.html">03-07</a></nav></div></header>
-<div class="doc-shell"><aside class="sidebar"><p class="sidebar-title">03-06 数据库类</p><h2>本类攻击</h2><a href="range-query-reconstruction.html">区间查询重建</a><a class="active" href="aggregate-query-differencing.html">差分重建</a><a href="averaging-linear-reconstruction.html">平均与线性系统重建</a><a href="background-attribute-disclosure.html">背景知识属性披露</a><a href="query-composition-risk.html">查询组合风险</a><h2>返回</h2><a href="index.html">数据库类目录</a><a href="../index.html">总目录</a></aside>
-<main class="content"><h1>用相邻聚合查询恢复个体贡献</h1><section class="section"><h2>适用产品</h2><div class="topic"><h3>服务方式</h3><p>计数、求和、平均值、比例、分组统计和交互式统计查询。</p></div><div class="topic"><h3>攻击对象</h3><p>原始记录、敏感属性、小群体统计和目标个体贡献。</p></div></section>
-<section class="section"><h2>攻击思路</h2><div class="topic"><h3>相邻查询</h3><p>提交两个只差一个条件的查询。两个响应相减后，暴露差异集合的信息。</p></div><div class="topic"><h3>自适应缩小</h3><p>攻击者根据前一次响应继续选择新查询，逐步缩小目标集合。</p></div><div class="topic"><h3>辅助知识</h3><p>如果攻击者知道某些准标识符或外部事实，差分结果更容易落到具体个体。</p></div></section>
-<section class="section"><h2>评估口径</h2><div class="topic"><h3>指标</h3><p>恢复成功率、目标集合大小、属性恢复率、查询次数和聚合噪声强度。</p></div></section>
-<section class="section"><h2>文献</h2><div class="topic"><h3>基础来源</h3><p>Irit Dinur, Kobbi Nissim. Revealing Information while Preserving Privacy. Proceedings of the 22nd ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems, 2003, pp. 202-210.</p><p>Simson L. Garfinkel, John M. Abowd, Christian Martindale. Understanding Database Reconstruction Attacks on Public Data. ACM Queue, 2018, 16(5): 28-53.</p><p>John M. Abowd, Tamara Adams, Robert Ashmead, David Darais, Sourya Dey, Simson L. Garfinkel, Nathan Goldschlag, Michael B. Hawes, Daniel Kifer, Philip Leclerc, Ethan Lew, Scott Moore, Rolando A. Rodríguez, Ramy N. Tadros, Lars Vilhuber. A Simulated Reconstruction and Reidentification Attack on the 2010 U.S. Census. Harvard Data Science Review, 2025, 7(3).</p></div></section></main></div></body></html>
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数据库类：差分重建</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">产品攻击文档</a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="../verification/index.html">03-04</a>
+        <a href="../indicator/index.html">03-05</a>
+        <a href="index.html">03-06</a>
+        <a href="../model/index.html">03-07</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">产品攻击文档</p>
+      <h2>文档树</h2>
+      <div class="nav-tree">
+        <a href="../index.html">概览</a>
+        <a href="../metrics-normalization.html">指标统一尺度</a>
+        <details class="nav-group" open>
+          <summary>03-04 核验类</summary>
+          <div class="nav-children">
+            <a href="../verification/index.html">核验类目录</a>
+            <a href="../verification/hard-label-attribute-inference.html">属性推断</a>
+            <a href="../verification/verification-membership-inference.html">成员推断</a>
+            <a href="../verification/decision-boundary-inference.html">决策边界推断</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-05 指标型</summary>
+          <div class="nav-children">
+            <a href="../indicator/index.html">指标型目录</a>
+            <a href="../indicator/score-attribute-inference.html">评分属性推断</a>
+            <a href="../indicator/score-membership-inference.html">评分成员推断</a>
+            <a href="../indicator/confidence-model-inversion.html">置信度模型反演</a>
+            <a href="../indicator/property-inference.html">训练属性推断</a>
+            <a href="../indicator/rank-segment-leakage.html">排序与分段泄露</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-06 数据库类</summary>
+          <div class="nav-children">
+            <a href="index.html">数据库类目录</a>
+            <a href="range-query-reconstruction.html">区间查询重建</a>
+            <a class="active" href="aggregate-query-differencing.html">差分重建</a>
+            <a href="averaging-linear-reconstruction.html">平均与线性系统重建</a>
+            <a href="background-attribute-disclosure.html">背景知识属性披露</a>
+            <a href="query-composition-risk.html">查询组合风险</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-07 模型类</summary>
+          <div class="nav-children">
+            <a href="../model/index.html">模型类目录</a>
+            <a href="../model/label-only-membership-inference.html">仅标签成员推断</a>
+            <a href="../model/score-membership-inference.html">评分成员推断</a>
+            <a href="../model/white-box-membership-inference.html">白盒成员推断</a>
+            <a href="../model/model-extraction.html">模型抽取</a>
+            <a href="../model/model-inversion.html">模型反演</a>
+            <a href="../model/property-inference.html">训练属性推断（说明）</a>
+            <a href="../model/adversarial-examples.html">对抗样本（说明）</a>
+          </div>
+        </details>
+      </div>
+    </aside>
+    <main class="content">
+      <h1>差分重建</h1>
+
+      <section class="section">
+        <h2>适用产品</h2>
+        <div class="topic">
+          <h3>服务方式</h3>
+          <p>计数、求和、平均值、比例、分组统计和交互式统计查询。</p>
+        </div>
+        <div class="topic">
+          <h3>攻击对象</h3>
+          <p>原始记录、敏感属性、小群体统计和目标个体贡献。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>攻击思路</h2>
+        <div class="topic">
+          <h3>相邻查询</h3>
+          <p>提交两个只差一个条件的查询。两个响应相减后，暴露差异集合的信息。</p>
+        </div>
+        <div class="topic">
+          <h3>自适应缩小</h3>
+          <p>攻击者根据前一次响应继续选择新查询，逐步缩小目标集合。</p>
+        </div>
+        <div class="topic">
+          <h3>辅助知识</h3>
+          <p>如果攻击者知道某些准标识符或外部事实，差分结果更容易落到具体个体。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>评估口径</h2>
+        <div class="topic">
+          <h3>指标</h3>
+          <p>恢复成功率、目标集合大小、属性恢复率、查询次数和聚合噪声强度。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>文献</h2>
+        <div class="topic">
+          <h3>基础来源</h3>
+          <p>Irit Dinur, Kobbi Nissim. <a href="https://weizmann.esploro.exlibrisgroup.com/esploro/outputs/conferenceProceeding/Revealing-information-while-preserving-privacy/993346366703596">Revealing Information while Preserving Privacy</a>. Proceedings of the 22nd ACM SIGMOD-SIGACT-SIGART Symposium on Principles of Database Systems, 2003, pp. 202-210.</p>
+          <p>Simson L. Garfinkel, John M. Abowd, Christian Martindale. <a href="https://queue.acm.org/detail.cfm?id=3295691">Understanding Database Reconstruction Attacks on Public Data</a>. ACM Queue, 2018, 16(5): 28-53.</p>
+          <p>John M. Abowd, Tamara Adams, Robert Ashmead, David Darais, Sourya Dey, Simson L. Garfinkel, Nathan Goldschlag, Michael B. Hawes, Daniel Kifer, Philip Leclerc, Ethan Lew, Scott Moore, Rolando A. Rodríguez, Ramy N. Tadros, Lars Vilhuber. <a href="https://hdsr.mitpress.mit.edu/pub/ntchx9im">A Simulated Reconstruction and Reidentification Attack on the 2010 U.S. Census</a>. Harvard Data Science Review, 2025, 7(3).</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

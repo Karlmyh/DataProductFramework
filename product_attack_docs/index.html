@@ -22,16 +22,57 @@
   <div class="doc-shell">
     <aside class="sidebar">
       <p class="sidebar-title">产品攻击文档</p>
-      <h2>产品目录</h2>
-      <a class="active" href="index.html">概览</a>
-      <a href="verification/index.html">03-04 核验类</a>
-      <a href="indicator/index.html">03-05 指标型</a>
-      <a href="knowledge/index.html">03-06 数据库类</a>
-      <a href="model/index.html">03-07 模型类</a>
+      <h2>文档树</h2>
+      <div class="nav-tree">
+        <a class="active" href="index.html">概览</a>
+        <a href="metrics-normalization.html">指标统一尺度</a>
+        <details class="nav-group" open>
+          <summary>03-04 核验类</summary>
+          <div class="nav-children">
+            <a href="verification/index.html">核验类目录</a>
+            <a href="verification/hard-label-attribute-inference.html">属性推断</a>
+            <a href="verification/verification-membership-inference.html">成员推断</a>
+            <a href="verification/decision-boundary-inference.html">决策边界推断</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-05 指标型</summary>
+          <div class="nav-children">
+            <a href="indicator/index.html">指标型目录</a>
+            <a href="indicator/score-attribute-inference.html">评分属性推断</a>
+            <a href="indicator/score-membership-inference.html">评分成员推断</a>
+            <a href="indicator/confidence-model-inversion.html">置信度模型反演</a>
+            <a href="indicator/property-inference.html">训练属性推断</a>
+            <a href="indicator/rank-segment-leakage.html">排序与分段泄露</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-06 数据库类</summary>
+          <div class="nav-children">
+            <a href="knowledge/index.html">数据库类目录</a>
+            <a href="knowledge/range-query-reconstruction.html">区间查询重建</a>
+            <a href="knowledge/aggregate-query-differencing.html">差分重建</a>
+            <a href="knowledge/averaging-linear-reconstruction.html">平均与线性系统重建</a>
+            <a href="knowledge/background-attribute-disclosure.html">背景知识属性披露</a>
+            <a href="knowledge/query-composition-risk.html">查询组合风险</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-07 模型类</summary>
+          <div class="nav-children">
+            <a href="model/index.html">模型类目录</a>
+            <a href="model/label-only-membership-inference.html">仅标签成员推断</a>
+            <a href="model/score-membership-inference.html">评分成员推断</a>
+            <a href="model/white-box-membership-inference.html">白盒成员推断</a>
+            <a href="model/model-extraction.html">模型抽取</a>
+            <a href="model/model-inversion.html">模型反演</a>
+            <a href="model/property-inference.html">训练属性推断（说明）</a>
+            <a href="model/adversarial-examples.html">对抗样本（说明）</a>
+          </div>
+        </details>
+      </div>
     </aside>
-
     <main class="content">
-      
       <h1>数据产品安全衡量框架</h1>
 
       <section class="section">
@@ -66,7 +107,15 @@
         </div>
         <div class="topic">
           <h3>03-07 模型类数据产品</h3>
-          <p>交付训练后的模型能力。攻击内容包括仅标签成员推断、评分成员推断、白盒成员推断、模型抽取、模型反演、训练属性推断和对抗样本。<a href="model/index.html">查看目录</a></p>
+          <p>交付训练后的模型能力。攻击内容包括仅标签成员推断、评分成员推断、白盒成员推断、模型抽取和模型反演；有对应 demo 的详情页只提供简洁链接入口。<a href="model/index.html">查看目录</a></p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>统一评估口径</h2>
+        <div class="topic">
+          <h3>指标统一尺度</h3>
+          <p>说明各类攻击常用 metric，以及如何把 AUC、balanced accuracy、TPR@固定 FPR、重建率、误差降低、模型抽取 fidelity 和模型反演成功率统一到 0 到 1 的风险尺度。<a href="metrics-normalization.html">打开页面</a></p>
         </div>
       </section>
     </main>

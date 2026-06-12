@@ -1,7 +1,133 @@
-<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>模型类：仅标签成员推断</title><link rel="stylesheet" href="../docs.css"></head>
-<body><header class="topbar"><div class="topbar-inner"><a class="brand" href="../index.html">产品攻击文档</a><nav class="topnav"><a href="../verification/index.html">03-04</a><a href="../indicator/index.html">03-05</a><a href="../knowledge/index.html">03-06</a><a href="../model/index.html">03-07</a></nav></div></header>
-<div class="doc-shell"><aside class="sidebar"><p class="sidebar-title">03-07 模型类</p><h2>本类攻击</h2><a class="active" href="label-only-membership-inference.html">仅标签成员推断</a><a href="score-membership-inference.html">评分成员推断</a><a href="white-box-membership-inference.html">白盒成员推断</a><a href="model-extraction.html">模型抽取</a><a href="model-inversion.html">模型反演</a><a href="property-inference.html">训练属性推断</a><a href="adversarial-examples.html">对抗样本</a><h2>返回</h2><a href="index.html">模型类目录</a><a href="../index.html">总目录</a></aside>
-<main class="content"><h1>只用标签判断训练成员</h1><section class="section"><h2>适用产品</h2><div class="topic"><h3>服务方式</h3><p>硬标签预测接口、离散分类接口、只返回最终类别的模型服务。</p></div><div class="topic"><h3>攻击对象</h3><p>候选样本是否属于训练集、校准集或私有参考集。</p></div></section>
-<section class="section"><h2>攻击思路</h2><div class="topic"><h3>扰动稳定性</h3><p>成员样本可能在小扰动下更稳定。攻击者统计 标签是否保持不变。</p></div><div class="topic"><h3>边界距离</h3><p>沿输入方向搜索 标签翻转点，距离边界越远，成员分数越高。</p></div><div class="topic"><h3>采样查询</h3><p>多次随机扰动形成 标签保留率，用它近似成员概率。</p></div></section>
-<section class="section"><h2>评估口径</h2><div class="topic"><h3>指标</h3><p>曲线下面积、固定误报率下的真正率、攻击准确率、查询次数和扰动强度。</p></div></section>
-<section class="section"><h2>文献</h2><div class="topic"><h3>基础来源</h3><p>Christopher A. Choquette-Choo, Florian Tramèr, Nicholas Carlini, Nicolas Papernot. Label-Only Membership Inference Attacks. Proceedings of the 38th International Conference on Machine Learning, 2021, PMLR 139:1964-1974.</p><p>Jun Niu, Peng Liu, Xiaoyan Zhu, Kuo Shen, Yuecong Wang, Haotian Chi, Yulong Shen, Xiaohong Jiang, Jianfeng Ma, Yuqing Zhang. A Survey on Membership Inference Attacks and Defenses in Machine Learning. Journal of Information and Intelligence, 2024, 2(5): 404-454.</p></div></section></main></div></body></html>
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>模型类：仅标签成员推断</title>
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../index.html">产品攻击文档</a>
+      <nav class="topnav" aria-label="顶部导航">
+        <a href="../verification/index.html">03-04</a>
+        <a href="../indicator/index.html">03-05</a>
+        <a href="../knowledge/index.html">03-06</a>
+        <a href="index.html">03-07</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <aside class="sidebar">
+      <p class="sidebar-title">产品攻击文档</p>
+      <h2>文档树</h2>
+      <div class="nav-tree">
+        <a href="../index.html">概览</a>
+        <a href="../metrics-normalization.html">指标统一尺度</a>
+        <details class="nav-group" open>
+          <summary>03-04 核验类</summary>
+          <div class="nav-children">
+            <a href="../verification/index.html">核验类目录</a>
+            <a href="../verification/hard-label-attribute-inference.html">属性推断</a>
+            <a href="../verification/verification-membership-inference.html">成员推断</a>
+            <a href="../verification/decision-boundary-inference.html">决策边界推断</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-05 指标型</summary>
+          <div class="nav-children">
+            <a href="../indicator/index.html">指标型目录</a>
+            <a href="../indicator/score-attribute-inference.html">评分属性推断</a>
+            <a href="../indicator/score-membership-inference.html">评分成员推断</a>
+            <a href="../indicator/confidence-model-inversion.html">置信度模型反演</a>
+            <a href="../indicator/property-inference.html">训练属性推断</a>
+            <a href="../indicator/rank-segment-leakage.html">排序与分段泄露</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-06 数据库类</summary>
+          <div class="nav-children">
+            <a href="../knowledge/index.html">数据库类目录</a>
+            <a href="../knowledge/range-query-reconstruction.html">区间查询重建</a>
+            <a href="../knowledge/aggregate-query-differencing.html">差分重建</a>
+            <a href="../knowledge/averaging-linear-reconstruction.html">平均与线性系统重建</a>
+            <a href="../knowledge/background-attribute-disclosure.html">背景知识属性披露</a>
+            <a href="../knowledge/query-composition-risk.html">查询组合风险</a>
+          </div>
+        </details>
+        <details class="nav-group" open>
+          <summary>03-07 模型类</summary>
+          <div class="nav-children">
+            <a href="index.html">模型类目录</a>
+            <a class="active" href="label-only-membership-inference.html">仅标签成员推断</a>
+            <a href="score-membership-inference.html">评分成员推断</a>
+            <a href="white-box-membership-inference.html">白盒成员推断</a>
+            <a href="model-extraction.html">模型抽取</a>
+            <a href="model-inversion.html">模型反演</a>
+            <a href="property-inference.html">训练属性推断（说明）</a>
+            <a href="adversarial-examples.html">对抗样本（说明）</a>
+          </div>
+        </details>
+      </div>
+    </aside>
+    <main class="content">
+      <h1>仅标签成员推断</h1>
+
+      <section class="section">
+        <h2>适用产品</h2>
+        <div class="topic">
+          <h3>服务方式</h3>
+          <p>硬标签预测接口。输入候选样本，只返回类别、通过、拒绝或相似的离散判断。</p>
+        </div>
+        <div class="topic">
+          <h3>攻击对象</h3>
+          <p>训练数据成员关系，即候选样本是否参与过模型训练、校准或微调。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>攻击思路</h2>
+        <div class="topic">
+          <h3>扰动查询</h3>
+          <p>围绕同一候选样本生成轻微扰动、插值或边界扫描样本，观察输出标签是否稳定。</p>
+        </div>
+        <div class="topic">
+          <h3>成员分数</h3>
+          <p>把标签翻转频率、近似边界距离和局部稳定性转换为成员分数，再与非成员候选比较。</p>
+        </div>
+        <div class="topic">
+          <h3>间接性</h3>
+          <p>接口没有输出训练集名单；成员关系来自多次 hard-label 响应的统计差异。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>评估口径</h2>
+        <div class="topic">
+          <h3>指标</h3>
+          <p>AUC、攻击准确率、TPR@10%FPR、不同查询预算下的稳定性。AUC 接近 0.5 时应写成弱分离或有限泄露。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Demo 入口</h2>
+        <div class="topic">
+          <h3>公开数据 demo</h3>
+          <p>对应 demo：<a href="../../membership_inference_demo/casia_facev5_mia_showcase.html">打开 CASIA-FaceV5 仅标签成员推断 demo</a>。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>文献</h2>
+        <div class="topic">
+          <h3>基础来源</h3>
+          <p>Christopher A. Choquette-Choo, Florian Tramer, Nicholas Carlini, Nicolas Papernot. <a href="https://proceedings.mlr.press/v139/choquette-choo21a.html">Label-Only Membership Inference Attacks</a>. Proceedings of the 38th International Conference on Machine Learning, 2021, PMLR 139:1964-1974.</p>
+          <p>Hongsheng Hu, Zoran Salcic, Lichao Sun, Gillian Dobbie, Philip S. Yu, Xuyun Zhang. <a href="https://arxiv.org/abs/2103.07853">Membership Inference Attacks on Machine Learning: A Survey</a>. ACM Computing Surveys, 2022, 54(11s): Article 235.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
