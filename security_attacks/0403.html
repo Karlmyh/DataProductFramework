@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="私有语料可被越权检索、提示注入或逐字外泄；向量、访问模式和工具结果也会暴露成员与属性。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/0403.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>0403 推理时上下文供给型攻击｜数据产品安全衡量框架</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>04 模型类数据产品</span><span>/</span>
+          <strong>0403</strong>
+        </nav>
+        <span class="category-code">攻击面 · 0403</span>
+        <h1>推理时上下文供给型<br />攻击页面</h1>
+        <p class="lead">生产数据与基础模型逻辑分离，在运行时作为证据、工具结果或会话上下文参与生成。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>生产数据与基础模型逻辑分离，在运行时作为证据、工具结果或会话上下文参与生成。</p></div>
+          <div class="fact"><span>主要暴露</span><p>私有语料可被越权检索、提示注入或逐字外泄；向量、访问模式和工具结果也会暴露成员与属性。</p></div>
+          <div class="fact"><span>分类边界</span><p>修改底层上下文可直接改变后续回答而无需重训；若产品直接返回检索记录而非综合回答，归入 03。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>三级产品分支</h2><ol class="numbered-list"><li>040301 非结构化语料与索引</li><li>040302 结构化数据库与知识图谱</li><li>040303 实时外部服务与工具</li><li>040304 用户与会话临时上下文</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>检索增强生成私有语料外泄</strong></li>
+                <li><span>02</span><strong>间接提示注入</strong></li>
+                <li><span>03</span><strong>检索向量成员推断</strong></li>
+                <li><span>04</span><strong>工具劫持</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/method_library/" target="_blank" rel="noreferrer">
+              <strong>攻击方法库</strong><span>检索增强生成、智能体、提示注入和上下文外泄规则。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/model/" target="_blank" rel="noreferrer">
+              <strong>模型类攻击目录</strong><span>参照模型输出侧的统一攻击与评估口径。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/knowledge/query-composition-risk.html" target="_blank" rel="noreferrer">
+              <strong>查询组合风险</strong><span>理解多轮检索和生成中的累计泄露。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="0402.html"><small>← 上一个类别</small><strong>0402 参数内化使用型</strong></a>
+        <a href="0404.html"><small>下一个类别 →</small><strong>0404 部署后反馈更新型</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

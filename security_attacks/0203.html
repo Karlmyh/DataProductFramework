@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="排名和前 K 名结果会泄露对象间次序、群体分布、入选边界及参照集合成员变化。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/0203.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>0203 集合参照排名与相对位置攻击｜数据产品安全衡量框架</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>02 指标型数据产品</span><span>/</span>
+          <strong>0203</strong>
+        </nav>
+        <span class="category-code">攻击面 · 0203</span>
+        <h1>集合参照排名与相对位置<br />攻击页面</h1>
+        <p class="lead">依据当期比较集合或参照分布交付名次、百分位、分位层级或其他相对位置。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>依据当期比较集合或参照分布交付名次、百分位、分位层级或其他相对位置。</p></div>
+          <div class="fact"><span>主要暴露</span><p>排名和前 K 名结果会泄露对象间次序、群体分布、入选边界及参照集合成员变化。</p></div>
+          <div class="fact"><span>分类边界</span><p>结果依赖比较集合；若只按固定标准或阈值分级，归入 0202。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>三级产品分支</h2><ol class="numbered-list"><li>020301 名次、顺序与前 K 名</li><li>020302 百分位、分位位置与分位分层</li><li>020303 成对关系与偏序位置</li><li>020304 支配关系与效率前沿位置</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>前 K 名成员探测</strong></li>
+                <li><span>02</span><strong>排序翻转分析</strong></li>
+                <li><span>03</span><strong>分位边界恢复</strong></li>
+                <li><span>04</span><strong>参照集合推断</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/indicator/rank-segment-leakage.html" target="_blank" rel="noreferrer">
+              <strong>排序与分段泄露</strong><span>从名次、前 K 名、等级和分段推断边界。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/indicator/" target="_blank" rel="noreferrer">
+              <strong>指标类攻击目录</strong><span>查看连续评分与相对位置的攻击入口。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/metrics-normalization.html" target="_blank" rel="noreferrer">
+              <strong>指标统一尺度</strong><span>把不同攻击结果归一到可比较的风险尺度。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="0202.html"><small>← 上一个类别</small><strong>0202 标准参照等级与分段</strong></a>
+        <a href="0301.html"><small>下一个类别 →</small><strong>0301 存在性查询</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>
