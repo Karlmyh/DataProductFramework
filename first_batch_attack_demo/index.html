@@ -23,7 +23,7 @@
     <h1>第一批未覆盖类别攻击评估</h1>
     <p class="lead">同一套现有 Adult 与 CASIA-FaceV5 资产，分别包装成等级、存在性和对象同一性三种数据产品。攻击只访问产品声明的返回值；页面中的内部阈值、私有集合和注册模板仅供评价者核对。</p>
     <div class="notice"><strong>研究用途声明：</strong>本演示用于通过受控攻击构建更准确的安全评价体系。实验仅在本地、固定数据和离线模型上运行，不连接真实业务系统，不提供面向第三方系统的攻击能力。</div>
-    <nav><a href="#grade">0202 等级与分段</a><a href="#existence">0301 存在性查询</a><a href="#identity">0102 对象同一性核验</a><a href="../index.html">返回框架首页</a></nav>
+    <nav><a href="#grade">030502 等级与分段</a><a href="#existence">030601 存在性查询</a><a href="#identity">030402 对象同一性核验</a><a href="../index.html">返回框架首页</a></nav>
     <div class="summary">
       <article><span>新覆盖二级类别</span><strong>3</strong></article>
       <article><span>真实离线数据</span><strong>Adult + CASIA</strong></article>
@@ -33,7 +33,7 @@
   </section>
 
   <section class="panel" id="grade">
-    <div class="section-head"><div><span class="code">0202</span><h2>标准参照等级与分段</h2><p class="desc">Adult收入模型只返回A—D等级。攻击者把查询结果当作硬标签，主动挑选最靠近当前替代模型边界的档案继续查询。</p></div></div>
+    <div class="section-head"><div><span class="code">030502</span><h2>标准参照等级与分段</h2><p class="desc">Adult收入模型只返回A—D等级。攻击者把查询结果当作硬标签，主动挑选最靠近当前替代模型边界的档案继续查询。</p></div></div>
     <div class="metrics">
       <article class="metric"><span>最终等级一致率</span><strong>83.2%</strong><p>替代模型在未查询评价集上复现目标等级的比例</p></article>
       <article class="metric"><span>多数类基线</span><strong>25.5%</strong><p>永远猜最常见等级时的一致率</p></article>
@@ -55,12 +55,12 @@
     <p>纵轴为未查询档案上的等级一致率；横轴为累计API调用。</p></div>
       <div class="box"><h3>不同查询预算</h3><table><thead><tr><th>查询</th><th>一致率</th><th>Macro-F1</th><th>查询标签 A/B/C/D</th></tr></thead><tbody><tr><td>64</td><td>72.7%</td><td>72.6%</td><td>A:16 / B:18 / C:16 / D:14</td></tr><tr><td>128</td><td>75.6%</td><td>75.2%</td><td>A:30 / B:46 / C:35 / D:17</td></tr><tr><td>256</td><td>75.7%</td><td>75.1%</td><td>A:45 / B:89 / C:105 / D:17</td></tr><tr><td>512</td><td>81.7%</td><td>82.0%</td><td>A:69 / B:183 / C:240 / D:20</td></tr><tr><td>1024</td><td>83.2%</td><td>83.3%</td><td>A:111 / B:501 / C:359 / D:53</td></tr></tbody></table></div>
       <div class="box"><h3>最终混淆矩阵</h3><table><thead><tr><th>真实\预测</th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead><tbody><tr><th>A</th><td>1360</td><td>424</td><td>0</td><td>0</td></tr><tr><th>B</th><td>73</td><td>1647</td><td>113</td><td>5</td></tr><tr><th>C</th><td>0</td><td>171</td><td>1455</td><td>184</td></tr><tr><th>D</th><td>0</td><td>0</td><td>245</td><td>1541</td></tr></tbody></table></div>
-      <div class="box"><h3>安全评价含义</h3><p>等级输出仍可被查询样本转化为训练标签；替代模型的一致率衡量等级规则可复制程度。</p><div class="boundary"><strong>类别边界：</strong>交易交付物是标准参照等级，因此属于0202；内部使用了模型，并不会自动把产品归入模型类。</div></div>
+      <div class="box"><h3>安全评价含义</h3><p>等级输出仍可被查询样本转化为训练标签；替代模型的一致率衡量等级规则可复制程度。</p><div class="boundary"><strong>类别边界：</strong>交易交付物是标准参照等级，因此属于030502；内部使用了模型，并不会自动把产品归入模型类。</div></div>
     </div>
   </section>
 
   <section class="panel" id="existence">
-    <span class="code">0301</span><h2>存在性查询</h2><p class="desc">接口对组合数值条件只回答true/false。攻击者知道一个候选总体的非敏感属性，但不知道谁出现在私有库中；自适应群组测试逐步缩小仍可能命中的候选集合。</p>
+    <span class="code">030601</span><h2>存在性查询</h2><p class="desc">接口对组合数值条件只回答true/false。攻击者知道一个候选总体的非敏感属性，但不知道谁出现在私有库中；自适应群组测试逐步缩小仍可能命中的候选集合。</p>
     <div class="metrics">
       <article class="metric"><span>最终恢复</span><strong>32/32</strong><p>被正确定位的私有库成员</p></article>
       <article class="metric"><span>恢复召回率</span><strong>100.0%</strong><p>未产生假阳性；风险来自成员存在性泄露</p></article>
@@ -82,12 +82,12 @@
     <div class="legend"><span><i style="background:#315f7d"></i>自适应群组测试</span><span><i style="background:#8b8f8b"></i>逐条枚举</span></div></div>
       <div class="box"><h3>预算下的恢复效果</h3><table><thead><tr><th>查询</th><th>恢复成员</th><th>群组测试召回率</th><th>枚举召回率</th></tr></thead><tbody><tr><td>64</td><td>4/32</td><td>12.5%</td><td>6.2%</td></tr><tr><td>128</td><td>10/32</td><td>31.2%</td><td>18.8%</td></tr><tr><td>256</td><td>23/32</td><td>71.9%</td><td>37.5%</td></tr><tr><td>512</td><td>32/32</td><td>100.0%</td><td>68.8%</td></tr><tr><td>1024</td><td>32/32</td><td>100.0%</td><td>100.0%</td></tr></tbody></table></div>
       <div class="box"><h3>前十次真实查询轨迹</h3><table><thead><tr><th>#</th><th>组合条件</th><th>候选数</th><th>响应</th></tr></thead><tbody><tr><td>1</td><td><code>all candidate profiles</code></td><td>1024</td><td><span class="truth true">true</span></td></tr><tr><td>2</td><td><code>all candidate profiles AND fnlwgt &gt; 177878</code></td><td>510</td><td><span class="truth true">true</span></td></tr><tr><td>3</td><td><code>all candidate profiles AND fnlwgt &gt; 177878 AND fnlwgt &gt; 232590</code></td><td>253</td><td><span class="truth true">true</span></td></tr><tr><td>4</td><td><code>fnlwgt &gt; 177878 AND fnlwgt &gt; 232590 AND fnlwgt &gt; 300184</code></td><td>126</td><td><span class="truth true">true</span></td></tr><tr><td>5</td><td><code>fnlwgt &gt; 232590 AND fnlwgt &gt; 300184 AND fnlwgt &lt;= 355746</code></td><td>63</td><td><span class="truth true">true</span></td></tr><tr><td>6</td><td><code>fnlwgt &gt; 300184 AND fnlwgt &lt;= 355746 AND fnlwgt &lt;= 323704</code></td><td>31</td><td><span class="truth false">false</span></td></tr><tr><td>7</td><td><code>fnlwgt &gt; 300184 AND fnlwgt &lt;= 355746 AND fnlwgt &gt; 323704</code></td><td>32</td><td><span class="truth true">true</span></td></tr><tr><td>8</td><td><code>fnlwgt &lt;= 355746 AND fnlwgt &gt; 323704 AND fnlwgt &lt;= 338897</code></td><td>16</td><td><span class="truth false">false</span></td></tr><tr><td>9</td><td><code>fnlwgt &lt;= 355746 AND fnlwgt &gt; 323704 AND fnlwgt &gt; 338897</code></td><td>16</td><td><span class="truth true">true</span></td></tr><tr><td>10</td><td><code>fnlwgt &gt; 323704 AND fnlwgt &gt; 338897 AND fnlwgt &lt;= 344988</code></td><td>8</td><td><span class="truth false">false</span></td></tr></tbody></table></div>
-      <div class="box"><h3>安全评价含义</h3><p>灵活的组合条件使真假接口成为群组测试预言机；风险取决于候选知识、查询预算与可定制条件。</p><p><strong>实验假设：</strong>攻击者拥有候选总体及其非敏感属性，目标是判断哪些候选出现在私有库中。</p><div class="boundary"><strong>类别边界：</strong>每次响应只有“是否存在”，所以属于0301；攻击最终恢复出成员，不会把产品本身改判成记录与子集查询。</div></div>
+      <div class="box"><h3>安全评价含义</h3><p>灵活的组合条件使真假接口成为群组测试预言机；风险取决于候选知识、查询预算与可定制条件。</p><p><strong>实验假设：</strong>攻击者拥有候选总体及其非敏感属性，目标是判断哪些候选出现在私有库中。</p><div class="boundary"><strong>类别边界：</strong>每次响应只有“是否存在”，所以属于030601；攻击最终恢复出成员，不会把产品本身改判成记录与子集查询。</div></div>
     </div>
   </section>
 
   <section class="panel" id="identity">
-    <span class="code">0102</span><h2>对象同一性核验</h2><p class="desc">CASIA-FaceV5核验接口比较探针与一个固定注册对象，只返回三位小数相似度和same/different。攻击者使用辅助人脸构成的低维子空间进行黑盒坐标爬山。</p>
+    <span class="code">030402</span><h2>对象同一性核验</h2><p class="desc">CASIA-FaceV5核验接口比较探针与一个固定注册对象，只返回三位小数相似度和same/different。攻击者使用辅助人脸构成的低维子空间进行黑盒坐标爬山。</p>
     <div class="metrics">
       <article class="metric"><span>初始相似度</span><strong>-0.214</strong><p>攻击开始时的最优量化响应</p></article>
       <article class="metric"><span>最终相似度</span><strong>0.905</strong><p>512次查询后的量化响应</p></article>
@@ -98,7 +98,7 @@
       <div class="box"><h3>评价者视角下的输入与恢复结果</h3><div class="face-grid"><figure><img src="assets/face_evaluator_reference.png" alt="注册模板参考"><figcaption>注册模板参考，仅评价者可见；攻击过程没有读取该图。</figcaption></figure><figure><img src="assets/face_attack_initial.png" alt="初始候选"><figcaption>攻击初始候选。</figcaption></figure><figure><img src="assets/face_attack_reconstruction.png" alt="攻击恢复结果"><figcaption>仅利用量化相似度爬山得到的最终探针。</figcaption></figure></div></div>
       <div class="box"><h3>查询预算检查点</h3><table><thead><tr><th>查询</th><th>最佳相似度</th><th>判定</th></tr></thead><tbody><tr><td>32</td><td>0.193</td><td>未通过</td></tr><tr><td>64</td><td>0.365</td><td>未通过</td></tr><tr><td>128</td><td>0.663</td><td>未通过</td></tr><tr><td>256</td><td>0.808</td><td>通过</td></tr><tr><td>512</td><td>0.905</td><td>通过</td></tr></tbody></table><p>校准FAR=1.1%，校准TPR=72.7%。</p></div>
       <div class="box"><h3>黑盒爬山轨迹</h3><img class="wide-image" src="assets/face_hill_climb_curve.png" alt="人脸核验爬山曲线"></div>
-      <div class="box"><h3>安全评价含义</h3><p>相似度反馈形成连续优化信号；查询预算越高，攻击者越能逼近注册模板方向。</p><div class="boundary"><strong>类别边界：</strong>核心响应是在判断两个对象是否为同一身份，因此属于0102；相似度是核验响应的一部分，不按数值型指标另行分类。</div></div>
+      <div class="box"><h3>安全评价含义</h3><p>相似度反馈形成连续优化信号；查询预算越高，攻击者越能逼近注册模板方向。</p><div class="boundary"><strong>类别边界：</strong>核心响应是在判断两个对象是否为同一身份，因此属于030402；相似度是核验响应的一部分，不按数值型指标另行分类。</div></div>
     </div>
   </section>
 

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="真假响应可成为群组测试预言机；灵活条件和自适应查询会逐步定位私有库成员。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030601.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030601 存在性查询攻击｜数据产品安全衡量框架</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0306 数据查询类数据产品</span><span>/</span>
+          <strong>030601</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030601</span>
+        <h1>存在性查询<br />攻击页面</h1>
+        <p class="lead">保留至少一个开放变量，但只返回是否存在匹配对象，不枚举对象及其取值。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>保留至少一个开放变量，但只返回是否存在匹配对象，不枚举对象及其取值。</p></div>
+          <div class="fact"><span>主要暴露</span><p>真假响应可成为群组测试预言机；灵活条件和自适应查询会逐步定位私有库成员。</p></div>
+          <div class="fact"><span>分类边界</span><p>最终只返回是否存在；即使攻击恢复出具体成员，产品仍属于存在性查询。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>03060101 标识符与资源存在性</li><li>03060102 关键词与内容命中存在性</li><li>03060103 条件记录存在性</li><li>03060104 开放关系存在性</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>自适应群组测试</strong></li>
+                <li><span>02</span><strong>成员枚举</strong></li>
+                <li><span>03</span><strong>二分条件探测</strong></li>
+                <li><span>04</span><strong>查询组合攻击</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/first_batch_attack_demo/#existence" target="_blank" rel="noreferrer">
+              <strong>Adult 存在性群组测试</strong><span>用真假响应和组合条件逐步恢复私有库成员。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/knowledge/query-composition-risk.html" target="_blank" rel="noreferrer">
+              <strong>查询组合风险</strong><span>刻画重复、自适应查询带来的累计泄露。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/verification/verification-membership-inference.html" target="_blank" rel="noreferrer">
+              <strong>核验成员推断</strong><span>对比有限状态接口中的成员信号。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030503.html"><small>← 上一个类别</small><strong>030503 集合参照排名与相对位置</strong></a>
+        <a href="030602.html"><small>下一个类别 →</small><strong>030602 记录与子集查询</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

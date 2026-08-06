@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="单次关系判断可被组合为组织、交易、设备或社会网络，并进一步揭示未公开的控制与关联结构。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030403.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030403 多体关系核验攻击｜数据产品安全衡量框架</title>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0304 核验类数据产品</span><span>/</span>
+          <strong>030403</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030403</span>
+        <h1>多体关系核验<br />攻击页面</h1>
+        <p class="lead">判断两个或多个独立业务对象之间是否存在所有、任职、授权、控制、交易或绑定等关系。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>判断两个或多个独立业务对象之间是否存在所有、任职、授权、控制、交易或绑定等关系。</p></div>
+          <div class="fact"><span>主要暴露</span><p>单次关系判断可被组合为组织、交易、设备或社会网络，并进一步揭示未公开的控制与关联结构。</p></div>
+          <div class="fact"><span>分类边界</span><p>对象具有独立业务角色且确认的是非同一性关系；返回开放关系对象或路径时归入 030603。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>03040301 权威登记关系核验</li><li>03040302 合同、证照与授权关系核验</li><li>03040303 账户、设备、交易与行为关系核验</li><li>03040304 多源关联与关系推定核验</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>关系枚举</strong></li>
+                <li><span>02</span><strong>账户与设备绑定探测</strong></li>
+                <li><span>03</span><strong>控制关系图重建</strong></li>
+                <li><span>04</span><strong>多源关联推断</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/verification/" target="_blank" rel="noreferrer">
+              <strong>核验类攻击目录</strong><span>从有限核验反馈出发组织属性、成员与边界攻击。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/product_attack_docs/knowledge/query-composition-risk.html" target="_blank" rel="noreferrer">
+              <strong>查询组合风险</strong><span>说明多次安全响应如何组合出敏感关系。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://karlmyh.github.io/DataProductFramework/method_library/" target="_blank" rel="noreferrer">
+              <strong>攻击方法库</strong><span>检索实体链接、关系重建与推断规则。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030402.html"><small>← 上一个类别</small><strong>030402 对象同一性核验</strong></a>
+        <a href="030501.html"><small>下一个类别 →</small><strong>030501 数值型指标</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>
