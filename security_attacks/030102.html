@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="记录级结果会直接产生再识别、跨库链接、敏感属性披露与局部数据重建风险。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030102.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030102 记录与子集查询攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0301 行业基础数据库类数据产品</span><span>/</span>
+          <strong>030102</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030102</span>
+        <h1>记录与子集查询<br />攻击页面</h1>
+        <p class="lead">按关键词、字段、谓词、时空范围或分页返回匹配记录与字段。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>按关键词、字段、谓词、时空范围或分页返回匹配记录与字段。</p></div>
+          <div class="fact"><span>主要暴露</span><p>记录级结果会直接产生再识别、跨库链接、敏感属性披露与局部数据重建风险。</p></div>
+          <div class="fact"><span>分类边界</span><p>主要交付数据单元本身；仅交付统计摘要时归入 030104。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>资源与文档结果</li><li>表格与业务记录结果</li><li>字段与属性切片</li><li>时空窗口与批次数据</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>记录再识别</strong></li>
+                <li><span>02</span><strong>跨库链接</strong></li>
+                <li><span>03</span><strong>背景知识属性披露</strong></li>
+                <li><span>04</span><strong>局部数据重建</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/product_attack_docs/knowledge/background-attribute-disclosure.html" target="_blank" rel="noreferrer">
+              <strong>背景知识属性披露</strong><span>组合准标识符与辅助数据推断敏感字段。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/dataset_reconstruction_demo/" target="_blank" rel="noreferrer">
+              <strong>数据集重建系列</strong><span>观察查询预算与记录恢复效果。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030101.html"><small>← 上一个类别</small><strong>030101 存在性查询</strong></a>
+        <a href="030103.html"><small>下一个类别 →</small><strong>030103 关系发现与路径查询</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

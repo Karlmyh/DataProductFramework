@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="离散等级可通过阈值试探、主动学习和替代模型复制恢复分段边界。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030502.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030502 标准参照等级与分段攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0305 指标型数据产品</span><span>/</span>
+          <strong>030502</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030502</span>
+        <h1>标准参照等级与分段<br />攻击页面</h1>
+        <p class="lead">依据固定标准、目标、阈值、规则或模型边界交付有限有序类别。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>依据固定标准、目标、阈值、规则或模型边界交付有限有序类别。</p></div>
+          <div class="fact"><span>主要暴露</span><p>离散等级可通过阈值试探、主动学习和替代模型复制恢复分段边界。</p></div>
+          <div class="fact"><span>分类边界</span><p>对象不变时不受其他参评对象影响；依赖比较集合的结果归入 030503。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>绝对数值阈值分级</li><li>固定参照偏离分级</li><li>多条件规则分级</li><li>学习型固定边界分级</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>阈值试探</strong></li>
+                <li><span>02</span><strong>等级规则提取</strong></li>
+                <li><span>03</span><strong>替代模型训练</strong></li>
+                <li><span>04</span><strong>分段边界泄露</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/first_batch_attack_demo/#grade" target="_blank" rel="noreferrer">
+              <strong>Adult 等级规则提取</strong><span>1024 次标签查询复制等级规则，一致率 83.2%。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030501.html"><small>← 上一个类别</small><strong>030501 数值型指标</strong></a>
+        <a href="030503.html"><small>下一个类别 →</small><strong>030503 集合参照排名与相对位置</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

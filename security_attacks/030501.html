@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="连续数值提供强排序与优化信号，可能暴露个体贡献、权重、成员与隐藏输入。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030501.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030501 数值型指标攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0305 指标型数据产品</span><span>/</span>
+          <strong>030501</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030501</span>
+        <h1>数值型指标<br />攻击页面</h1>
+        <p class="lead">直接交付具有独立量纲或稳定数值含义的结果。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>直接交付具有独立量纲或稳定数值含义的结果。</p></div>
+          <div class="fact"><span>主要暴露</span><p>连续数值提供强排序与优化信号，可能暴露个体贡献、权重、成员与隐藏输入。</p></div>
+          <div class="fact"><span>分类边界</span><p>指标针对既定对象和口径预先形成；任意新输入的预测函数归入 0307。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>总量与计数</li><li>比率、比例与份额</li><li>均值与分布统计量</li><li>变化率与单一定基测度</li><li>线性加权合成</li><li>几何或乘法合成</li><li>非补偿性与多准则数值合成</li><li>其他非线性数值合成</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>评分属性推断</strong></li>
+                <li><span>02</span><strong>评分成员推断</strong></li>
+                <li><span>03</span><strong>置信度反演</strong></li>
+                <li><span>04</span><strong>分项权重恢复</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/product_attack_docs/indicator/" target="_blank" rel="noreferrer">
+              <strong>指标类攻击目录</strong><span>连续评分与相对位置的统一攻击入口。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030403.html"><small>← 上一个类别</small><strong>030403 多体关系核验</strong></a>
+        <a href="030502.html"><small>下一个类别 →</small><strong>030502 标准参照等级与分段</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

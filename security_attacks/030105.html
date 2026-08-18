@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="转换后的表示、特征和残差仍会保留原数据结构，并可被反演或链接。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030105.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030105 派生与处理查询攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0301 行业基础数据库类数据产品</span><span>/</span>
+          <strong>030105</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030105</span>
+        <h1>派生与处理查询<br />攻击页面</h1>
+        <p class="lead">选择底层数据并指定转换或计算，取得具有新结构、属性或表示的派生结果。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>选择底层数据并指定转换或计算，取得具有新结构、属性或表示的派生结果。</p></div>
+          <div class="fact"><span>主要暴露</span><p>转换后的表示、特征和残差仍会保留原数据结构，并可被反演或链接。</p></div>
+          <div class="fact"><span>分类边界</span><p>服务方底层数据是处理对象；若最终交付模型生成回答，归入 0307。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>表示与坐标转换</li><li>质量修正与标准化</li><li>语义与特征派生</li><li>分辨率与尺度变换</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>变换反演</strong></li>
+                <li><span>02</span><strong>特征残留分析</strong></li>
+                <li><span>03</span><strong>分辨率恢复</strong></li>
+                <li><span>04</span><strong>重复处理组合</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/product_attack_docs/knowledge/query-composition-risk.html" target="_blank" rel="noreferrer">
+              <strong>查询组合风险</strong><span>评估多次处理请求叠加后的累计泄露。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/method_library/" target="_blank" rel="noreferrer">
+              <strong>攻击方法库</strong><span>检索嵌入反演、表示重建与链接方法。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030104.html"><small>← 上一个类别</small><strong>030104 聚合统计查询</strong></a>
+        <a href="030401.html"><small>下一个类别 →</small><strong>030401 单体断言核验</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

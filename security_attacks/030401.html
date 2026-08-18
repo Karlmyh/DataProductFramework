@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="有限状态仍会泄露对象属性、名单命中与规则阈值。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030401.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030401 单体断言核验攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0304 核验类数据产品</span><span>/</span>
+          <strong>030401</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030401</span>
+        <h1>单体断言核验<br />攻击页面</h1>
+        <p class="lead">判断一个对象是否具有某项属性、满足某个条件或处于某种状态。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>判断一个对象是否具有某项属性、满足某个条件或处于某种状态。</p></div>
+          <div class="fact"><span>主要暴露</span><p>有限状态仍会泄露对象属性、名单命中与规则阈值。</p></div>
+          <div class="fact"><span>分类边界</span><p>只确认一个对象的一项属性或状态；同一实体比对归入 030402。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>权威记录核验</li><li>文档与数字凭证核验</li><li>测试、测量与检验核验</li><li>第三方声明与见证核验</li><li>规则或模型推定核验</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>敏感属性枚举</strong></li>
+                <li><span>02</span><strong>名单与状态探测</strong></li>
+                <li><span>03</span><strong>规则阈值推断</strong></li>
+                <li><span>04</span><strong>硬标签成员推断</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/product_attack_docs/verification/" target="_blank" rel="noreferrer">
+              <strong>核验类攻击目录</strong><span>从有限反馈组织属性、成员与边界攻击。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030105.html"><small>← 上一个类别</small><strong>030105 派生与处理查询</strong></a>
+        <a href="030402.html"><small>下一个类别 →</small><strong>030402 对象同一性核验</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>
