@@ -1,6 +1,6 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { categories, groups, series } from "../app/data.ts";
+import { categories, groups } from "../app/data.ts";
 import { candidateAttacks, demoSuites } from "../app/demo-data.ts";
 
 const projectRoot = process.cwd();
@@ -83,60 +83,67 @@ function documentShell({ title, description, stylesheet, canonical, body, extraH
 
 function renderHome() {
   const categoryCount = groups.reduce((sum, group) => sum + group.categories.length, 0);
-  const frameworkStrip = frameworkSteps.map((step) => `<div><span>${step.index}</span><strong>${step.title}</strong><p>${step.output}</p></div>`).join("");
-  const frameworkCards = frameworkSteps.map((step, index) => `<article><header><span>${step.index}</span><small>${step.title}</small></header><h3>${step.headline}</h3><p>${step.body}</p><footer><span>输出</span><strong>${step.output}</strong></footer>${index < frameworkSteps.length - 1 ? '<i aria-hidden="true">→</i>' : ""}</article>`).join("");
-  const taxonomyCards = groups.map((group) => `
-            <article class="taxonomy-card" style="--group-accent:${group.accent}">
-              <header><span>${group.code}</span><small>${group.categories.length} 个三级类别</small></header>
-              <h3>${escapeHtml(group.name)}</h3><p>${escapeHtml(group.summary)}</p>
-              <ol>${group.categories.map((category) => `<li><a href="security_attacks/${category.code}.html"><span>${category.code}</span><strong>${escapeHtml(category.name)}</strong><i aria-hidden="true">↗</i></a><small>${category.attacks.slice(0, 2).map(escapeHtml).join(" · ")}</small></li>`).join("")}</ol>
-            </article>`).join("");
-  const archivedEvidencePaths: Record<string, string> = { A: "/first_batch_attack_demo", B: "", C: "/product_attack_docs" };
-  const seriesRows = series.map((item) => `<a class="series-row" href="${archivedEvidenceBase}${archivedEvidencePaths[item.index] ?? ""}" target="_blank" rel="noreferrer"><span class="series-index">${item.index}</span><span class="series-main"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.scope)}</small></span><span class="series-attacks">${escapeHtml(item.attacks)}</span><span class="series-arrow" aria-hidden="true">↗</span></a>`).join("");
+  const frameworkRows = frameworkSteps.map((step) => `<tr><td>${step.index}</td><th scope="row">${step.title}</th><td>${step.body}</td><td>${step.output}</td></tr>`).join("");
+  const taxonomyBranches = groups.map((group) => `
+            <div class="tree-branch">
+              <p class="tree-branch-title"><span>${group.code}</span>${escapeHtml(group.name)}</p>
+              <ul class="tree-nodes">${group.categories.map((category) => `<li><a href="security_attacks/${category.code}.html"><strong>${category.code} ${escapeHtml(category.name)}</strong></a></li>`).join("")}</ul>
+            </div>`).join("");
   const payload = JSON.stringify({ suites: demoSuites, candidatesByProduct: candidateAttacks }).replaceAll("<", "\\u003c");
 
   const body = `
-    <main>
-      <header class="site-header" id="top">
-        <div class="eyebrow-row"><span>DATA PRODUCT PRIVACY LAB · 2026</span><span>衡量 / 决策 / 优化</span></div>
-        <p class="hero-kicker">产品化隐私风险演示与统一衡量</p>
-        <h1>数据产品<br />安全衡量框架</h1>
-        <p class="lead">从产品实际交付的结果出发，识别可见接口，匹配所有适用攻击，再把不同攻击结果汇总成可比较、可解释的产品风险结论。</p>
-        <div class="framework-strip" aria-label="衡量框架的四个环节">${frameworkStrip}</div>
-        <nav class="hero-nav" aria-label="页面目录"><a class="hero-cta" href="#framework">查看衡量流程 <span aria-hidden="true">↓</span></a><a href="#interactive-demo">直接进入 Demo</a></nav>
+    <main id="top">
+      <header class="site-header">
+        <h1>数据产品安全衡量框架</h1>
+        <p class="lead">以数据产品的实际交付形态为对象，演示产品如何被调用、适用攻击会造成什么结果，以及多个结果如何形成产品级结论。</p>
       </header>
 
-      <section class="section-block framework-section" id="framework">
-        <div class="section-heading"><span class="section-number">01</span><div><p class="section-kicker">MEASUREMENT FRAMEWORK</p><h2>从产品调用到风险结论</h2><p>页面内容严格按“表示—匹配—衡量—聚合”的主链组织；Demo 也完整复现同一条链路。</p></div></div>
-        <div class="framework-grid">${frameworkCards}</div>
-        <div class="framework-formula"><span>摘要聚合口径</span><strong>产品主结论 = max（各攻击对象隐私损失），并保留完整结果向量</strong><p>Demo 中未完成正式损失曲线配置的数字只标为“展示性结果强度”；平均值仅作辅助。</p></div>
-      </section>
+      <div class="document-layout">
+        <nav class="page-nav" aria-label="页面目录">
+          <h2>目录</h2>
+          <ol>
+            <li><a href="#framework">衡量框架</a></li>
+            <li><a href="#taxonomy">产品类别</a></li>
+            <li><a href="#interactive-demo">互动演示</a></li>
+          </ol>
+          <p class="toc-note">当前覆盖 5 个二级类别、${categoryCount} 个三级类别、3 个场景和 15 个可切换产品。</p>
+          <p class="toc-top"><a href="#top">返回页面顶部</a></p>
+        </nav>
 
-      <section id="taxonomy" class="section-block taxonomy-section">
-        <div class="section-heading"><span class="section-number">02</span><div><p class="section-kicker">UPDATED PRODUCT TAXONOMY</p><h2>当前覆盖的五个产品类别</h2><p>已按最新《数据产品隐私衡量项目摘要》更新：5 个二级类别、${categoryCount} 个三级类别。原“数据查询类”并入 0301 行业基础数据库；模型类改为按最终任务与输出划分；新增 0309 梯度类。</p></div></div>
-        <div class="taxonomy-overview" aria-label="数据资源产品分类概览">
-          <div class="taxonomy-root"><span>03</span><strong>数据资源产品</strong><small>当前框架覆盖范围</small></div><div class="taxonomy-line" aria-hidden="true"></div>
-          <div class="taxonomy-groups">${taxonomyCards}</div>
+        <div class="document-content">
+          <section id="framework">
+            <h2>一、衡量框架</h2>
+            <p class="intro">先把平台拆成可独立调用的产品，再根据其输入、输出与访问条件匹配攻击。每个适用攻击都执行并保留原始结果，最后形成可比较的产品级结论。</p>
+            <div class="chain-line">产品表示 → 攻击匹配 → 统一衡量 → 风险聚合</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th scope="col">步骤</th><th scope="col">环节</th><th scope="col">主要工作</th><th scope="col">输出</th></tr></thead>
+                <tbody>${frameworkRows}</tbody>
+              </table>
+            </div>
+            <div class="framework-note"><p><strong>聚合口径：</strong>产品主结论取各攻击对象结果的最大值，同时保留完整结果向量；平均值仅作辅助。Demo 中的 0—100 数字是展示性结果强度，不等同于正式隐私损失。</p></div>
+          </section>
+
+          <section id="taxonomy">
+            <h2>二、产品类别</h2>
+            <p class="intro">分类与《数据产品隐私衡量项目摘要》保持一致。当前覆盖 03 数据资源产品中的 5 个二级类别和 ${categoryCount} 个三级类别；点击细类可查看边界与主要攻击。</p>
+            <figure class="taxonomy-tree">
+              <figcaption>本框架当前覆盖的数据资源产品三级分类树</figcaption>
+              <div class="tree-root">03 数据资源产品（当前覆盖范围）</div>
+              <div class="tree-branches">${taxonomyBranches}</div>
+            </figure>
+          </section>
+
+          <section id="interactive-demo" aria-labelledby="lab-title">
+            <h2 id="lab-title">三、互动演示</h2>
+            <p class="lab-intro">先选择场景，再用上方按钮切换产品。页面会动画展示一次正常调用，随后对该产品执行所有适用攻击，并比较和聚合结果。</p>
+            <div id="privacy-lab-root"><p>正在载入互动演示…</p></div>
+            <div class="lab-note"><p><strong>结果说明：</strong>“已有实测”复用现有实验，“机制验证”表示已有代码或复现入口，“受控演示”用于展示流程。所有产品均为虚构，不连接真实业务系统。</p></div>
+          </section>
+
+          <footer class="site-footer"><p>数据产品安全衡量框架 · 研究用途</p><a href="#top">返回页面顶部</a></footer>
         </div>
-      </section>
-
-      <section class="lab-section" id="interactive-demo" aria-labelledby="lab-title">
-        <div class="section-heading lab-heading"><span class="section-number">03</span><div><p class="section-kicker">INTERACTIVE PRODUCT LAB</p><h2 id="lab-title">多类别产品 · 一站式攻击结果台</h2><p>选择一个业务场景，再切换其中的产品。正常调用会以动画呈现；页面随后自动执行该产品当前匹配到的全部攻击，并比较、聚合结果。</p></div></div>
-        <div id="privacy-lab-root"><p class="static-loading">正在载入互动产品实验室…</p></div>
-      </section>
-
-      <section id="existing" class="section-block evidence-section">
-        <div class="section-heading"><span class="section-number">04</span><div><p class="section-kicker">EXISTING EVIDENCE</p><h2>已完成内容与本页复用方式</h2><p>已有实验继续作为“已有实测”；新增产品使用“机制验证”或“受控演示”标识，并补充来源、协议与限制，避免把演示数字误写成真实业务结论。</p></div></div>
-        <div class="evidence-summary"><div><strong>3</strong><span>现有实测系列</span></div><div><strong>5</strong><span>更新后二级类别</span></div><div><strong>3</strong><span>多类别场景 Demo</span></div><div><strong>15</strong><span>可切换产品</span></div></div>
-        <div class="series-list">${seriesRows}</div>
-      </section>
-
-      <section class="section-block reading-guide" id="guide">
-        <div class="section-heading"><span class="section-number">05</span><div><p class="section-kicker">HOW TO READ</p><h2>如何理解页面中的结果</h2></div></div>
-        <div class="guide-grid"><article><span>已有实测</span><h3>来自现有固定实验结果</h3><p>直接复用仓库中已有的查询预算、恢复率、相似度或泄露率，并在 Demo 中标出来源层级。</p></article><article><span>机制验证</span><h3>攻击机制已实现或已有入口</h3><p>说明该类风险有实际代码或复现路径，但当前场景数字仍是受控适配，不外推到真实产品。</p></article><article><span>受控演示</span><h3>用于展示比较与聚合逻辑</h3><p>数字是虚构产品的展示性结果强度，不是归一隐私损失；真实产品必须配置基线、参考点与损失曲线后复测。</p></article></div>
-      </section>
-
-      <footer class="site-footer"><div><span>DATA PRODUCT PRIVACY LAB</span><strong>数据产品安全衡量框架</strong></div><p>研究用途 · 受控攻击 · 不连接真实业务系统</p><a href="#top">回到页首 ↑</a></footer>
+      </div>
     </main>
     <script>window.__PRIVACY_LAB_DATA__=${payload};</script>
     <script src="privacy-lab.js" defer></script>`;
@@ -244,10 +251,7 @@ function renderLegacyRedirect(oldCode: string, newCode: string) {
 
 async function main() {
   await mkdir(attackOutput, { recursive: true });
-  const sourceCss = await readFile(path.join(projectRoot, "app/globals.css"), "utf8");
-  const css = sourceCss.replace(/^@import\s+"tailwindcss";\s*/, "") + `
-.detail-footer { margin-top: 34px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; }
-`;
+  const css = await readFile(path.join(projectRoot, "scripts/privacy-lab-static.css"), "utf8");
   await writeFile(path.join(outputRoot, "index.html"), renderHome(), "utf8");
   await copyFile(path.join(projectRoot, "scripts/privacy-lab-static.js"), path.join(outputRoot, "privacy-lab.js"));
   await writeFile(path.join(attackOutput, "styles.css"), css, "utf8");

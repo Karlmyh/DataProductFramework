@@ -21,18 +21,15 @@
   };
 
   function aggregate(product) {
-    const familyMaximums = {};
     const objectVector = {};
     let sum = 0;
     for (const attack of product.attacks) {
       sum += attack.displayScore;
-      familyMaximums[attack.attackFamily] = Math.max(familyMaximums[attack.attackFamily] ?? 0, attack.displayScore);
       objectVector[attack.attackObject] = Math.max(objectVector[attack.attackObject] ?? 0, attack.displayScore);
     }
     return {
       average: Math.round(sum / product.attacks.length),
       maximum: Math.max(...Object.values(objectVector)),
-      familyMaximums: Object.entries(familyMaximums),
       objectVector: Object.entries(objectVector),
     };
   }
@@ -56,11 +53,11 @@
       <div class="product-stage template-${escapeHtml(product.template)}">
         <div class="product-summary">
           <div><span class="category-chip">${escapeHtml(product.category)} · ${escapeHtml(product.family)}</span><h3>${escapeHtml(product.name)}</h3><p>${escapeHtml(product.tagline)}</p></div>
-          <a href="security_attacks/${encodeURIComponent(product.category)}.html">查看类别边界 ↗</a>
+          <a href="security_attacks/${encodeURIComponent(product.category)}.html">查看类别说明</a>
         </div>
         <div class="call-console">
           <div class="request-card">
-            <span class="console-label">01 / INPUT · ${escapeHtml(product.inputLabel)}</span>
+            <span class="console-label">01 输入 · ${escapeHtml(product.inputLabel)}</span>
             <strong>${escapeHtml(product.inputValue)}</strong>
             <button type="button" data-rerun><span aria-hidden="true">▶</span> ${escapeHtml(product.callLabel)}</button>
           </div>
@@ -68,15 +65,15 @@
             ${product.flow.map((step, index) => `<div class="flow-node" data-flow="${index}"><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(step)}</strong>${index < product.flow.length - 1 ? '<i aria-hidden="true"></i>' : ""}</div>`).join("")}
           </div>
           <div class="response-card" aria-live="polite">
-            <span class="console-label">03 / OUTPUT · ${escapeHtml(product.outputLabel)}</span>
+            <span class="console-label">03 输出 · ${escapeHtml(product.outputLabel)}</span>
             <strong data-response-value>等待产品响应…</strong><p>${escapeHtml(product.outputDetail)}</p>
           </div>
         </div>
       </div>
       <div class="attack-results" aria-live="polite">
         <div class="results-head">
-          <div><span class="console-label">AUTOMATED EVALUATION</span><h3 data-results-title>正在匹配并执行适用攻击…</h3><p>攻击过程只保留一句话说明，重点比较最终泄露结果；匹配覆盖率、排除原因与证据范围均可核对。</p></div>
-          <span class="scope-note">受控、离线、虚构产品数据</span>
+          <div><span class="console-label">攻击结果</span><h3 data-results-title>正在匹配并执行适用攻击…</h3><p>攻击方式只作简要说明，重点展示最终结果及产品级聚合结论。</p></div>
+          <span class="scope-note">受控离线演示</span>
         </div>
         <div class="attack-output"><div class="attack-loading" role="status"><span>正在冻结权限、先验与查询预算</span><i></i><i></i><i></i></div></div>
       </div>`;
@@ -124,11 +121,8 @@
         <div><strong>${candidates.length}</strong><span>候选攻击</span></div>
         <div><strong>${applicableCount}</strong><span>条件适用</span></div>
         <div><strong>${executedCount}</strong><span>已执行</span></div>
-        <p><b>${executedCount === applicableCount ? "全部适用攻击均已执行" : "仍有适用攻击待执行"}</b><span>统计由下方逐项候选清单生成。</span></p>
+        <p><b>${executedCount === applicableCount ? "全部适用攻击均已执行" : "仍有适用攻击待执行"}</b></p>
       </div>
-      <ul class="candidate-list" aria-label="候选攻击适用性与执行清单">
-        ${candidates.map((candidate) => `<li class="${candidate.executed ? "executed" : "excluded"}"><span>${candidate.executed ? "已执行" : "已排除"}</span><strong>${escapeHtml(candidate.name)}</strong><p>${escapeHtml(candidate.reason)}</p></li>`).join("")}
-      </ul>
       <div class="attack-grid">
         ${product.attacks.map((attack, index) => `
           <article class="attack-card" style="transition-delay:${index * 90}ms">
@@ -141,13 +135,10 @@
           </article>`).join("")}
       </div>
       <div class="aggregate-panel">
-        <div class="aggregate-title"><span>PRODUCT RESULT VECTOR / 聚合结论</span><h3>${escapeHtml(product.name)}</h3><p>先在攻击家族内取最大值，再按攻击对象保留完整向量；产品主结论取对象向量最大值，平均值只作辅助。本页强度用于互动比较，尚未配置 R₀、R* 与损失曲线，不等同正式隐私损失。</p></div>
-        <div class="aggregate-metrics"><div><span>平均结果强度</span><strong>${result.average}</strong><small>辅助统计</small></div><div class="result-primary"><span>最高结果强度</span><strong>${result.maximum}</strong><small>当前主结论</small></div><div><span>正式隐私损失</span><strong>—</strong><small>待校准</small></div></div>
+        <div class="aggregate-title"><div><span>产品聚合结论</span><h3>${escapeHtml(product.name)}</h3></div><p>主结论取攻击对象结果向量中的最大值；平均值仅用于辅助比较。当前数字是展示性结果强度，尚未配置基线与损失曲线。</p></div>
+        <div class="aggregate-summary"><div><span>平均结果强度</span><strong>${result.average}</strong><small>辅助统计</small></div><div><span>最高结果强度</span><strong>${result.maximum}</strong><small>当前主结论</small></div><div><span>正式隐私损失</span><strong>—</strong><small>待校准</small></div></div>
         <div class="comparison-chart" aria-label="攻击结果横向比较">${product.attacks.map((attack) => `<div class="comparison-row"><span>${escapeHtml(attack.name)}</span><div><i style="width:${attack.displayScore}%"></i></div><strong>${attack.displayScore}</strong></div>`).join("")}</div>
-        <div class="aggregation-audit" aria-label="攻击家族与攻击对象聚合审计">
-          <div><span>01 / 攻击家族最大值</span><ul>${result.familyMaximums.map(([label, value]) => `<li><b>${escapeHtml(label)}</b><strong>${value}</strong></li>`).join("")}</ul></div>
-          <div><span>02 / 攻击对象结果向量</span><ul>${result.objectVector.map(([label, value]) => `<li><b>${escapeHtml(label)}</b><strong>${value}</strong></li>`).join("")}</ul></div>
-        </div>
+        <div class="result-vector" aria-label="攻击对象结果向量"><span>攻击对象结果向量</span><ul>${result.objectVector.map(([label, value]) => `<li><b>${escapeHtml(label)}</b><strong>${value}</strong></li>`).join("")}</ul></div>
       </div>`;
   }
 
