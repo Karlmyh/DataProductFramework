@@ -44,11 +44,9 @@ test("uses GitHub Pages-relative assets and includes social metadata", async () 
   ]);
   assert.match(html, /src="privacy-lab\.js"/);
   assert.match(html, /href="security_attacks\/styles\.css"/);
-  assert.match(html, /https:\/\/karlmyh\.github\.io\/DataProductFramework\/og-privacy-lab\.jpg/);
   assert.doesNotMatch(html, /chatgpt\.site/);
   assert.doesNotMatch(html, /href="\/attacks\//);
   assert.doesNotMatch(css, /@import\s+"tailwindcss"/);
-  await access(new URL("og-privacy-lab.jpg", pagesRoot));
 });
 
 test("keeps intentionally retired evidence pages offline and links to Git history", async () => {

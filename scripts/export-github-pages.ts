@@ -151,11 +151,9 @@ function renderHome() {
     <meta property="og:description" content="五类数据产品 · 互动调用演示 · 多攻击结果聚合" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${publicBase}/" />
-    <meta property="og:image" content="${publicBase}/og-privacy-lab.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="数据产品安全衡量框架" />
-    <meta name="twitter:description" content="五类数据产品 · 互动调用演示 · 多攻击结果聚合" />
-    <meta name="twitter:image" content="${publicBase}/og-privacy-lab.jpg" />`,
+    <meta name="twitter:description" content="五类数据产品 · 互动调用演示 · 多攻击结果聚合" />`,
   });
 }
 
@@ -252,7 +250,6 @@ async function main() {
 `;
   await writeFile(path.join(outputRoot, "index.html"), renderHome(), "utf8");
   await copyFile(path.join(projectRoot, "scripts/privacy-lab-static.js"), path.join(outputRoot, "privacy-lab.js"));
-  await copyFile(path.join(projectRoot, "public/og-privacy-lab.jpg"), path.join(outputRoot, "og-privacy-lab.jpg"));
   await writeFile(path.join(attackOutput, "styles.css"), css, "utf8");
   await Promise.all(categories.map((category, index) =>
     writeFile(path.join(attackOutput, `${category.code}.html`), renderAttackPage(category, index), "utf8")
