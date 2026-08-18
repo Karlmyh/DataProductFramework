@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="标签、置信度与生成结果可暴露训练成员、人物原型和模型边界。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030702.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030702 图像视频理解与生成服务攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0307 模型类数据产品</span><span>/</span>
+          <strong>030702</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030702</span>
+        <h1>图像视频理解与生成服务<br />攻击页面</h1>
+        <p class="lead">交付分类识别、检测分割、场景动作理解或图像视频生成修复能力。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>交付分类识别、检测分割、场景动作理解或图像视频生成修复能力。</p></div>
+          <div class="fact"><span>主要暴露</span><p>标签、置信度与生成结果可暴露训练成员、人物原型和模型边界。</p></div>
+          <div class="fact"><span>分类边界</span><p>产品承诺是固定模型能力；只做人脸同一性事实确认时归入 030402。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>图像分类与识别</li><li>目标检测与分割</li><li>场景与动作理解</li><li>图像视频生成与修复</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>图像成员推断</strong></li>
+                <li><span>02</span><strong>模型反演</strong></li>
+                <li><span>03</span><strong>训练样本提取</strong></li>
+                <li><span>04</span><strong>模型抽取</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/membership_inference_demo/" target="_blank" rel="noreferrer">
+              <strong>成员推断评估</strong><span>图像模型的标签稳定性与边界成员信号。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030701.html"><small>← 上一个类别</small><strong>030701 文本生成与语言处理服务</strong></a>
+        <a href="030703.html"><small>下一个类别 →</small><strong>030703 语音识别与合成服务</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

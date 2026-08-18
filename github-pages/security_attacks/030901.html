@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="梯度可能泄露训练样本、标签、成员身份、敏感属性与参与方信息。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030901.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030901 梯度类数据产品攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0309 其他数据产品</span><span>/</span>
+          <strong>030901</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030901</span>
+        <h1>梯度类数据产品<br />攻击页面</h1>
+        <p class="lead">交付单方梯度、批次梯度、参数增量或聚合、受保护后的梯度结果。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>交付单方梯度、批次梯度、参数增量或聚合、受保护后的梯度结果。</p></div>
+          <div class="fact"><span>主要暴露</span><p>梯度可能泄露训练样本、标签、成员身份、敏感属性与参与方信息。</p></div>
+          <div class="fact"><span>分类边界</span><p>固定模型或模型调用归入 0307；训练过程单独交付的更新结果归入本类。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>单方梯度</li><li>批次梯度</li><li>参数增量</li><li>聚合或受保护梯度</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>梯度重建</strong></li>
+                <li><span>02</span><strong>标签泄露</strong></li>
+                <li><span>03</span><strong>群体属性推断</strong></li>
+                <li><span>04</span><strong>恶意更新与后门</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/method_library/" target="_blank" rel="noreferrer">
+              <strong>攻击方法库</strong><span>检索梯度反演、属性推断与联邦训练攻击。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030706.html"><small>← 上一个类别</small><strong>030706 模型蒸馏服务</strong></a>
+        <a href="030101.html"><small>下一个类别 →</small><strong>030101 存在性查询</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

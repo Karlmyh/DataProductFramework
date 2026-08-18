@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="输出可能泄露训练成员、记忆语料、系统提示、检索上下文与模型能力。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030701.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030701 文本生成与语言处理服务攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0307 模型类数据产品</span><span>/</span>
+          <strong>030701</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030701</span>
+        <h1>文本生成与语言处理服务<br />攻击页面</h1>
+        <p class="lead">交付文本理解、翻译转换、生成摘要、问答或对话能力。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>交付文本理解、翻译转换、生成摘要、问答或对话能力。</p></div>
+          <div class="fact"><span>主要暴露</span><p>输出可能泄露训练成员、记忆语料、系统提示、检索上下文与模型能力。</p></div>
+          <div class="fact"><span>分类边界</span><p>最终交付模型生成结果；仅返回检索记录的产品归入 0301。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>文本理解与分类</li><li>机器翻译与转换</li><li>文本生成与摘要</li><li>问答与对话</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>训练数据提取</strong></li>
+                <li><span>02</span><strong>成员推断</strong></li>
+                <li><span>03</span><strong>提示与上下文泄露</strong></li>
+                <li><span>04</span><strong>模型抽取</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9" target="_blank" rel="noreferrer">
+              <strong>RAG 隐私演示</strong><span>多轮问答中的语料外泄与成员风险。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030503.html"><small>← 上一个类别</small><strong>030503 集合参照排名与相对位置</strong></a>
+        <a href="030702.html"><small>下一个类别 →</small><strong>030702 图像视频理解与生成服务</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>

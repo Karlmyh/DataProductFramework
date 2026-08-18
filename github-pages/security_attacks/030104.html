@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="相邻查询差、重叠区间和大量线性聚合可消去群体贡献并恢复个体信息。" />
+    <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030104.html" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>030104 聚合统计查询攻击｜数据产品安全衡量框架</title>
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5ZH8RB1RV4');
+    </script>
+  </head>
+  <body>
+    <main class="detail-main">
+      <header class="detail-header">
+        <nav class="breadcrumbs" aria-label="面包屑">
+          <a href="../">分类树</a><span>/</span>
+          <span>0301 行业基础数据库类数据产品</span><span>/</span>
+          <strong>030104</strong>
+        </nav>
+        <span class="category-code">攻击面 · 030104</span>
+        <h1>聚合统计查询<br />攻击页面</h1>
+        <p class="lead">对匹配子集计算计数、比例、分组汇总、分布或其他统计摘要。</p>
+      </header>
+
+      <section class="detail-section">
+        <h2>攻击面判定</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>核心交付</span><p>对匹配子集计算计数、比例、分组汇总、分布或其他统计摘要。</p></div>
+          <div class="fact"><span>主要暴露</span><p>相邻查询差、重叠区间和大量线性聚合可消去群体贡献并恢复个体信息。</p></div>
+          <div class="fact"><span>分类边界</span><p>响应为统计摘要；若直接返回记录或字段值，归入 030102。</p></div>
+        </div>
+      </section>
+
+      <section class="detail-section detail-columns">
+        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>标量聚合</li><li>分组与交叉表</li><li>多维聚合</li><li>分布与分位摘要</li></ol></div>
+        <div><h2>主要攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>相邻查询差分</strong></li>
+                <li><span>02</span><strong>平均与线性系统重建</strong></li>
+                <li><span>03</span><strong>区间查询重建</strong></li>
+                <li><span>04</span><strong>预算组合攻击</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>攻击文档与实验入口</h2>
+        <div class="reference-list">
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/product_attack_docs/knowledge/aggregate-query-differencing.html" target="_blank" rel="noreferrer">
+              <strong>差分重建</strong><span>让相邻聚合相减，暴露个体贡献。</span><b aria-hidden="true">↗</b>
+            </a>
+            <a class="reference-link" href="https://github.com/Karlmyh/DataProductFramework/tree/9394efeddab45409657fe79996de985b5e31c1a9/product_attack_docs/knowledge/averaging-linear-reconstruction.html" target="_blank" rel="noreferrer">
+              <strong>平均与线性重建</strong><span>用聚合响应组成方程组恢复记录。</span><b aria-hidden="true">↗</b>
+            </a>
+        </div>
+      </section>
+
+      <nav class="detail-nav" aria-label="相邻类别">
+        <a href="030103.html"><small>← 上一个类别</small><strong>030103 关系发现与路径查询</strong></a>
+        <a href="030105.html"><small>下一个类别 →</small><strong>030105 派生与处理查询</strong></a>
+      </nav>
+      <footer class="detail-footer"><a href="../">返回数据产品安全衡量框架</a></footer>
+    </main></body>
+</html>
