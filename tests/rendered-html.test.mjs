@@ -1,91 +1,108 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
-const templateRoot = new URL("../", import.meta.url);
-const previewRoot = new URL("../app/_sites-preview/", import.meta.url);
-
-async function render() {
+async function render(pathname = "/", headers = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
+  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${pathname}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
+    new Request(`http://localhost${pathname}`, { headers: { accept: "text/html", ...headers } }),
+    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
+    { waitUntil() {}, passThroughOnException() {} },
   );
 }
 
-test("server-renders the starter loading skeleton", async () => {
+test("renders the measurement framework and updated product taxonomy", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, developmentPreviewMeta);
-  assert.match(html, /<title>Your site is taking shape<\/title>/i);
-  assert.match(html, /Building your site/);
-  assert.match(html, /Your site is taking shape/);
-  assert.match(
-    html,
-    /Your first version will appear here automatically when it’s ready\./,
-  );
-  assert.doesNotMatch(html, /Codex/);
-  assert.match(html, /react-loading-skeleton/);
-  assert.match(html, /role="status"/);
+  assert.match(html, /数据产品安全衡量框架/);
+  assert.match(html, /产品表示/);
+  assert.match(html, /攻击匹配/);
+  assert.match(html, /统一衡量/);
+  assert.match(html, /风险聚合/);
+
+  for (const category of [
+    "0301",
+    "行业基础数据库类数据产品",
+    "0304",
+    "核验类数据产品",
+    "0305",
+    "指标型数据产品",
+    "0307",
+    "模型类数据产品",
+    "0309",
+    "梯度类数据产品",
+  ]) assert.match(html, new RegExp(category));
+
+  assert.doesNotMatch(html, /0306 数据查询类/);
+  assert.doesNotMatch(html, /codex-preview|Building your site|Starter Project/i);
 });
 
-test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, files] = await Promise.all([
-    readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
-    readFile(new URL("preview.css", previewRoot), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readdir(previewRoot),
+test("server-renders all three multi-product demos and aggregation language", async () => {
+  const html = await (await render()).text();
+  for (const suite of ["金融数据协作中心", "城市公共服务平台", "智能内容服务台"]) {
+    assert.match(html, new RegExp(suite));
+  }
+  assert.match(html, /15/);
+  assert.match(html, /匹配到的全部攻击/);
+  assert.match(html, /主结论 = max/);
+  assert.match(html, /完整结果向量/);
+  assert.match(html, /展示性结果强度/);
+  assert.match(html, /不是归一隐私损失/);
+  assert.match(html, /已有实测/);
+  assert.match(html, /机制验证/);
+  assert.match(html, /受控演示/);
+});
+
+test("renders representative category detail routes with route-specific metadata", async () => {
+  for (const [path, title, attack] of [
+    ["/attacks/030101", "存在性查询", "自适应群组测试"],
+    ["/attacks/030705", "多模态综合模型服务", "多模态提示注入"],
+    ["/attacks/030901", "梯度类数据产品", "梯度重建"],
+  ]) {
+    const response = await render(path);
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.match(html, new RegExp(title));
+    assert.match(html, new RegExp(attack));
+    assert.match(html, new RegExp(`<title>${title === "梯度类数据产品" ? "030901 梯度类数据产品" : path.slice(-6) + " " + title}攻击`));
+    assert.doesNotMatch(html, /og\.png/);
+  }
+});
+
+test("returns a real 404 for unknown category codes", async () => {
+  const response = await render("/attacks/not-real");
+  assert.equal(response.status, 404);
+});
+
+test("falls back safely when a forwarded host contains an invalid port", async () => {
+  const response = await render("/", { "x-forwarded-host": "safe.example:65536" });
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /<title>数据产品安全衡量框架<\/title>/);
+  assert.match(html, /og-privacy-lab\.png/);
+});
+
+test("source keeps the product-switch interaction and accessible state", async () => {
+  const [lab, data] = await Promise.all([
+    readFile(new URL("../app/demo-lab.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/demo-data.ts", import.meta.url), "utf8"),
   ]);
-
-  assert.deepEqual(files.sort(), ["SkeletonPreview.tsx", "preview.css"]);
-  assert.match(preview, /from "react-loading-skeleton"/);
-  assert.match(preview, /baseColor="#eceae7"/);
-  assert.match(preview, /highlightColor="#f9f8f6"/);
-  assert.match(preview, /duration=\{2\.8\}/);
-  assert.match(preview, /sites-skeleton-search-placeholder/);
-  assert.match(packageJson, /"react-loading-skeleton": "3\.5\.0"/);
-
-  const shellIndex = preview.indexOf('className="sites-skeleton-shell"');
-  const statusIndex = preview.indexOf('className="sites-skeleton-status"');
-  assert.ok(shellIndex >= 0 && statusIndex > shellIndex);
-  assert.match(css, /position:\s*fixed/);
-  assert.match(css, /inset:\s*0/);
-  assert.match(css, /opacity:\s*0\.52/);
-  assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(css, /#020617|canvas|pets|progress/i);
-  assert.doesNotMatch(
-    preview,
-    /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
-  );
-
-  assert.match(page, /export const metadata:\s*Metadata/);
-  assert.match(page, /"codex-preview": "development"/);
-  assert.match(page, /<SkeletonPreview \/>/);
-  assert.match(layout, /title:\s*"Starter Project"/);
-  assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
-  assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
-
-  await assert.rejects(
-    access(new URL("public/_sites-preview", templateRoot)),
-  );
+  assert.match(lab, /aria-pressed/);
+  assert.doesNotMatch(lab, /role="tab(list)?"/);
+  assert.match(lab, /aria-live="polite"/);
+  assert.match(lab, /product\.attacks\.map/);
+  assert.match(lab, /Math\.max/);
+  assert.match(lab, /candidateAttacks/);
+  assert.match(lab, /objectVector/);
+  assert.match(lab, /familyMaximums/);
+  assert.match(data, /applicable: boolean/);
+  assert.match(data, /attackFamily/);
+  assert.doesNotMatch(lab, /average \* 0\.4 \+ maximum \* 0\.6/);
+  assert.equal((data.match(/id: "(finance|city|content)-/g) ?? []).length, 15);
 });

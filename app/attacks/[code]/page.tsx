@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import { categories, findCategory } from "../../data";
 
 type PageProps = { params: Promise<{ code: string }> };
@@ -10,25 +12,23 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { code } = await params;
   const category = findCategory(code);
-  return category
-    ? { title: category.code + " " + category.name + "攻击", description: category.exposure }
-    : { title: "攻击类别未找到" };
+  if (!category) return { title: "攻击类别未找到" };
+
+  const title = `${category.code} ${category.name}攻击`;
+  const description = category.exposure;
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: [] },
+    twitter: { title, description, images: [] },
+  };
 }
 
 export default async function AttackPage({ params }: PageProps) {
   const { code } = await params;
   const category = findCategory(code);
 
-  if (!category) {
-    return (
-      <main className="detail-main">
-        <header className="detail-header">
-          <a href="/">← 返回分类树</a>
-          <h1>未找到该类别</h1>
-        </header>
-      </main>
-    );
-  }
+  if (!category) notFound();
 
   const currentIndex = categories.findIndex((item) => item.code === code);
   const previous = categories[(currentIndex - 1 + categories.length) % categories.length];
@@ -38,11 +38,11 @@ export default async function AttackPage({ params }: PageProps) {
     <main className="detail-main">
       <header className="detail-header">
         <nav className="breadcrumbs" aria-label="面包屑">
-          <a href="/">分类树</a><span>/</span>
+          <Link href="/">分类树</Link><span>/</span>
           <span>{category.group.code} {category.group.name}</span><span>/</span>
           <strong>{category.code}</strong>
         </nav>
-        <span className="category-code">ATTACK SURFACE · {category.code}</span>
+        <span className="category-code">攻击面 · {category.code}</span>
         <h1>{category.name}<br />攻击页面</h1>
         <p className="lead">{category.definition}</p>
       </header>
@@ -58,7 +58,7 @@ export default async function AttackPage({ params }: PageProps) {
 
       <section className="detail-section detail-columns">
         <div>
-          <h2>三级产品分支</h2>
+          <h2>四级产品分支</h2>
           <ol className="numbered-list">
             {category.children.map((child) => <li key={child}>{child}</li>)}
           </ol>
@@ -85,8 +85,8 @@ export default async function AttackPage({ params }: PageProps) {
       </section>
 
       <nav className="detail-nav" aria-label="相邻类别">
-        <a href={"/attacks/" + previous.code}><small>← 上一个类别</small><strong>{previous.code} {previous.name}</strong></a>
-        <a href={"/attacks/" + next.code}><small>下一个类别 →</small><strong>{next.code} {next.name}</strong></a>
+        <Link href={"/attacks/" + previous.code}><small>← 上一个类别</small><strong>{previous.code} {previous.name}</strong></Link>
+        <Link href={"/attacks/" + next.code}><small>下一个类别 →</small><strong>{next.code} {next.name}</strong></Link>
       </nav>
     </main>
   );
