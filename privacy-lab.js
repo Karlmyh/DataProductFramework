@@ -84,6 +84,43 @@
     return residentStore.records.filter((record) => residentConditions.every((condition) => recordMatchesCondition(record, condition)));
   }
 
+  function restrictiveDefaultCondition() {
+    const usedFields = new Set(residentConditions.map((condition) => condition.field));
+    const availableFields = residentStore.schema.filter((field) => !usedFields.has(field.key));
+    const currentMatches = queryResidents();
+    const fallbackField = availableFields[0];
+    if (!fallbackField) return null;
+
+    const candidates = availableFields.flatMap((field) => {
+      const values = field.type === "number"
+        ? Array.from({ length: Number(field.max) - Number(field.min) + 1 }, (_, index) => String(Number(field.min) + index))
+        : field.values.map(String);
+      return values.map((value) => ({ field: field.key, operator: "eq", value }));
+    });
+
+    if (currentMatches.length === 0) {
+      return { field: fallbackField.key, operator: operatorsFor(fallbackField)[0].id, value: conditionDefault(fallbackField) };
+    }
+
+    const ranked = candidates.map((condition, order) => ({
+      condition,
+      order,
+      count: currentMatches.filter((record) => recordMatchesCondition(record, condition)).length,
+    }));
+    const targetCount = Math.max(1, Math.floor(currentMatches.length / 2));
+    const narrowing = ranked
+      .filter(({ count }) => count > 0 && count < currentMatches.length)
+      .sort((left, right) => Math.abs(left.count - targetCount) - Math.abs(right.count - targetCount) || left.order - right.order)[0];
+    if (narrowing) return narrowing.condition;
+
+    const eliminating = ranked.find(({ count }) => count === 0);
+    return eliminating?.condition ?? {
+      field: fallbackField.key,
+      operator: operatorsFor(fallbackField)[0].id,
+      value: conditionDefault(fallbackField),
+    };
+  }
+
   const withCurrentInput = (product) => {
     if (product.id !== "city-existence") return { ...product, inputValue: inputValue.trim() || product.inputValue };
     const matches = queryResidents();
@@ -468,10 +505,9 @@
       refreshProductControl();
       resetAfterControlEdit();
     } else if (target?.closest("[data-add-condition]")) {
-      const usedFields = new Set(residentConditions.map((condition) => condition.field));
-      const field = residentStore.schema.find((candidate) => !usedFields.has(candidate.key)) ?? residentStore.schema[0];
-      if (field && residentConditions.length < residentStore.schema.length) {
-        residentConditions.push({ field: field.key, operator: operatorsFor(field)[0].id, value: conditionDefault(field) });
+      const condition = restrictiveDefaultCondition();
+      if (condition && residentConditions.length < residentStore.schema.length) {
+        residentConditions.push(condition);
         refreshProductControl();
         resetAfterControlEdit();
       }

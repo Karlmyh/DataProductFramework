@@ -10,7 +10,7 @@
     { key: "housing", label: "居住类型", type: "enum", values: ["自有", "租住", "保障房"] },
   ];
 
-  const records = [
+  const seedRecords = [
     ["R-1001", "01", 29, "中", "服务业", 2, "无", "城镇职工", "租住", "H-201", "E-11"],
     ["R-1002", "03", 64, "低", "退休", 1, "有效", "城乡居民", "保障房", "H-202", null],
     ["R-1003", "05", 41, "高", "自由职业", 3, "无", "城镇职工", "自有", "H-203", "E-19"],
@@ -35,7 +35,40 @@
     ["R-1022", "01", 46, "中", "制造业", 4, "无", "城镇职工", "自有", "H-222", "E-08"],
     ["R-1023", "03", 31, "低", "无业", 2, "有效", "城乡居民", "租住", "H-223", null],
     ["R-1024", "05", 76, "中", "退休", 2, "无", "城镇职工", "自有", "H-224", null],
-  ].map(([residentId, street, age, incomeBand, occupation, householdSize, subsidyStatus, insurance, housing, householdId, employerId]) => ({
+  ];
+
+  const streets = ["01", "03", "05", "07", "09"];
+  const incomeBands = ["低", "中", "高"];
+  const occupations = ["退休", "制造业", "服务业", "自由职业", "学生", "无业"];
+  const subsidyStatuses = ["有效", "暂停", "无"];
+  const insurances = ["城镇职工", "城乡居民", "未参保"];
+  const housingTypes = ["自有", "租住", "保障房"];
+  const employerCodes = {
+    "制造业": "E-08",
+    "服务业": "E-11",
+    "自由职业": "E-19",
+  };
+
+  const generatedRecords = Array.from({ length: 76 }, (_, offset) => {
+    const serial = 1025 + offset;
+    const age = 18 + ((offset * 11 + 7) % 73);
+    const occupation = occupations[(offset * 5 + Math.floor(age / 10)) % occupations.length];
+    return [
+      `R-${serial}`,
+      streets[(offset * 3 + 1) % streets.length],
+      age,
+      incomeBands[(offset * 2 + Math.floor(age / 15)) % incomeBands.length],
+      occupation,
+      1 + ((offset * 5 + 2) % 6),
+      subsidyStatuses[(offset * 2 + Math.floor(age / 20)) % subsidyStatuses.length],
+      insurances[(offset + Math.floor(age / 18)) % insurances.length],
+      housingTypes[(offset * 2 + Math.floor(age / 25)) % housingTypes.length],
+      `H-${200 + serial - 1000}`,
+      employerCodes[occupation] ?? null,
+    ];
+  });
+
+  const records = [...seedRecords, ...generatedRecords].map(([residentId, street, age, incomeBand, occupation, householdSize, subsidyStatus, insurance, housing, householdId, employerId]) => ({
     residentId,
     street,
     age,
