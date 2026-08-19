@@ -43,16 +43,15 @@
             <span>${escapeHtml(item.code)}</span><strong>${escapeHtml(item.name)}</strong>
           </button>`).join("")}
       </div>
-      <div class="suite-context"><span>${escapeHtml(suite.code)}</span><p>${escapeHtml(suite.description)}</p></div>
       <div class="product-switcher" aria-label="${escapeHtml(suite.name)}产品切换">
         ${suite.products.map((item, index) => `
           <button type="button" data-product="${index}" aria-pressed="${productIndex === index}" class="${productIndex === index ? "active" : ""}">
-            <span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.family)}</small>
+            <span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.name)}</strong>
           </button>`).join("")}
       </div>
       <div class="product-stage template-${escapeHtml(product.template)}">
         <div class="product-summary">
-          <div><span class="category-chip">${escapeHtml(product.category)} · ${escapeHtml(product.family)}</span><h3>${escapeHtml(product.name)}</h3><p>${escapeHtml(product.tagline)}</p></div>
+          <div><span class="category-chip">${escapeHtml(product.category)} · ${escapeHtml(product.family)}</span><h3>${escapeHtml(product.name)}</h3></div>
           <a href="security_attacks/${encodeURIComponent(product.category)}.html">查看类别说明</a>
         </div>
         <div class="call-console">
@@ -72,7 +71,7 @@
       </div>
       <div class="attack-results" aria-live="polite">
         <div class="results-head">
-          <div><span class="console-label">攻击结果</span><h3 data-results-title>正在匹配并执行适用攻击…</h3><p>攻击方式只作简要说明，重点展示最终结果及产品级聚合结论。</p></div>
+          <div><span class="console-label">攻击结果</span><h3 data-results-title>正在匹配并执行适用攻击…</h3></div>
           <span class="scope-note">受控离线演示</span>
         </div>
         <div class="attack-output"><div class="attack-loading" role="status"><span>正在冻结权限、先验与查询预算</span><i></i><i></i><i></i></div></div>
@@ -135,7 +134,7 @@
           </article>`).join("")}
       </div>
       <div class="aggregate-panel">
-        <div class="aggregate-title"><div><span>产品聚合结论</span><h3>${escapeHtml(product.name)}</h3></div><p>主结论取攻击对象结果向量中的最大值；平均值仅用于辅助比较。当前数字是展示性结果强度，尚未配置基线与损失曲线。</p></div>
+        <div class="aggregate-title"><div><span>产品聚合结论</span><h3>${escapeHtml(product.name)}</h3></div></div>
         <div class="aggregate-summary"><div><span>平均结果强度</span><strong>${result.average}</strong><small>辅助统计</small></div><div><span>最高结果强度</span><strong>${result.maximum}</strong><small>当前主结论</small></div><div><span>正式隐私损失</span><strong>—</strong><small>待校准</small></div></div>
         <div class="comparison-chart" aria-label="攻击结果横向比较">${product.attacks.map((attack) => `<div class="comparison-row"><span>${escapeHtml(attack.name)}</span><div><i style="width:${attack.displayScore}%"></i></div><strong>${attack.displayScore}</strong></div>`).join("")}</div>
         <div class="result-vector" aria-label="攻击对象结果向量"><span>攻击对象结果向量</span><ul>${result.objectVector.map(([label, value]) => `<li><b>${escapeHtml(label)}</b><strong>${value}</strong></li>`).join("")}</ul></div>
