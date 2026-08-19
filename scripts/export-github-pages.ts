@@ -95,7 +95,6 @@ function renderHome() {
     <main id="top">
       <header class="site-header">
         <h1>数据产品安全衡量框架</h1>
-        <p class="lead">以数据产品的实际交付形态为对象，演示产品如何被调用、适用攻击会造成什么结果，以及多个结果如何形成产品级结论。</p>
       </header>
 
       <div class="document-layout">
@@ -113,7 +112,6 @@ function renderHome() {
         <div class="document-content">
           <section id="framework">
             <h2>一、衡量框架</h2>
-            <p class="intro">先把平台拆成可独立调用的产品，再根据其输入、输出与访问条件匹配攻击。每个适用攻击都执行并保留原始结果，最后形成可比较的产品级结论。</p>
             <div class="chain-line">产品表示 → 攻击匹配 → 统一衡量 → 风险聚合</div>
             <div class="table-wrap">
               <table>
@@ -121,24 +119,20 @@ function renderHome() {
                 <tbody>${frameworkRows}</tbody>
               </table>
             </div>
-            <div class="framework-note"><p><strong>聚合口径：</strong>产品主结论取各攻击对象结果的最大值，同时保留完整结果向量；平均值仅作辅助。Demo 中的 0—100 数字是展示性结果强度，不等同于正式隐私损失。</p></div>
           </section>
 
           <section id="taxonomy">
             <h2>二、产品类别</h2>
-            <p class="intro">分类与《数据产品隐私衡量项目摘要》保持一致。当前覆盖 03 数据资源产品中的 5 个二级类别和 ${categoryCount} 个三级类别；点击细类可查看边界与主要攻击。</p>
             <figure class="taxonomy-tree">
               <figcaption>本框架当前覆盖的数据资源产品三级分类树</figcaption>
-              <div class="tree-root">03 数据资源产品（当前覆盖范围）</div>
+              <div class="tree-root">03 数据资源产品</div>
               <div class="tree-branches">${taxonomyBranches}</div>
             </figure>
           </section>
 
           <section id="interactive-demo" aria-labelledby="lab-title">
             <h2 id="lab-title">三、互动演示</h2>
-            <p class="lab-intro">先选择场景，再用上方按钮切换产品。页面会动画展示一次正常调用，随后对该产品执行所有适用攻击，并比较和聚合结果。</p>
             <div id="privacy-lab-root"><p>正在载入互动演示…</p></div>
-            <div class="lab-note"><p><strong>结果说明：</strong>“已有实测”复用现有实验，“机制验证”表示已有代码或复现入口，“受控演示”用于展示流程。所有产品均为虚构，不连接真实业务系统。</p></div>
           </section>
 
           <footer class="site-footer"><p>数据产品安全衡量框架 · 研究用途</p><a href="#top">返回页面顶部</a></footer>

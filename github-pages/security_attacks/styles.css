@@ -39,14 +39,6 @@ main {
   line-height: 1.35;
   letter-spacing: .03em;
 }
-.site-header .lead {
-  max-width: 1040px;
-  margin: 0;
-  font-size: 20px;
-  line-height: 1.75;
-  font-weight: 700;
-}
-
 .document-layout {
   display: grid;
   grid-template-columns: 248px minmax(0, 1040px);
@@ -91,7 +83,6 @@ main {
 .document-content h2 { margin-bottom: 18px; font-size: 25px; line-height: 1.45; }
 .document-content h3 { margin: 24px 0 10px; font-size: 20px; line-height: 1.5; }
 .document-content p { margin-bottom: 14px; text-align: justify; text-justify: inter-ideograph; }
-.intro { max-width: 900px; }
 .muted { color: var(--muted); font-size: 14px; }
 .chain-line {
   margin: 20px 0 22px;
@@ -105,14 +96,6 @@ main {
 table { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.6; }
 th, td { padding: 10px 12px; vertical-align: top; text-align: left; border: 1px solid var(--ink); }
 th { font-weight: 700; }
-.framework-note {
-  margin: 16px 0 0;
-  padding: 13px 16px;
-  border-left: 4px solid var(--ink);
-  font-size: 14px;
-}
-.framework-note p:last-child { margin-bottom: 0; }
-
 .taxonomy-tree {
   margin: 24px 0 8px;
   padding: 22px;
@@ -185,7 +168,6 @@ th { font-weight: 700; }
 .tree-nodes a:hover strong { text-decoration: underline; }
 .tree-nodes strong { display: block; }
 
-.lab-intro { margin-bottom: 20px; }
 .suite-switcher, .product-switcher { display: grid; border: 1px solid var(--ink); }
 .suite-switcher { grid-template-columns: repeat(3, 1fr); }
 .product-switcher { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 16px; }
@@ -209,15 +191,10 @@ th { font-weight: 700; }
   letter-spacing: .07em;
 }
 .suite-switcher strong, .product-switcher strong { display: block; font-size: 15px; line-height: 1.35; }
-.product-switcher small { display: block; margin-top: 5px; color: inherit; opacity: .7; font-size: 10px; line-height: 1.35; }
-.suite-context { display: grid; grid-template-columns: 92px 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--ink); }
-.suite-context span { font: 700 11px Arial, sans-serif; }
-.suite-context p { margin: 0; color: var(--muted); font-size: 13px; text-align: left; }
 
 .product-stage { margin-top: 18px; border: 1px solid var(--ink); }
 .product-summary { display: flex; justify-content: space-between; gap: 24px; align-items: flex-end; padding: 18px; border-bottom: 1px solid var(--ink); }
 .product-summary h3 { margin: 7px 0 3px; font-size: 23px; }
-.product-summary p { margin: 0; color: var(--muted); font-size: 13px; text-align: left; }
 .product-summary > a { flex: 0 0 auto; font-size: 12px; font-weight: 700; }
 .category-chip { font: 700 10px Arial, sans-serif; letter-spacing: .04em; }
 .call-console { display: grid; grid-template-columns: .9fr 1.2fr .9fr; min-height: 230px; }
@@ -243,7 +220,6 @@ th { font-weight: 700; }
 .attack-results { margin-top: 24px; }
 .results-head { display: flex; justify-content: space-between; gap: 24px; align-items: flex-end; padding: 18px 0 13px; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink); }
 .results-head h3 { margin: 2px 0 0; font-size: 21px; }
-.results-head p { margin: 2px 0 0; color: var(--muted); font-size: 12px; text-align: left; }
 .scope-note { flex: 0 0 auto; font-size: 11px; font-weight: 700; }
 .attack-loading { min-height: 120px; display: grid; grid-template-columns: 1fr repeat(3, 1fr); gap: 10px; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--ink); }
 .attack-loading span { color: var(--muted); font-size: 12px; }
@@ -278,10 +254,8 @@ th { font-weight: 700; }
 .evidence-trace p b { color: var(--ink); }
 
 .aggregate-panel { margin-top: 16px; padding: 18px; border: 2px solid var(--ink); }
-.aggregate-title { display: grid; grid-template-columns: minmax(180px, .75fr) 1.25fr; gap: 22px; align-items: start; }
 .aggregate-title > div > span { font: 700 10px Arial, sans-serif; letter-spacing: .06em; }
 .aggregate-title h3 { margin: 4px 0 0; font-size: 22px; }
-.aggregate-title p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; text-align: left; }
 .aggregate-summary { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 16px; border: 1px solid var(--ink); }
 .aggregate-summary > div { padding: 12px; }
 .aggregate-summary > div + div { border-left: 1px solid var(--ink); }
@@ -299,8 +273,6 @@ th { font-weight: 700; }
 .result-vector ul { display: flex; flex-wrap: wrap; gap: 7px; margin: 8px 0 0; padding: 0; list-style: none; }
 .result-vector li { display: flex; gap: 9px; padding: 4px 8px; border: 1px solid var(--ink); font-size: 10px; }
 
-.lab-note { margin: 18px 0 0; padding: 13px 16px; border: 1px solid var(--ink); font-size: 13px; }
-.lab-note p { margin: 0; }
 .site-footer { display: flex; justify-content: space-between; gap: 24px; padding-top: 26px; font-size: 13px; }
 .site-footer p { margin: 0; color: var(--muted); }
 
@@ -354,18 +326,16 @@ th { font-weight: 700; }
   body { font-size: 16px; }
   main, .detail-main { width: min(100% - 30px, 1040px); padding: 34px 0 60px; }
   .site-header h1, .detail-header h1 { font-size: 27px; }
-  .site-header .lead, .detail-header .lead { font-size: 17px; }
+  .detail-header .lead { font-size: 17px; }
   .document-content > section { padding: 28px 0; }
   .taxonomy-tree { padding: 15px; }
   .tree-branches, .suite-switcher, .product-switcher, .attack-grid { grid-template-columns: 1fr; }
   .suite-switcher button + button, .product-switcher button + button, .attack-card + .attack-card { border-top: 1px solid var(--ink); border-left: 0; }
-  .suite-context { grid-template-columns: 1fr; gap: 3px; }
   .product-summary, .results-head { align-items: flex-start; flex-direction: column; }
   .flow-track { padding-left: 2px; padding-right: 2px; }
   .attack-loading { grid-template-columns: 1fr; }
   .attack-coverage p { min-width: 100%; justify-content: flex-start; border-top: 1px solid var(--ink); border-left: 0; text-align: left; }
   .attack-outcome { min-height: 0; }
-  .aggregate-title { grid-template-columns: 1fr; gap: 8px; }
   .aggregate-summary { grid-template-columns: 1fr; }
   .aggregate-summary > div + div { border-top: 1px solid var(--ink); border-left: 0; }
   .comparison-row { grid-template-columns: 92px 1fr 25px; }
