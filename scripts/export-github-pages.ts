@@ -28,7 +28,16 @@ const frameworkSteps = [
   { index: "01", title: "产品表示", headline: "先确定交付的是什么", body: "把平台拆成可独立调用的原子产品，用“产品类别＋交付方式＋可见输出＋保护边界”形成统一画像。", output: "产品画像" },
   { index: "02", title: "攻击匹配", headline: "再测试所有适用攻击", body: "根据攻击者可控输入、可见输出、先验与预算匹配候选方法；适用的全部执行，不适用的记录原因。", output: "攻击结果集" },
   { index: "03", title: "统一衡量", headline: "让不同结果可以比较", body: "保留 AUC、恢复率、一致率等原始指标，再用零信息基线与完全风险参考校准为 0—100 隐私损失。", output: "统一风险分" },
-  { index: "04", title: "风险聚合", headline: "主结论取最大，结果向量保留", body: "同层按最大隐私损失形成产品主结论，同时保留各攻击对象的结果向量；平均值只作为辅助描述。", output: "产品综合结论" },
+  { index: "04", title: "风险聚合", headline: "形成效用—隐私损失曲线", body: "根据各攻击对象的结果向量，再结合有限调查、行业信息和业务要求建立效用—隐私损失曲线。", output: "效用—隐私损失曲线" },
+];
+
+const showcaseSeries = [
+  { id: "data", code: "S1", name: "数据库类＋核验类", visual: "data", productIds: ["city-existence", "content-library", "finance-verify", "city-verify"] },
+  { id: "vision", code: "S2", name: "图片预测模型", visual: "vision", productIds: ["content-voice", "content-vision"] },
+  { id: "chat", code: "S3", name: "RAG and Chatbot", visual: "chat", productIds: ["city-rag", "content-multimodal"] },
+  { id: "graph", code: "S4", name: "知识图谱", visual: "graph", productIds: ["finance-graph"] },
+  { id: "attribute", code: "S5", name: "属性推断", visual: "attribute", productIds: ["finance-index", "city-grade", "content-rank", "finance-model"] },
+  { id: "gradient", code: "S6", name: "梯度交付", visual: "gradient", productIds: ["finance-gradient", "city-gradient"] },
 ];
 
 function escapeHtml(value: string) {
@@ -82,14 +91,14 @@ function documentShell({ title, description, stylesheet, canonical, body, extraH
 }
 
 function renderHome() {
-  const categoryCount = groups.reduce((sum, group) => sum + group.categories.length, 0);
   const frameworkRows = frameworkSteps.map((step) => `<tr><td>${step.index}</td><th scope="row">${step.title}</th><td>${step.body}</td><td>${step.output}</td></tr>`).join("");
   const taxonomyBranches = groups.map((group) => `
             <div class="tree-branch">
               <p class="tree-branch-title"><span>${group.code}</span>${escapeHtml(group.name)}</p>
               <ul class="tree-nodes">${group.categories.map((category) => `<li><a href="security_attacks/${category.code}.html"><strong>${category.code} ${escapeHtml(category.name)}</strong></a></li>`).join("")}</ul>
             </div>`).join("");
-  const payload = JSON.stringify({ suites: demoSuites, candidatesByProduct: candidateAttacks }).replaceAll("<", "\\u003c");
+  const productsById = Object.fromEntries(demoSuites.flatMap((suite) => suite.products).map((product) => [product.id, product]));
+  const payload = JSON.stringify({ series: showcaseSeries, productsById, candidatesByProduct: candidateAttacks }).replaceAll("<", "\\u003c");
 
   const body = `
     <main id="top">
@@ -105,7 +114,6 @@ function renderHome() {
             <li><a href="#taxonomy">产品类别</a></li>
             <li><a href="#interactive-demo">互动演示</a></li>
           </ol>
-          <p class="toc-note">当前覆盖 5 个二级类别、${categoryCount} 个三级类别、3 个场景和 15 个可切换产品。</p>
           <p class="toc-top"><a href="#top">返回页面顶部</a></p>
         </nav>
 

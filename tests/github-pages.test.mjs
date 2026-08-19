@@ -18,7 +18,7 @@ test("exports the complete taxonomy and static category pages", async () => {
   assert.doesNotMatch(html, /0306 数据查询类/);
 });
 
-test("embeds all interactive demos and their candidate attack registries", async () => {
+test("embeds all guided product series and their candidate attack registries", async () => {
   const [html, script] = await Promise.all([
     readFile(new URL("index.html", pagesRoot), "utf8"),
     readFile(new URL("privacy-lab.js", pagesRoot), "utf8"),
@@ -26,15 +26,19 @@ test("embeds all interactive demos and their candidate attack registries", async
   assert.equal(demoSuites.length, 3);
   assert.equal(demoSuites.flatMap((suite) => suite.products).length, 15);
   assert.equal(Object.keys(candidateAttacks).length, 15);
-  for (const suite of demoSuites) assert.match(html, new RegExp(suite.name));
+  for (const series of ["数据库类＋核验类", "图片预测模型", "RAG and Chatbot", "知识图谱", "属性推断", "梯度交付"]) {
+    assert.match(html, new RegExp(series));
+  }
   for (const product of demoSuites.flatMap((suite) => suite.products)) {
     assert.match(html, new RegExp(product.id));
     assert.equal(candidateAttacks[product.id].filter((candidate) => candidate.executed).length, product.attacks.length);
   }
-  assert.match(script, /data-suite/);
+  assert.match(script, /data-series/);
   assert.match(script, /data-product/);
   assert.match(script, /objectVector/);
   assert.match(script, /renderResults/);
+  assert.match(script, /renderVisual/);
+  assert.match(script, /audit-rail/);
 });
 
 test("uses GitHub Pages-relative assets and includes social metadata", async () => {
