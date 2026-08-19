@@ -7,6 +7,7 @@
   let seriesIndex = 0;
   let productIndex = 0;
   let phase = 0;
+  let attackStep = 0;
   let timers = [];
 
   const escapeHtml = (value) => String(value)
@@ -97,21 +98,29 @@
   function renderLab() {
     const { activeSeries, products, product } = current();
     phase = 0;
+    attackStep = 0;
     root.innerHTML = `
       <div class="series-switcher" aria-label="选择产品演示系列">${series.map((item, index) => `<button type="button" data-series="${index}" aria-pressed="${seriesIndex === index}" class="${seriesIndex === index ? "active" : ""}"><span>${escapeHtml(item.code)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="product-switcher" aria-label="${escapeHtml(activeSeries.name)}产品切换">${products.map((item, index) => `<button type="button" data-product="${index}" aria-pressed="${productIndex === index}" class="${productIndex === index ? "active" : ""}"><span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="guided-tour">
-        <div class="tour-progress" aria-label="演示进度">${["产品输入", "产品运行", "公开输出", "攻击生效"].map((label, index) => `<div data-progress="${index + 1}"><b>${index + 1}</b><span>${label}</span></div>`).join("")}</div>
-        <div class="tour-stage">
-          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></header><div class="product-canvas" data-product-canvas>${renderVisual(activeSeries, product, 0)}</div><footer><button type="button" data-rerun>↻ 重播产品调用与攻击</button><span>自动执行全部适用攻击</span></footer></article>
-          <aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>离线</i></div><h3 data-audit-title>等待产品输入</h3><div class="audit-counter"><span>观察到的风险信号</span><strong data-risk-value>0 / ${product.attacks.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>尚未执行攻击</li></ul></aside>
-        </div>
-        <div class="tour-results" data-results hidden></div>
+        <section class="demo-act product-demo-act">
+          <header class="demo-act-heading"><span>阶段 01</span><div><strong>产品调用演示</strong><small>仅展示产品如何接收输入、运行并返回正常结果</small></div></header>
+          <div class="tour-progress" aria-label="产品演示进度">${["提交产品输入", "产品内部运行", "返回正常输出"].map((label, index) => `<div data-progress="${index + 1}"><b>${index + 1}</b><span>${label}</span></div>`).join("")}</div>
+          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></header><div class="product-canvas" data-product-canvas>${renderVisual(activeSeries, product, 0)}</div><footer><button type="button" data-rerun>↻ 重播产品演示</button><span data-product-status>准备接收产品输入</span><button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
+        </section>
+        <section class="demo-act attack-demo-act" data-attack-stage hidden>
+          <header class="demo-act-heading inverse"><span>阶段 02</span><div><strong>隐私攻击演示</strong><small>在产品正常输出完成后，依次执行全部适用攻击</small></div></header>
+          <div class="attack-stage">
+            <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header><ol class="attack-progress-list" data-attack-progress>${product.attacks.map((attack, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(attack.name)}</span></li>`).join("")}</ol><div class="attack-canvas" data-attack-canvas>${renderVisual(activeSeries, product, 3)}</div></article>
+            <aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>已连接</i></div><h3 data-audit-title>准备执行适用攻击</h3><div class="audit-counter"><span>已完成攻击</span><strong data-risk-value>0 / ${product.attacks.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>等待攻击序列开始</li></ul></aside>
+          </div>
+          <div class="tour-results" data-results hidden></div>
+        </section>
       </div>`;
-    scheduleRun();
+    scheduleProductRun();
   }
 
-  function updatePhase(nextPhase) {
+  function updateProductPhase(nextPhase) {
     const { activeSeries, product } = current();
     phase = nextPhase;
     root.querySelectorAll("[data-progress]").forEach((item) => {
@@ -121,34 +130,61 @@
     });
     const canvas = root.querySelector("[data-product-canvas]");
     if (canvas) canvas.innerHTML = renderVisual(activeSeries, product, phase);
+    const status = root.querySelector("[data-product-status]");
+    const startButton = root.querySelector("[data-start-attack]");
+    const statuses = ["准备接收产品输入", "产品已收到正常请求", "产品正在完成内部处理", "产品正常输出已完成"];
+    if (status) status.textContent = statuses[phase];
+    if (startButton instanceof HTMLButtonElement) startButton.disabled = phase < 3;
+  }
+
+  function scheduleProductRun() {
+    timers.forEach(window.clearTimeout);
+    timers = [];
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      updateProductPhase(3);
+      return;
+    }
+    timers = [
+      window.setTimeout(() => updateProductPhase(1), 220),
+      window.setTimeout(() => updateProductPhase(2), 900),
+      window.setTimeout(() => updateProductPhase(3), 1750),
+    ];
+  }
+
+  function updateAttackStep(nextStep) {
+    const { activeSeries, product } = current();
+    attackStep = nextStep;
+    const attackCanvas = root.querySelector("[data-attack-canvas]");
+    if (attackCanvas) attackCanvas.innerHTML = renderVisual(activeSeries, product, attackStep > 0 ? 4 : 3);
+    root.querySelectorAll("[data-attack-index]").forEach((item) => {
+      const index = Number(item.getAttribute("data-attack-index"));
+      item.classList.toggle("active", index === attackStep - 1);
+      item.classList.toggle("done", index < attackStep);
+    });
     const title = root.querySelector("[data-audit-title]");
     const value = root.querySelector("[data-risk-value]");
     const bar = root.querySelector("[data-risk-bar]");
     const evidence = root.querySelector("[data-evidence-list]");
-    const titles = ["等待产品输入", "产品收到正常请求", "产品正在计算", "公开结果已经返回", "全部适用攻击已经生效"];
-    if (title) title.textContent = titles[phase];
-    const observed = phase < 4 ? 0 : product.attacks.length;
-    if (value) value.textContent = `${observed} / ${product.attacks.length}`;
-    if (bar) bar.style.width = `${phase * 25}%`;
-    if (evidence) evidence.innerHTML = phase < 4
-      ? `<li>${phase === 0 ? "尚未执行攻击" : phase === 1 ? "公开请求已进入产品" : phase === 2 ? "正在观察中间响应" : "公开输出可见"}</li>`
-      : product.attacks.map((attack) => `<li>${escapeHtml(attack.name)}：${escapeHtml(attack.result)}</li>`).join("");
-    if (phase === 4) renderResults(product);
+    if (title) title.textContent = attackStep === 0 ? "准备执行适用攻击" : attackStep === product.attacks.length ? "全部适用攻击已经完成" : `正在执行：${product.attacks[attackStep - 1].name}`;
+    if (value) value.textContent = `${attackStep} / ${product.attacks.length}`;
+    if (bar) bar.style.width = `${attackStep / product.attacks.length * 100}%`;
+    if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待攻击序列开始</li>" : product.attacks.slice(0, attackStep).map((attack) => `<li>${escapeHtml(attack.name)}：${escapeHtml(attack.result)}</li>`).join("");
+    if (attackStep === product.attacks.length) renderResults(product);
   }
 
-  function scheduleRun() {
+  function startAttackRun() {
     timers.forEach(window.clearTimeout);
     timers = [];
+    const stage = root.querySelector("[data-attack-stage]");
+    const results = root.querySelector("[data-results]");
+    if (stage) stage.hidden = false;
+    if (results) results.hidden = true;
+    updateAttackStep(0);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      updatePhase(4);
+      updateAttackStep(current().product.attacks.length);
       return;
     }
-    timers = [
-      window.setTimeout(() => updatePhase(1), 220),
-      window.setTimeout(() => updatePhase(2), 820),
-      window.setTimeout(() => updatePhase(3), 1480),
-      window.setTimeout(() => updatePhase(4), 2350),
-    ];
+    timers = current().product.attacks.map((_, index) => window.setTimeout(() => updateAttackStep(index + 1), 350 + index * 820));
   }
 
   function renderResults(product) {
@@ -176,11 +212,10 @@
     } else if (productButton) {
       productIndex = Number(productButton.getAttribute("data-product"));
       renderLab();
+    } else if (target?.closest("[data-start-attack]")) {
+      startAttackRun();
     } else if (target?.closest("[data-rerun]")) {
-      updatePhase(0);
-      const results = root.querySelector("[data-results]");
-      if (results) results.hidden = true;
-      scheduleRun();
+      renderLab();
     }
   });
 

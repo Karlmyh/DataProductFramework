@@ -173,15 +173,24 @@ th { font-weight: 700; }
 .series-switcher strong, .product-switcher strong { display: block; font-size: 13px; line-height: 1.35; }
 
 .guided-tour { margin-top: 18px; overflow: hidden; border: 2px solid var(--ink); }
-.tour-progress { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--ink); background: var(--soft); }
+.demo-act + .demo-act { border-top: 8px solid var(--paper); }
+.demo-act-heading { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-bottom: 1px solid var(--ink); background: var(--paper); }
+.demo-act-heading > span { padding: 5px 7px; color: var(--paper); background: var(--ink); font: 700 9px Arial, sans-serif; letter-spacing: .06em; }
+.demo-act-heading strong, .demo-act-heading small { display: block; }
+.demo-act-heading strong { font-size: 16px; }
+.demo-act-heading small { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.demo-act-heading.inverse { color: var(--paper); background: var(--ink); }
+.demo-act-heading.inverse > span { color: var(--ink); background: var(--paper); }
+.demo-act-heading.inverse small { color: #bbb; }
+.attack-demo-act[hidden] { display: none; }
+.tour-progress { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--ink); background: var(--soft); }
 .tour-progress > div { display: flex; align-items: center; gap: 9px; min-height: 58px; padding: 10px 13px; color: var(--muted); }
 .tour-progress > div + div { border-left: 1px solid var(--ink); }
 .tour-progress b { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border: 1px solid var(--ink); border-radius: 50%; background: var(--paper); font: 700 10px Arial, sans-serif; }
 .tour-progress span { font-size: 11px; font-weight: 700; }
 .tour-progress .active { color: var(--ink); background: var(--paper); }
 .tour-progress .active b, .tour-progress .done b { color: var(--paper); background: var(--ink); }
-.tour-stage { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(250px, .6fr); }
-.product-window { min-width: 0; border-right: 1px solid var(--ink); }
+.product-window { min-width: 0; }
 .product-window > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--ink); }
 .product-window > header > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .product-window > header strong, .product-window > header small { display: block; }
@@ -189,10 +198,25 @@ th { font-weight: 700; }
 .product-window > header a { flex: 0 0 auto; font-size: 11px; }
 .product-avatar { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; color: var(--paper); background: var(--ink); font: 700 10px Arial, sans-serif; }
 .product-canvas { min-height: 390px; background: #fafafa; }
-.product-window > footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 16px; border-top: 1px solid var(--ink); font-size: 10px; }
+.product-window > footer { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 12px 16px; border-top: 1px solid var(--ink); font-size: 10px; }
 .product-window > footer button { padding: 8px 12px; border: 1px solid var(--ink); color: var(--paper); background: var(--ink); font-size: 11px; font-weight: 700; cursor: pointer; }
 .product-window > footer button:hover { color: var(--ink); background: var(--paper); }
 .product-window > footer span { color: var(--muted); }
+.product-window > footer .start-attack { min-width: 190px; }
+.product-window > footer .start-attack:disabled { color: #888; border-color: #ccc; background: #eee; cursor: wait; }
+.attack-stage { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); }
+.attack-target { min-width: 0; border-right: 1px solid var(--ink); }
+.attack-target > header { display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--ink); }
+.attack-target > header span { color: var(--muted); font-size: 9px; }
+.attack-target > header strong { font-size: 13px; }
+.attack-progress-list { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding: 0; border-bottom: 1px solid var(--ink); list-style: none; }
+.attack-progress-list li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 10px; color: var(--muted); }
+.attack-progress-list li + li { border-left: 1px solid var(--ink); }
+.attack-progress-list b { display: grid; width: 22px; height: 22px; flex: 0 0 auto; place-items: center; border: 1px solid var(--ink); border-radius: 50%; font: 700 9px Arial, sans-serif; }
+.attack-progress-list span { overflow: hidden; font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.attack-progress-list .active { color: var(--ink); background: #fae9e6; }
+.attack-progress-list .active b, .attack-progress-list .done b { color: var(--paper); background: #9c2e22; }
+.attack-canvas { min-height: 390px; background: #fafafa; }
 .audit-rail { min-width: 0; padding: 18px; color: #fff; background: #111; }
 .audit-kicker { display: flex; justify-content: space-between; gap: 12px; color: #aaa; font: 700 9px Arial, sans-serif; letter-spacing: .07em; }
 .audit-kicker i { color: #9fd4ad; font-style: normal; }
@@ -340,8 +364,8 @@ th { font-weight: 700; }
   .series-switcher { grid-template-columns: repeat(3, 1fr); }
   .series-switcher button:nth-child(4) { border-left: 0; }
   .series-switcher button:nth-child(n + 4) { border-top: 1px solid var(--ink); }
-  .tour-stage { grid-template-columns: 1fr; }
-  .product-window { border-right: 0; border-bottom: 1px solid var(--ink); }
+  .attack-stage { grid-template-columns: 1fr; }
+  .attack-target { border-right: 0; border-bottom: 1px solid var(--ink); }
   .audit-rail { min-height: 260px; }
 }
 
@@ -358,10 +382,11 @@ th { font-weight: 700; }
   .series-switcher button:nth-child(even) { border-left: 1px solid var(--ink); }
   .series-switcher button:nth-child(n + 3) { border-top: 1px solid var(--ink); }
   .product-switcher button + button, .attack-card + .attack-card { border-top: 1px solid var(--ink); border-left: 0; }
-  .tour-progress { grid-template-columns: 1fr 1fr; }
-  .tour-progress > div:nth-child(3) { border-top: 1px solid var(--ink); border-left: 0; }
-  .tour-progress > div:nth-child(4) { border-top: 1px solid var(--ink); }
+  .tour-progress { grid-template-columns: repeat(3, 1fr); }
+  .tour-progress > div { align-items: flex-start; flex-direction: column; }
   .product-window > header, .product-window > footer, .tour-results > header { align-items: flex-start; flex-direction: column; }
+  .product-window > footer { display: flex; }
+  .product-window > footer .start-attack { width: 100%; }
   .product-canvas { min-height: 430px; }
   .vision-product-view, .chat-product-view, .attribute-product-view { grid-template-columns: 1fr; }
   .vision-frame, .chat-thread { min-height: 270px; border-right: 0; border-bottom: 1px solid var(--ink); }
