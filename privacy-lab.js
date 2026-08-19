@@ -4,12 +4,34 @@
   if (!payload || !root) return;
 
   const { series, productsById, candidatesByProduct } = payload;
+  const residentStore = window.__RESIDENT_DATA__ ?? { name: "居民公共服务数据库", schema: [], records: [] };
+  const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
+  const residentOperators = {
+    enum: [
+      { id: "eq", label: "等于", symbol: "=" },
+      { id: "neq", label: "不等于", symbol: "≠" },
+    ],
+    number: [
+      { id: "eq", label: "等于", symbol: "=" },
+      { id: "gte", label: "大于等于", symbol: "≥" },
+      { id: "lte", label: "小于等于", symbol: "≤" },
+      { id: "gt", label: "大于", symbol: ">" },
+      { id: "lt", label: "小于", symbol: "<" },
+    ],
+  };
+  const defaultResidentConditions = () => [
+    { field: "street", operator: "eq", value: "07" },
+    { field: "age", operator: "gte", value: "60" },
+    { field: "subsidyStatus", operator: "eq", value: "有效" },
+  ];
+  if (productsById["city-existence"]) productsById["city-existence"].name = "居民数据存在性查询";
   let seriesIndex = 0;
   let productIndex = 0;
   let phase = 0;
   let attackStep = 0;
   let viewMode = "interface";
   let inputValue = "";
+  let residentConditions = defaultResidentConditions();
   let timers = [];
 
   const escapeHtml = (value) => String(value)
@@ -25,7 +47,54 @@
     return { activeSeries, products, product: products[productIndex] };
   };
 
-  const withCurrentInput = (product) => ({ ...product, inputValue: inputValue.trim() || product.inputValue });
+  function operatorsFor(field) {
+    return residentOperators[field?.type] ?? residentOperators.enum;
+  }
+
+  function operatorFor(field, operatorId) {
+    return operatorsFor(field).find((operator) => operator.id === operatorId) ?? operatorsFor(field)[0];
+  }
+
+  function conditionDefault(field) {
+    return field?.type === "number" ? String(field.min ?? 0) : String(field?.values?.[0] ?? "");
+  }
+
+  function formatResidentConditions() {
+    return residentConditions.map((condition) => {
+      const field = residentFields.get(condition.field);
+      const operator = operatorFor(field, condition.operator);
+      return `${field?.label ?? condition.field} ${operator.symbol} ${condition.value}`;
+    }).join(" AND ");
+  }
+
+  function recordMatchesCondition(record, condition) {
+    const field = residentFields.get(condition.field);
+    if (!field) return false;
+    const left = field.type === "number" ? Number(record[condition.field]) : String(record[condition.field] ?? "");
+    const right = field.type === "number" ? Number(condition.value) : String(condition.value);
+    if (condition.operator === "neq") return left !== right;
+    if (condition.operator === "gte") return left >= right;
+    if (condition.operator === "lte") return left <= right;
+    if (condition.operator === "gt") return left > right;
+    if (condition.operator === "lt") return left < right;
+    return left === right;
+  }
+
+  function queryResidents() {
+    return residentStore.records.filter((record) => residentConditions.every((condition) => recordMatchesCondition(record, condition)));
+  }
+
+  const withCurrentInput = (product) => {
+    if (product.id !== "city-existence") return { ...product, inputValue: inputValue.trim() || product.inputValue };
+    const matches = queryResidents();
+    return {
+      ...product,
+      inputLabel: "查询条件",
+      inputValue: formatResidentConditions(),
+      outputValue: matches.length > 0 ? "TRUE" : "FALSE",
+      outputDetail: "对外只返回是否存在，不返回命中数量或居民记录。",
+    };
+  };
 
   function aggregate(product) {
     const objectVector = {};
@@ -35,7 +104,34 @@
     return { objectVector: Object.entries(objectVector) };
   }
 
+  function residentExistenceVisual(product, currentPhase) {
+    const exposed = currentPhase >= 4;
+    const ready = currentPhase >= 3;
+    return `<div class="resident-existence-view">
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}">
+        <span>当前条件</span>
+        <strong>${escapeHtml(product.inputValue)}</strong>
+      </div>
+      <div class="existence-call">
+        <div class="resident-store-card ${currentPhase >= 2 ? "searching" : ""}">
+          <span>共享数据域</span>
+          <strong>${escapeHtml(residentStore.name)}</strong>
+          <small>${residentStore.records.length} 条受保护记录 · ${residentStore.schema.length} 个可查询字段</small>
+          <div class="masked-records" aria-label="受保护居民记录"><i></i><i></i><i></i></div>
+        </div>
+        <div class="existence-arrow" aria-hidden="true">→</div>
+        <div class="existence-response ${ready ? "ready" : ""}">
+          <span>公开响应</span>
+          <strong>${ready ? escapeHtml(product.outputValue) : currentPhase >= 2 ? "查询中…" : "等待运行"}</strong>
+          <small>不返回居民记录</small>
+        </div>
+      </div>
+      ${exposed ? '<div class="attack-overlay">重复改变条件并比较真假响应，可逐步缩小隐藏成员范围。</div>' : ""}
+    </div>`;
+  }
+
   function dataVisual(product, currentPhase) {
+    if (product.id === "city-existence") return residentExistenceVisual(product, currentPhase);
     const isVerification = product.category.startsWith("0304");
     const exposed = currentPhase >= 4;
     return `<div class="data-product-view">
@@ -109,6 +205,26 @@
   }
 
   function technicalExample(activeSeries, product) {
+    if (product.id === "city-existence") {
+      const sqlFields = {
+        street: "street",
+        age: "age",
+        incomeBand: "income_band",
+        occupation: "occupation",
+        householdSize: "household_size",
+        subsidyStatus: "subsidy_status",
+        insurance: "insurance",
+        housing: "housing",
+      };
+      const sqlOperators = { eq: "=", neq: "<>", gte: ">=", lte: "<=", gt: ">", lt: "<" };
+      const where = residentConditions.map((condition) => `${sqlFields[condition.field]} ${sqlOperators[condition.operator] ?? "="} ?`).join("\n  AND ");
+      const parameters = residentConditions.map((condition) => residentFields.get(condition.field)?.type === "number" ? Number(condition.value) : condition.value);
+      return {
+        language: "SQL / JSON",
+        code: `SELECT EXISTS (\n  SELECT 1\n  FROM residents\n  WHERE ${where}\n) AS exists;\n\nparams = ${JSON.stringify(parameters)}`,
+        output: `{ "exists": ${product.outputValue === "TRUE"}, "records": "protected" }`,
+      };
+    }
     if (activeSeries.visual === "gradient") return {
       language: "PYTORCH",
       code: `batch_x, batch_y = next(train_loader)\nlogits = model(batch_x)\nloss = criterion(logits, batch_y)\nloss.backward()\ngradient = model.classifier.weight.grad`,
@@ -153,6 +269,51 @@
     return renderVisual(activeSeries, product, currentPhase);
   }
 
+  function renderResidentValueControl(condition, field, index) {
+    if (field.type === "enum") {
+      return `<select data-condition-value="${index}" aria-label="${escapeHtml(field.label)}的值">${field.values.map((value) => `<option value="${escapeHtml(value)}" ${String(condition.value) === String(value) ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}</select>`;
+    }
+    return `<input type="number" min="${field.min ?? ""}" max="${field.max ?? ""}" value="${escapeHtml(condition.value)}" data-condition-value="${index}" aria-label="${escapeHtml(field.label)}的值" />`;
+  }
+
+  function renderResidentProductControl(product) {
+    return `<form class="product-control resident-query-control" data-product-form>
+      <div class="condition-builder">
+        <div class="condition-builder-heading"><span>组合条件</span></div>
+        <div class="condition-list">${residentConditions.map((condition, index) => {
+          const field = residentFields.get(condition.field) ?? residentStore.schema[0];
+          return `<div class="condition-row" data-condition-row="${index}">
+            <select data-condition-field="${index}" aria-label="第 ${index + 1} 个条件的字段">${residentStore.schema.map((candidate) => `<option value="${escapeHtml(candidate.key)}" ${candidate.key === field.key ? "selected" : ""}>${escapeHtml(candidate.label)}</option>`).join("")}</select>
+            <select data-condition-operator="${index}" aria-label="第 ${index + 1} 个条件的运算符">${operatorsFor(field).map((operator) => `<option value="${operator.id}" ${operator.id === condition.operator ? "selected" : ""}>${escapeHtml(operator.label)}</option>`).join("")}</select>
+            ${renderResidentValueControl(condition, field, index)}
+            <button type="button" class="condition-remove" data-remove-condition="${index}" ${residentConditions.length === 1 ? "disabled" : ""} aria-label="删除第 ${index + 1} 个条件">删除</button>
+          </div>`;
+        }).join("")}</div>
+        <button type="button" class="condition-add" data-add-condition ${residentConditions.length >= residentStore.schema.length ? "disabled" : ""}>+ 添加条件</button>
+      </div>
+      <div class="query-actions">
+        <button type="button" class="secondary" data-reset-query>恢复示例</button>
+        <button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button>
+      </div>
+    </form>`;
+  }
+
+  function renderProductControl(product) {
+    if (product.id === "city-existence") return renderResidentProductControl(product);
+    return `<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form>`;
+  }
+
+  function resetAfterControlEdit() {
+    updateProductPhase(0);
+    const stage = root.querySelector("[data-attack-stage]");
+    if (stage) stage.hidden = true;
+  }
+
+  function refreshProductControl() {
+    const control = root.querySelector("[data-product-form]");
+    if (control) control.outerHTML = renderProductControl(current().product);
+  }
+
   function renderLab() {
     const { activeSeries, products, product } = current();
     phase = 0;
@@ -161,16 +322,15 @@
     inputValue = product.inputValue;
     const displayProduct = withCurrentInput(product);
     root.innerHTML = `
-      <div class="series-switcher" aria-label="选择产品演示系列">${series.map((item, index) => `<button type="button" data-series="${index}" aria-pressed="${seriesIndex === index}" class="${seriesIndex === index ? "active" : ""}"><span>${escapeHtml(item.code)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
+      <div class="series-switcher" aria-label="选择产品演示系列">${series.map((item, index) => `<button type="button" data-series="${index}" aria-pressed="${seriesIndex === index}" class="${seriesIndex === index ? "active" : ""}"><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="product-switcher" aria-label="${escapeHtml(activeSeries.name)}产品切换">${products.map((item, index) => `<button type="button" data-product="${index}" aria-pressed="${productIndex === index}" class="${productIndex === index ? "active" : ""}"><span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="guided-tour">
         <section class="demo-act product-demo-act">
-          <header class="demo-act-heading"><span>阶段 01</span><div><strong>可操作的产品调用演示</strong><small>编辑产品输入、点击运行，并切换界面、流程或代码视图</small></div></header>
-          <div class="tour-progress" aria-label="产品演示进度">${["提交产品输入", "产品内部运行", "返回正常输出"].map((label, index) => `<div data-progress="${index + 1}"><b>${index + 1}</b><span>${label}</span></div>`).join("")}</div>
+          <header class="demo-act-heading"><strong>产品演示</strong></header>
           <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["flow", "运行流程"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header><form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer><button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span><button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
-          <header class="demo-act-heading inverse"><span>阶段 02</span><div><strong>隐私攻击演示</strong><small>在产品正常输出完成后，依次执行全部适用攻击</small></div></header>
+          <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
           <div class="attack-stage">
             <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header><ol class="attack-progress-list" data-attack-progress>${product.attacks.map((attack, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(attack.name)}</span></li>`).join("")}</ol><div class="attack-canvas" data-attack-canvas>${renderVisual(activeSeries, product, 3)}</div></article>
             <aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>已连接</i></div><h3 data-audit-title>准备执行适用攻击</h3><div class="audit-counter"><span>已完成攻击</span><strong data-risk-value>0 / ${product.attacks.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>等待攻击序列开始</li></ul></aside>
@@ -178,6 +338,13 @@
           <div class="tour-results" data-results hidden></div>
         </section>
       </div>`;
+    root.querySelector(".product-avatar")?.remove();
+    root.querySelector(".product-window > header small")?.remove();
+    root.querySelector(".product-header-tools > a")?.remove();
+    const initialControl = root.querySelector("[data-product-form]");
+    if (initialControl) initialControl.outerHTML = renderProductControl(product);
+    const initialStatus = root.querySelector("[data-product-status]");
+    if (initialStatus) initialStatus.textContent = product.id === "city-existence" ? "请设置条件并运行产品" : "请编辑输入并运行产品";
     updateProductPhase(0);
   }
 
@@ -195,7 +362,9 @@
     const status = root.querySelector("[data-product-status]");
     const startButton = root.querySelector("[data-start-attack]");
     const runButton = root.querySelector("[data-run-product]");
-    const statuses = ["请编辑输入并运行产品", "产品已收到用户请求", "产品正在完成内部处理", "产品正常输出已完成，可继续查看攻击"];
+    const statuses = product.id === "city-existence"
+      ? ["请设置条件并运行产品", "已提交结构化条件", "正在查询共享居民数据库", "已返回存在性结果"]
+      : ["请编辑输入并运行产品", "产品已收到用户请求", "产品正在完成内部处理", "产品正常输出已完成，可继续查看攻击"];
     if (status) status.textContent = statuses[phase];
     if (startButton instanceof HTMLButtonElement) startButton.disabled = phase < 3;
     if (runButton instanceof HTMLButtonElement) runButton.disabled = phase > 0 && phase < 3;
@@ -280,9 +449,11 @@
     if (seriesButton) {
       seriesIndex = Number(seriesButton.getAttribute("data-series"));
       productIndex = 0;
+      residentConditions = defaultResidentConditions();
       renderLab();
     } else if (productButton) {
       productIndex = Number(productButton.getAttribute("data-product"));
+      residentConditions = defaultResidentConditions();
       renderLab();
     } else if (viewButton) {
       viewMode = viewButton.getAttribute("data-view-mode") || "interface";
@@ -292,6 +463,26 @@
         button.setAttribute("aria-pressed", String(selected));
       });
       updateProductPhase(phase);
+    } else if (target?.closest("[data-reset-query]")) {
+      residentConditions = defaultResidentConditions();
+      refreshProductControl();
+      resetAfterControlEdit();
+    } else if (target?.closest("[data-add-condition]")) {
+      const usedFields = new Set(residentConditions.map((condition) => condition.field));
+      const field = residentStore.schema.find((candidate) => !usedFields.has(candidate.key)) ?? residentStore.schema[0];
+      if (field && residentConditions.length < residentStore.schema.length) {
+        residentConditions.push({ field: field.key, operator: operatorsFor(field)[0].id, value: conditionDefault(field) });
+        refreshProductControl();
+        resetAfterControlEdit();
+      }
+    } else if (target?.closest("[data-remove-condition]")) {
+      const button = target.closest("[data-remove-condition]");
+      const index = Number(button?.getAttribute("data-remove-condition"));
+      if (residentConditions.length > 1 && Number.isInteger(index)) {
+        residentConditions.splice(index, 1);
+        refreshProductControl();
+        resetAfterControlEdit();
+      }
     } else if (target?.closest("[data-reset-input]")) {
       inputValue = current().product.inputValue;
       const input = root.querySelector("[data-product-input]");
@@ -308,11 +499,43 @@
 
   root.addEventListener("input", (event) => {
     const target = event.target;
-    if (!(target instanceof HTMLInputElement) || !target.matches("[data-product-input]")) return;
-    inputValue = target.value;
-    updateProductPhase(0);
-    const stage = root.querySelector("[data-attack-stage]");
-    if (stage) stage.hidden = true;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (target.matches("[data-condition-value]")) {
+      const index = Number(target.getAttribute("data-condition-value"));
+      if (residentConditions[index]) residentConditions[index].value = target.value;
+      resetAfterControlEdit();
+      return;
+    }
+    if (target.matches("[data-product-input]")) {
+      inputValue = target.value;
+      resetAfterControlEdit();
+    }
+  });
+
+  root.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLSelectElement)) return;
+    if (target.matches("[data-condition-field]")) {
+      const index = Number(target.getAttribute("data-condition-field"));
+      const field = residentFields.get(target.value);
+      if (residentConditions[index] && field) {
+        residentConditions[index] = { field: field.key, operator: operatorsFor(field)[0].id, value: conditionDefault(field) };
+        refreshProductControl();
+        resetAfterControlEdit();
+      }
+      return;
+    }
+    if (target.matches("[data-condition-operator]")) {
+      const index = Number(target.getAttribute("data-condition-operator"));
+      if (residentConditions[index]) residentConditions[index].operator = target.value;
+      resetAfterControlEdit();
+      return;
+    }
+    if (target.matches("[data-condition-value]")) {
+      const index = Number(target.getAttribute("data-condition-value"));
+      if (residentConditions[index]) residentConditions[index].value = target.value;
+      resetAfterControlEdit();
+    }
   });
 
   root.addEventListener("submit", (event) => {
@@ -321,6 +544,7 @@
     event.preventDefault();
     const input = form.querySelector("[data-product-input]");
     if (input instanceof HTMLInputElement) inputValue = input.value;
+    if (current().product.id === "city-existence") inputValue = formatResidentConditions();
     scheduleProductRun();
   });
 
