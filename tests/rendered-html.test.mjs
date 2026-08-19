@@ -48,7 +48,7 @@ test("server-renders all three multi-product demos and aggregation language", as
   for (const suite of ["金融数据协作中心", "城市公共服务平台", "智能内容服务台"]) {
     assert.match(html, new RegExp(suite));
   }
-  assert.match(html, /15/);
+  assert.match(html, /17/);
   assert.match(html, /匹配到的全部攻击/);
   assert.match(html, /主结论 = max/);
   assert.match(html, /完整结果向量/);
@@ -104,5 +104,5 @@ test("source keeps the product-switch interaction and accessible state", async (
   assert.match(data, /applicable: boolean/);
   assert.match(data, /attackFamily/);
   assert.doesNotMatch(lab, /average \* 0\.4 \+ maximum \* 0\.6/);
-  assert.equal((data.match(/id: "(finance|city|content)-/g) ?? []).length, 15);
+  assert.equal((data.match(/id: "(finance|city|content)-/g) ?? []).length, 17);
 });

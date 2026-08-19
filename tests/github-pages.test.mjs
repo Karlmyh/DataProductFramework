@@ -24,9 +24,9 @@ test("embeds all guided product series and their candidate attack registries", a
     readFile(new URL("privacy-lab.js", pagesRoot), "utf8"),
   ]);
   assert.equal(demoSuites.length, 3);
-  assert.equal(demoSuites.flatMap((suite) => suite.products).length, 15);
-  assert.equal(Object.keys(candidateAttacks).length, 15);
-  for (const series of ["数据库类＋核验类", "图片预测模型", "RAG and Chatbot", "知识图谱", "属性推断", "梯度交付"]) {
+  assert.equal(demoSuites.flatMap((suite) => suite.products).length, 17);
+  assert.equal(Object.keys(candidateAttacks).length, 17);
+  for (const series of ["行业数据库与核验产品", "视觉理解与身份核验模型", "检索增强生成与智能问答", "知识图谱与关系查询产品", "指标发布与属性推断产品", "梯度与训练更新交付产品"]) {
     assert.match(html, new RegExp(series));
   }
   for (const product of demoSuites.flatMap((suite) => suite.products)) {
@@ -39,6 +39,9 @@ test("embeds all guided product series and their candidate attack registries", a
   assert.match(script, /renderResults/);
   assert.match(script, /renderVisual/);
   assert.match(script, /audit-rail/);
+  assert.match(script, /产品调用演示/);
+  assert.match(script, /隐私攻击演示/);
+  assert.match(script, /data-start-attack/);
 });
 
 test("uses GitHub Pages-relative assets and includes social metadata", async () => {

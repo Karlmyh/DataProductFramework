@@ -150,7 +150,7 @@ export default function Home() {
           <div><strong>3</strong><span>现有实测系列</span></div>
           <div><strong>5</strong><span>更新后二级类别</span></div>
           <div><strong>3</strong><span>多类别场景 Demo</span></div>
-          <div><strong>15</strong><span>可切换产品</span></div>
+          <div><strong>17</strong><span>可切换产品</span></div>
         </div>
         <div className="series-list">
           {series.map((item) => (

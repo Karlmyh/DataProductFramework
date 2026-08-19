@@ -32,12 +32,12 @@ const frameworkSteps = [
 ];
 
 const showcaseSeries = [
-  { id: "data", code: "S1", name: "数据库类＋核验类", visual: "data", productIds: ["city-existence", "content-library", "finance-verify", "city-verify"] },
-  { id: "vision", code: "S2", name: "图片预测模型", visual: "vision", productIds: ["content-voice", "content-vision"] },
-  { id: "chat", code: "S3", name: "RAG and Chatbot", visual: "chat", productIds: ["city-rag", "content-multimodal"] },
-  { id: "graph", code: "S4", name: "知识图谱", visual: "graph", productIds: ["finance-graph"] },
-  { id: "attribute", code: "S5", name: "属性推断", visual: "attribute", productIds: ["finance-index", "city-grade", "content-rank", "finance-model"] },
-  { id: "gradient", code: "S6", name: "梯度交付", visual: "gradient", productIds: ["finance-gradient", "city-gradient"] },
+  { id: "data", code: "S1", name: "行业数据库与核验产品", visual: "data", productIds: ["city-existence", "content-library", "finance-graph", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify"] },
+  { id: "vision", code: "S2", name: "视觉理解与身份核验模型", visual: "vision", productIds: ["content-voice", "content-vision"] },
+  { id: "chat", code: "S3", name: "检索增强生成与智能问答", visual: "chat", productIds: ["city-rag", "content-multimodal"] },
+  { id: "graph", code: "S4", name: "知识图谱与关系查询产品", visual: "graph", productIds: ["finance-graph"] },
+  { id: "attribute", code: "S5", name: "指标发布与属性推断产品", visual: "attribute", productIds: ["finance-index", "city-grade", "content-rank", "finance-model"] },
+  { id: "gradient", code: "S6", name: "梯度与训练更新交付产品", visual: "gradient", productIds: ["finance-gradient", "city-gradient"] },
 ];
 
 function escapeHtml(value: string) {
