@@ -42,6 +42,14 @@ test("embeds all guided product series and their candidate attack registries", a
   assert.match(script, /产品调用演示/);
   assert.match(script, /隐私攻击演示/);
   assert.match(script, /data-start-attack/);
+  assert.match(script, /data-run-product/);
+  assert.match(script, /data-product-input/);
+  assert.match(script, /产品界面/);
+  assert.match(script, /运行流程/);
+  assert.match(script, /代码与数据/);
+  assert.match(script, /gradient-model-flow/);
+  assert.match(script, /GRADIENT TENSOR/);
+  assert.match(script, /loss\.backward\(\)/);
 });
 
 test("uses GitHub Pages-relative assets and includes social metadata", async () => {

@@ -8,6 +8,8 @@
   let productIndex = 0;
   let phase = 0;
   let attackStep = 0;
+  let viewMode = "interface";
+  let inputValue = "";
   let timers = [];
 
   const escapeHtml = (value) => String(value)
@@ -22,6 +24,8 @@
     const products = activeSeries.productIds.map((id) => productsById[id]).filter(Boolean);
     return { activeSeries, products, product: products[productIndex] };
   };
+
+  const withCurrentInput = (product) => ({ ...product, inputValue: inputValue.trim() || product.inputValue });
 
   function aggregate(product) {
     const objectVector = {};
@@ -95,18 +99,75 @@
     return dataVisual(product, currentPhase);
   }
 
+  function workflowVisual(activeSeries, product, currentPhase) {
+    const isGradient = activeSeries.visual === "gradient";
+    const steps = isGradient
+      ? ["训练批次", "模型 fθ(x)", "损失函数 L", "自动求导 ∂L/∂θ", "梯度更新 Δθ"]
+      : [product.inputLabel, ...product.flow, product.outputLabel];
+    const activeLimit = currentPhase === 0 ? 0 : currentPhase === 1 ? 1 : currentPhase === 2 ? Math.max(2, steps.length - 1) : steps.length;
+    return `<div class="workflow-view ${isGradient ? "gradient-model-flow" : ""}"><div class="workflow-caption"><span>${isGradient ? "模型训练与求导链路" : "产品内部处理流程"}</span><strong>${escapeHtml(product.name)}</strong></div><div class="workflow-chain">${steps.map((step, index) => `<div class="workflow-node ${index < activeLimit ? "active" : ""} ${index < activeLimit - 1 ? "done" : ""}"><b>${String(index + 1).padStart(2, "0")}</b><span>${escapeHtml(step)}</span>${index < steps.length - 1 ? '<i aria-hidden="true">→</i>' : ""}</div>`).join("")}</div>${isGradient ? `<div class="autodiff-equation ${currentPhase >= 2 ? "active" : ""}"><span>前向传播</span><code>ŷ = fθ(x) · L = ℓ(ŷ, y)</code><span>反向传播</span><code>g = ∇θL · θ ← θ − ηg</code></div>` : `<div class="workflow-io"><span>输入</span><strong>${escapeHtml(product.inputValue)}</strong><span>输出</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待产品运行"}</strong></div>`}</div>`;
+  }
+
+  function technicalExample(activeSeries, product) {
+    if (activeSeries.visual === "gradient") return {
+      language: "PYTORCH",
+      code: `batch_x, batch_y = next(train_loader)\nlogits = model(batch_x)\nloss = criterion(logits, batch_y)\nloss.backward()\ngradient = model.classifier.weight.grad`,
+      output: `tensor([[ 0.0124, -0.0381,  0.0076, ..., -0.0042],\n        [-0.0197,  0.0445, -0.0118, ...,  0.0261],\n        [ 0.0063, -0.0152,  0.0317, ..., -0.0095]],\n       device='cuda:0')\nshape = [3, 768]   norm = 0.1842`,
+    };
+    if (activeSeries.visual === "graph") return {
+      language: "CYPHER",
+      code: `MATCH p=(company:Company)-[*1..2]->(target)\nWHERE company.name = $company\nRETURN p, labels(target)\nLIMIT 20`,
+      output: `{ paths: 3, entities: 7, status: "authorized" }`,
+    };
+    if (activeSeries.visual === "chat") return {
+      language: "HTTP / JSON",
+      code: `POST /v1/assistant/query\n{\n  "question": "${product.inputValue}",\n  "retrieve": true,\n  "top_k": 3\n}`,
+      output: `{ answer: "${product.outputValue}", citations: 3 }`,
+    };
+    if (activeSeries.visual === "vision") return {
+      language: "JAVASCRIPT",
+      code: `const result = await vision.predict({\n  media: "${product.inputValue}",\n  returnConfidence: true\n});`,
+      output: `{ label: "${product.outputValue}", confidence: 0.92 }`,
+    };
+    if (activeSeries.visual === "attribute") return {
+      language: "HTTP / JSON",
+      code: `POST /v1/indicator/read\n{ "subject": "${product.inputValue}" }`,
+      output: `{ value: "${product.outputValue}", policy: "published" }`,
+    };
+    return {
+      language: "SQL / JSON",
+      code: `SELECT protected_result\nFROM authorized_product\nWHERE request = "${product.inputValue}";`,
+      output: `{ result: "${product.outputValue}", protected_fields: "hidden" }`,
+    };
+  }
+
+  function technicalVisual(activeSeries, product, currentPhase) {
+    const example = technicalExample(activeSeries, product);
+    const ready = currentPhase >= 3;
+    return `<div class="technical-view"><div class="code-panel"><header><span>${escapeHtml(example.language)}</span><i></i><i></i><i></i></header><pre><code>${escapeHtml(example.code)}</code></pre></div><div class="runtime-panel ${ready ? "ready" : ""}"><header><span>${activeSeries.visual === "gradient" ? "GRADIENT TENSOR" : "PRODUCT OUTPUT"}</span><strong>${ready ? "200 OK" : currentPhase >= 2 ? "RUNNING" : "WAITING"}</strong></header><pre><code>${ready ? escapeHtml(example.output) : currentPhase >= 2 ? "正在执行产品计算…" : "运行产品后显示结果"}</code></pre>${activeSeries.visual === "gradient" ? '<div class="tensor-legend"><span><i></i>正梯度</span><span><i></i>负梯度</span><span>dtype: float32</span></div>' : ""}</div></div>`;
+  }
+
+  function renderProductPresentation(activeSeries, product, currentPhase) {
+    if (viewMode === "flow") return workflowVisual(activeSeries, product, currentPhase);
+    if (viewMode === "technical") return technicalVisual(activeSeries, product, currentPhase);
+    return renderVisual(activeSeries, product, currentPhase);
+  }
+
   function renderLab() {
     const { activeSeries, products, product } = current();
     phase = 0;
     attackStep = 0;
+    viewMode = "interface";
+    inputValue = product.inputValue;
+    const displayProduct = withCurrentInput(product);
     root.innerHTML = `
       <div class="series-switcher" aria-label="选择产品演示系列">${series.map((item, index) => `<button type="button" data-series="${index}" aria-pressed="${seriesIndex === index}" class="${seriesIndex === index ? "active" : ""}"><span>${escapeHtml(item.code)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="product-switcher" aria-label="${escapeHtml(activeSeries.name)}产品切换">${products.map((item, index) => `<button type="button" data-product="${index}" aria-pressed="${productIndex === index}" class="${productIndex === index ? "active" : ""}"><span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="guided-tour">
         <section class="demo-act product-demo-act">
-          <header class="demo-act-heading"><span>阶段 01</span><div><strong>产品调用演示</strong><small>仅展示产品如何接收输入、运行并返回正常结果</small></div></header>
+          <header class="demo-act-heading"><span>阶段 01</span><div><strong>可操作的产品调用演示</strong><small>编辑产品输入、点击运行，并切换界面、流程或代码视图</small></div></header>
           <div class="tour-progress" aria-label="产品演示进度">${["提交产品输入", "产品内部运行", "返回正常输出"].map((label, index) => `<div data-progress="${index + 1}"><b>${index + 1}</b><span>${label}</span></div>`).join("")}</div>
-          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></header><div class="product-canvas" data-product-canvas>${renderVisual(activeSeries, product, 0)}</div><footer><button type="button" data-rerun>↻ 重播产品演示</button><span data-product-status>准备接收产品输入</span><button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
+          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["flow", "运行流程"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header><form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer><button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span><button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><span>阶段 02</span><div><strong>隐私攻击演示</strong><small>在产品正常输出完成后，依次执行全部适用攻击</small></div></header>
@@ -117,11 +178,12 @@
           <div class="tour-results" data-results hidden></div>
         </section>
       </div>`;
-    scheduleProductRun();
+    updateProductPhase(0);
   }
 
   function updateProductPhase(nextPhase) {
     const { activeSeries, product } = current();
+    const displayProduct = withCurrentInput(product);
     phase = nextPhase;
     root.querySelectorAll("[data-progress]").forEach((item) => {
       const step = Number(item.getAttribute("data-progress"));
@@ -129,17 +191,24 @@
       item.classList.toggle("done", step < phase);
     });
     const canvas = root.querySelector("[data-product-canvas]");
-    if (canvas) canvas.innerHTML = renderVisual(activeSeries, product, phase);
+    if (canvas) canvas.innerHTML = renderProductPresentation(activeSeries, displayProduct, phase);
     const status = root.querySelector("[data-product-status]");
     const startButton = root.querySelector("[data-start-attack]");
-    const statuses = ["准备接收产品输入", "产品已收到正常请求", "产品正在完成内部处理", "产品正常输出已完成"];
+    const runButton = root.querySelector("[data-run-product]");
+    const statuses = ["请编辑输入并运行产品", "产品已收到用户请求", "产品正在完成内部处理", "产品正常输出已完成，可继续查看攻击"];
     if (status) status.textContent = statuses[phase];
     if (startButton instanceof HTMLButtonElement) startButton.disabled = phase < 3;
+    if (runButton instanceof HTMLButtonElement) runButton.disabled = phase > 0 && phase < 3;
   }
 
   function scheduleProductRun() {
     timers.forEach(window.clearTimeout);
     timers = [];
+    const stage = root.querySelector("[data-attack-stage]");
+    const results = root.querySelector("[data-results]");
+    if (stage) stage.hidden = true;
+    if (results) results.hidden = true;
+    updateProductPhase(0);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       updateProductPhase(3);
       return;
@@ -153,9 +222,10 @@
 
   function updateAttackStep(nextStep) {
     const { activeSeries, product } = current();
+    const displayProduct = withCurrentInput(product);
     attackStep = nextStep;
     const attackCanvas = root.querySelector("[data-attack-canvas]");
-    if (attackCanvas) attackCanvas.innerHTML = renderVisual(activeSeries, product, attackStep > 0 ? 4 : 3);
+    if (attackCanvas) attackCanvas.innerHTML = renderVisual(activeSeries, displayProduct, attackStep > 0 ? 4 : 3);
     root.querySelectorAll("[data-attack-index]").forEach((item) => {
       const index = Number(item.getAttribute("data-attack-index"));
       item.classList.toggle("active", index === attackStep - 1);
@@ -180,6 +250,7 @@
     if (stage) stage.hidden = false;
     if (results) results.hidden = true;
     updateAttackStep(0);
+    stage?.scrollIntoView({ behavior: "smooth", block: "start" });
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       updateAttackStep(current().product.attacks.length);
       return;
@@ -205,6 +276,7 @@
     const target = event.target instanceof Element ? event.target : null;
     const seriesButton = target?.closest("[data-series]");
     const productButton = target?.closest("[data-product]");
+    const viewButton = target?.closest("[data-view-mode]");
     if (seriesButton) {
       seriesIndex = Number(seriesButton.getAttribute("data-series"));
       productIndex = 0;
@@ -212,11 +284,44 @@
     } else if (productButton) {
       productIndex = Number(productButton.getAttribute("data-product"));
       renderLab();
+    } else if (viewButton) {
+      viewMode = viewButton.getAttribute("data-view-mode") || "interface";
+      root.querySelectorAll("[data-view-mode]").forEach((button) => {
+        const selected = button.getAttribute("data-view-mode") === viewMode;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      });
+      updateProductPhase(phase);
+    } else if (target?.closest("[data-reset-input]")) {
+      inputValue = current().product.inputValue;
+      const input = root.querySelector("[data-product-input]");
+      if (input instanceof HTMLInputElement) input.value = inputValue;
+      updateProductPhase(0);
+      const stage = root.querySelector("[data-attack-stage]");
+      if (stage) stage.hidden = true;
     } else if (target?.closest("[data-start-attack]")) {
       startAttackRun();
     } else if (target?.closest("[data-rerun]")) {
-      renderLab();
+      scheduleProductRun();
     }
+  });
+
+  root.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || !target.matches("[data-product-input]")) return;
+    inputValue = target.value;
+    updateProductPhase(0);
+    const stage = root.querySelector("[data-attack-stage]");
+    if (stage) stage.hidden = true;
+  });
+
+  root.addEventListener("submit", (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches("[data-product-form]")) return;
+    event.preventDefault();
+    const input = form.querySelector("[data-product-input]");
+    if (input instanceof HTMLInputElement) inputValue = input.value;
+    scheduleProductRun();
   });
 
   renderLab();
