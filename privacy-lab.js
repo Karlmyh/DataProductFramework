@@ -19,11 +19,6 @@
       { id: "lt", label: "小于", symbol: "<" },
     ],
   };
-  const defaultResidentConditions = () => [
-    { field: "street", operator: "eq", value: "07" },
-    { field: "age", operator: "gte", value: "60" },
-    { field: "subsidyStatus", operator: "eq", value: "有效" },
-  ];
   if (productsById["city-existence"]) productsById["city-existence"].name = "居民数据存在性查询";
   if (productsById["content-library"]) Object.assign(productsById["content-library"], {
     name: "居民授权记录检索库",
@@ -35,13 +30,95 @@
     outputValue: "3 条授权记录",
     outputDetail: "返回记录编号、街道、年龄和职业；收入、补贴和保障类型保持受保护。",
   });
+  const structuredProductConfigs = {
+    "city-existence": {
+      schema: residentStore.schema,
+      defaults: [
+        { field: "street", operator: "eq", value: "07" },
+        { field: "age", operator: "gte", value: "60" },
+        { field: "subsidyStatus", operator: "eq", value: "有效" },
+      ],
+    },
+    "content-library": {
+      schema: residentStore.schema,
+      defaults: [
+        { field: "street", operator: "eq", value: "07" },
+        { field: "age", operator: "gte", value: "60" },
+        { field: "occupation", operator: "eq", value: "退休" },
+      ],
+    },
+    "finance-graph": {
+      schema: [
+        { key: "company", label: "企业", type: "enum", values: ["远澜科技", "海岸智造", "星桥能源"] },
+        { key: "relation", label: "关系类型", type: "enum", values: ["控制关系", "股权关系", "项目关系"] },
+        { key: "hops", label: "最大跳数", type: "number", min: 1, max: 3 },
+        { key: "direction", label: "关系方向", type: "enum", values: ["向外", "向内", "双向"] },
+      ],
+      defaults: [
+        { field: "company", operator: "eq", value: "远澜科技" },
+        { field: "relation", operator: "eq", value: "控制关系" },
+        { field: "hops", operator: "lte", value: "2" },
+      ],
+    },
+    "finance-aggregate": {
+      schema: [
+        { key: "region", label: "地区", type: "enum", values: ["华东", "华北", "华南"] },
+        { key: "industry", label: "行业", type: "enum", values: ["制造业", "服务业", "新能源"] },
+        { key: "month", label: "月份", type: "enum", values: ["2026-05", "2026-06", "2026-07"] },
+        { key: "metric", label: "统计指标", type: "enum", values: ["经营指数", "营收增长", "就业人数"] },
+        { key: "minSample", label: "最小样本数", type: "number", min: 10, max: 100 },
+      ],
+      defaults: [
+        { field: "region", operator: "eq", value: "华东" },
+        { field: "industry", operator: "eq", value: "制造业" },
+        { field: "month", operator: "eq", value: "2026-07" },
+      ],
+    },
+    "finance-derived": {
+      schema: [
+        { key: "enterprise", label: "企业编号", type: "enum", values: ["E-204", "E-318", "E-506"] },
+        { key: "featurePack", label: "特征包", type: "enum", values: ["经营稳定性 V3", "现金流 V2", "供应链 V1"] },
+        { key: "normalization", label: "标准化方式", type: "enum", values: ["Z-Score", "Min-Max", "分位数"] },
+        { key: "maskLevel", label: "脱敏级别", type: "enum", values: ["标准", "严格", "审核后原值"] },
+      ],
+      defaults: [
+        { field: "enterprise", operator: "eq", value: "E-204" },
+        { field: "featurePack", operator: "eq", value: "经营稳定性 V3" },
+      ],
+    },
+    "city-verify": {
+      schema: [
+        { key: "credential", label: "居民凭证", type: "enum", values: ["R-2048", "R-3186", "R-4207"] },
+        { key: "policy", label: "政策项目", type: "enum", values: ["养老补贴 Q3", "住房补贴 Q3", "医疗救助 Q3"] },
+        { key: "period", label: "核验周期", type: "enum", values: ["2026-Q3", "2026-Q2", "2026-Q1"] },
+        { key: "region", label: "政策地区", type: "enum", values: ["东城区", "西城区", "南城区"] },
+      ],
+      defaults: [
+        { field: "credential", operator: "eq", value: "R-2048" },
+        { field: "policy", operator: "eq", value: "养老补贴 Q3" },
+      ],
+    },
+    "finance-verify": {
+      schema: [
+        { key: "company", label: "企业", type: "enum", values: ["远澜科技", "海岸智造", "星桥能源"] },
+        { key: "account", label: "账户尾号", type: "enum", values: ["8421", "1936", "5708"] },
+        { key: "relation", label: "核验关系", type: "enum", values: ["开户归属", "资金授权", "代付关系"] },
+        { key: "institution", label: "机构", type: "enum", values: ["东海银行", "华城银行", "联合支付"] },
+      ],
+      defaults: [
+        { field: "company", operator: "eq", value: "远澜科技" },
+        { field: "account", operator: "eq", value: "8421" },
+      ],
+    },
+  };
+  const residentQueryProductIds = new Set(["city-existence", "content-library"]);
   let seriesIndex = 0;
   let productIndex = 0;
   let phase = 0;
   let attackStep = 0;
   let viewMode = "interface";
   let inputValue = "";
-  let residentConditions = defaultResidentConditions();
+  let structuredConditions = structuredProductConfigs["city-existence"].defaults.map((condition) => ({ ...condition }));
   let timers = [];
 
   const escapeHtml = (value) => String(value)
@@ -69,9 +146,26 @@
     return field?.type === "number" ? String(field.min ?? 0) : String(field?.values?.[0] ?? "");
   }
 
-  function formatResidentConditions() {
-    return residentConditions.map((condition) => {
-      const field = residentFields.get(condition.field);
+  function structuredConfig(product = current().product) {
+    return structuredProductConfigs[product?.id] ?? null;
+  }
+
+  function structuredSchema(product = current().product) {
+    return structuredConfig(product)?.schema ?? [];
+  }
+
+  function structuredFields(product = current().product) {
+    return new Map(structuredSchema(product).map((field) => [field.key, field]));
+  }
+
+  function defaultStructuredConditions(product = current().product) {
+    return (structuredConfig(product)?.defaults ?? []).map((condition) => ({ ...condition }));
+  }
+
+  function formatStructuredConditions(product = current().product) {
+    const fields = structuredFields(product);
+    return structuredConditions.map((condition) => {
+      const field = fields.get(condition.field);
       const operator = operatorFor(field, condition.operator);
       return `${field?.label ?? condition.field} ${operator.symbol} ${condition.value}`;
     }).join(" AND ");
@@ -91,16 +185,20 @@
   }
 
   function queryResidents() {
-    return residentStore.records.filter((record) => residentConditions.every((condition) => recordMatchesCondition(record, condition)));
+    return residentStore.records.filter((record) => structuredConditions.every((condition) => recordMatchesCondition(record, condition)));
   }
 
-  function restrictiveDefaultCondition() {
-    const usedFields = new Set(residentConditions.map((condition) => condition.field));
-    const availableFields = residentStore.schema.filter((field) => !usedFields.has(field.key));
-    const currentMatches = queryResidents();
+  function nextStructuredCondition(product = current().product) {
+    const schema = structuredSchema(product);
+    const usedFields = new Set(structuredConditions.map((condition) => condition.field));
+    const availableFields = schema.filter((field) => !usedFields.has(field.key));
     const fallbackField = availableFields[0];
     if (!fallbackField) return null;
+    if (!residentQueryProductIds.has(product.id)) {
+      return { field: fallbackField.key, operator: operatorsFor(fallbackField)[0].id, value: conditionDefault(fallbackField) };
+    }
 
+    const currentMatches = queryResidents();
     const candidates = availableFields.flatMap((field) => {
       const values = field.type === "number"
         ? Array.from({ length: Number(field.max) - Number(field.min) + 1 }, (_, index) => String(Number(field.min) + index))
@@ -132,15 +230,23 @@
   }
 
   const withCurrentInput = (product) => {
-    if (product.id !== "city-existence") return { ...product, inputValue: inputValue.trim() || product.inputValue };
-    const matches = queryResidents();
-    return {
-      ...product,
-      inputLabel: "查询条件",
-      inputValue: formatResidentConditions(),
-      outputValue: matches.length > 0 ? "TRUE" : "FALSE",
-      outputDetail: "对外只返回是否存在，不返回命中数量或居民记录。",
-    };
+    if (!structuredConfig(product)) return { ...product, inputValue: inputValue.trim() || product.inputValue };
+    const formattedInput = formatStructuredConditions(product);
+    if (residentQueryProductIds.has(product.id)) {
+      const matches = queryResidents();
+      return {
+        ...product,
+        inputLabel: "查询条件",
+        inputValue: formattedInput,
+        outputValue: matches.length > 0 ? "TRUE" : "FALSE",
+        outputDetail: "对外只返回是否存在，不返回命中数量或居民记录。",
+      };
+    }
+    if (product.id === "content-library") {
+      const matches = queryResidents();
+      return { ...product, inputValue: formattedInput, outputValue: `${matches.length} 条授权记录` };
+    }
+    return { ...product, inputValue: formattedInput };
   };
 
   function aggregate(product) {
@@ -165,22 +271,22 @@
   }
 
   function authorizedResidentRecords() {
-    return residentStore.records.filter((record) => record.street === "07" && record.age >= 60 && record.occupation === "退休");
+    return queryResidents().slice(0, 5);
   }
 
   function authorizedResidentVisual(product, currentPhase) {
     const ready = currentPhase >= 3;
     const rows = authorizedResidentRecords();
     return `<div class="authorized-records-view">
-      <div class="query-ribbon ${currentPhase >= 1 ? "active" : ""}"><span>${escapeHtml(product.inputLabel)}</span><strong>${escapeHtml(product.inputValue)}</strong></div>
-      <div class="authorized-record-table" aria-label="授权居民记录检索结果">
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前条件</span><strong>${escapeHtml(product.inputValue)}</strong></div>
+      ${ready ? `<div class="authorized-record-table" aria-label="授权居民记录检索结果">
         <div class="authorized-record-row authorized-record-head"><span>记录编号</span><span>公开字段</span><span>受保护字段（＊）</span></div>
-        ${ready ? rows.map((record) => `<div class="authorized-record-row">
+        ${rows.map((record) => `<div class="authorized-record-row">
           <strong>${escapeHtml(record.residentId)}</strong>
           <div class="public-features"><span><b>街道</b>${escapeHtml(record.street)}</span><span><b>年龄</b>${escapeHtml(record.age)}</span><span><b>职业</b>${escapeHtml(record.occupation)}</span></div>
           <div class="protected-features"><span><b>＊ 收入区间</b><i>••••</i></span><span><b>＊ 补贴状态</b><i>••••</i></span><span><b>＊ 保障类型</b><i>••••</i></span></div>
-        </div>`).join("") : '<div class="authorized-record-waiting">运行检索后显示授权记录</div>'}
-      </div>
+        </div>`).join("")}
+      </div>` : ""}
     </div>`;
   }
 
@@ -263,19 +369,19 @@
         housing: "housing",
       };
       const sqlOperators = { eq: "=", neq: "<>", gte: ">=", lte: "<=", gt: ">", lt: "<" };
-      const where = residentConditions.map((condition) => `${sqlFields[condition.field]} ${sqlOperators[condition.operator] ?? "="} ?`).join("\n  AND ");
-      const parameters = residentConditions.map((condition) => residentFields.get(condition.field)?.type === "number" ? Number(condition.value) : condition.value);
+      const where = structuredConditions.map((condition) => `${sqlFields[condition.field]} ${sqlOperators[condition.operator] ?? "="} ?`).join("\n  AND ");
+      const parameters = structuredConditions.map((condition) => residentFields.get(condition.field)?.type === "number" ? Number(condition.value) : condition.value);
+      if (product.id === "content-library") return {
+        language: "SQL / JSON",
+        code: `SELECT resident_id, street, age, occupation\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
+        output: `{ "records": ${queryResidents().length}, "public_fields": ["resident_id", "street", "age", "occupation"], "protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
+      };
       return {
         language: "SQL / JSON",
         code: `SELECT EXISTS (\n  SELECT 1\n  FROM residents\n  WHERE ${where}\n) AS exists;\n\nparams = ${JSON.stringify(parameters)}`,
         output: `{ "exists": ${product.outputValue === "TRUE"}, "records": "protected" }`,
       };
     }
-    if (product.id === "content-library") return {
-      language: "SQL / JSON",
-      code: `SELECT resident_id, street, age, occupation\nFROM residents\nWHERE street = ?\n  AND age >= ?\n  AND occupation = ?;\n\nparams = ["07", 60, "退休"]`,
-      output: `{ "records": 3, "public_fields": ["resident_id", "street", "age", "occupation"], "protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
-    };
     if (activeSeries.visual === "gradient") return {
       language: "PYTORCH",
       code: `batch_x, batch_y = next(train_loader)\nlogits = model(batch_x)\nloss = criterion(logits, batch_y)\nloss.backward()\ngradient = model.classifier.weight.grad`,
@@ -319,27 +425,29 @@
     return renderVisual(activeSeries, product, currentPhase);
   }
 
-  function renderResidentValueControl(condition, field, index) {
+  function renderStructuredValueControl(condition, field, index) {
     if (field.type === "enum") {
       return `<select data-condition-value="${index}" aria-label="${escapeHtml(field.label)}的值">${field.values.map((value) => `<option value="${escapeHtml(value)}" ${String(condition.value) === String(value) ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}</select>`;
     }
     return `<input type="number" min="${field.min ?? ""}" max="${field.max ?? ""}" value="${escapeHtml(condition.value)}" data-condition-value="${index}" aria-label="${escapeHtml(field.label)}的值" />`;
   }
 
-  function renderResidentProductControl(product) {
-    return `<form class="product-control resident-query-control" data-product-form>
+  function renderStructuredProductControl(product) {
+    const schema = structuredSchema(product);
+    const fields = structuredFields(product);
+    return `<form class="product-control structured-query-control" data-product-form>
       <div class="condition-builder">
         <div class="condition-builder-heading"><span>组合条件</span></div>
-        <div class="condition-list">${residentConditions.map((condition, index) => {
-          const field = residentFields.get(condition.field) ?? residentStore.schema[0];
+        <div class="condition-list">${structuredConditions.map((condition, index) => {
+          const field = fields.get(condition.field) ?? schema[0];
           return `<div class="condition-row" data-condition-row="${index}">
-            <select data-condition-field="${index}" aria-label="第 ${index + 1} 个条件的字段">${residentStore.schema.map((candidate) => `<option value="${escapeHtml(candidate.key)}" ${candidate.key === field.key ? "selected" : ""}>${escapeHtml(candidate.label)}</option>`).join("")}</select>
+            <select data-condition-field="${index}" aria-label="第 ${index + 1} 个条件的字段">${schema.map((candidate) => `<option value="${escapeHtml(candidate.key)}" ${candidate.key === field.key ? "selected" : ""}>${escapeHtml(candidate.label)}</option>`).join("")}</select>
             <select data-condition-operator="${index}" aria-label="第 ${index + 1} 个条件的运算符">${operatorsFor(field).map((operator) => `<option value="${operator.id}" ${operator.id === condition.operator ? "selected" : ""}>${escapeHtml(operator.label)}</option>`).join("")}</select>
-            ${renderResidentValueControl(condition, field, index)}
-            <button type="button" class="condition-remove" data-remove-condition="${index}" ${residentConditions.length === 1 ? "disabled" : ""} aria-label="删除第 ${index + 1} 个条件">删除</button>
+            ${renderStructuredValueControl(condition, field, index)}
+            <button type="button" class="condition-remove" data-remove-condition="${index}" ${structuredConditions.length === 1 ? "disabled" : ""} aria-label="删除第 ${index + 1} 个条件">删除</button>
           </div>`;
         }).join("")}</div>
-        <button type="button" class="condition-add" data-add-condition ${residentConditions.length >= residentStore.schema.length ? "disabled" : ""}>+ 添加条件</button>
+        <button type="button" class="condition-add" data-add-condition ${structuredConditions.length >= schema.length ? "disabled" : ""}>+ 添加条件</button>
       </div>
       <div class="query-actions">
         <button type="button" class="secondary" data-reset-query>恢复示例</button>
@@ -349,7 +457,7 @@
   }
 
   function renderProductControl(product) {
-    if (product.id === "city-existence") return renderResidentProductControl(product);
+    if (structuredConfig(product)) return renderStructuredProductControl(product);
     return `<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form>`;
   }
 
@@ -371,13 +479,14 @@
     viewMode = "interface";
     inputValue = product.inputValue;
     const displayProduct = withCurrentInput(product);
+    const minimalFooter = Boolean(structuredConfig(product));
     root.innerHTML = `
       <div class="series-switcher" aria-label="选择产品演示系列">${series.map((item, index) => `<button type="button" data-series="${index}" aria-pressed="${seriesIndex === index}" class="${seriesIndex === index ? "active" : ""}"><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="product-switcher" aria-label="${escapeHtml(activeSeries.name)}产品切换">${products.map((item, index) => `<button type="button" data-product="${index}" aria-pressed="${productIndex === index}" class="${productIndex === index ? "active" : ""}"><span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="guided-tour">
         <section class="demo-act product-demo-act">
           <header class="demo-act-heading"><strong>产品演示</strong></header>
-          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header><form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${product.id === "city-existence" ? "resident-product-footer" : ""}">${product.id === "city-existence" ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
+          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header><form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${minimalFooter ? "minimal-product-footer" : ""}">${minimalFooter ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
@@ -497,11 +606,11 @@
     if (seriesButton) {
       seriesIndex = Number(seriesButton.getAttribute("data-series"));
       productIndex = 0;
-      residentConditions = defaultResidentConditions();
+      structuredConditions = defaultStructuredConditions(current().product);
       renderLab();
     } else if (productButton) {
       productIndex = Number(productButton.getAttribute("data-product"));
-      residentConditions = defaultResidentConditions();
+      structuredConditions = defaultStructuredConditions(current().product);
       renderLab();
     } else if (viewButton) {
       viewMode = viewButton.getAttribute("data-view-mode") || "interface";
@@ -512,21 +621,22 @@
       });
       updateProductPhase(phase);
     } else if (target?.closest("[data-reset-query]")) {
-      residentConditions = defaultResidentConditions();
+      structuredConditions = defaultStructuredConditions(current().product);
       refreshProductControl();
       resetAfterControlEdit();
     } else if (target?.closest("[data-add-condition]")) {
-      const condition = restrictiveDefaultCondition();
-      if (condition && residentConditions.length < residentStore.schema.length) {
-        residentConditions.push(condition);
+      const product = current().product;
+      const condition = nextStructuredCondition(product);
+      if (condition && structuredConditions.length < structuredSchema(product).length) {
+        structuredConditions.push(condition);
         refreshProductControl();
         resetAfterControlEdit();
       }
     } else if (target?.closest("[data-remove-condition]")) {
       const button = target.closest("[data-remove-condition]");
       const index = Number(button?.getAttribute("data-remove-condition"));
-      if (residentConditions.length > 1 && Number.isInteger(index)) {
-        residentConditions.splice(index, 1);
+      if (structuredConditions.length > 1 && Number.isInteger(index)) {
+        structuredConditions.splice(index, 1);
         refreshProductControl();
         resetAfterControlEdit();
       }
@@ -549,7 +659,7 @@
     if (!(target instanceof HTMLInputElement)) return;
     if (target.matches("[data-condition-value]")) {
       const index = Number(target.getAttribute("data-condition-value"));
-      if (residentConditions[index]) residentConditions[index].value = target.value;
+      if (structuredConditions[index]) structuredConditions[index].value = target.value;
       resetAfterControlEdit();
       return;
     }
@@ -564,9 +674,9 @@
     if (!(target instanceof HTMLSelectElement)) return;
     if (target.matches("[data-condition-field]")) {
       const index = Number(target.getAttribute("data-condition-field"));
-      const field = residentFields.get(target.value);
-      if (residentConditions[index] && field) {
-        residentConditions[index] = { field: field.key, operator: operatorsFor(field)[0].id, value: conditionDefault(field) };
+      const field = structuredFields(current().product).get(target.value);
+      if (structuredConditions[index] && field) {
+        structuredConditions[index] = { field: field.key, operator: operatorsFor(field)[0].id, value: conditionDefault(field) };
         refreshProductControl();
         resetAfterControlEdit();
       }
@@ -574,13 +684,13 @@
     }
     if (target.matches("[data-condition-operator]")) {
       const index = Number(target.getAttribute("data-condition-operator"));
-      if (residentConditions[index]) residentConditions[index].operator = target.value;
+      if (structuredConditions[index]) structuredConditions[index].operator = target.value;
       resetAfterControlEdit();
       return;
     }
     if (target.matches("[data-condition-value]")) {
       const index = Number(target.getAttribute("data-condition-value"));
-      if (residentConditions[index]) residentConditions[index].value = target.value;
+      if (structuredConditions[index]) structuredConditions[index].value = target.value;
       resetAfterControlEdit();
     }
   });
@@ -591,7 +701,7 @@
     event.preventDefault();
     const input = form.querySelector("[data-product-input]");
     if (input instanceof HTMLInputElement) inputValue = input.value;
-    if (current().product.id === "city-existence") inputValue = formatResidentConditions();
+    if (structuredConfig(current().product)) inputValue = formatStructuredConditions(current().product);
     scheduleProductRun();
   });
 
