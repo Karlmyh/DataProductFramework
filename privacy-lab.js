@@ -25,6 +25,16 @@
     { field: "subsidyStatus", operator: "eq", value: "有效" },
   ];
   if (productsById["city-existence"]) productsById["city-existence"].name = "居民数据存在性查询";
+  if (productsById["content-library"]) Object.assign(productsById["content-library"], {
+    name: "居民授权记录检索库",
+    tagline: "按授权条件返回居民记录的公开字段，受保护字段仅显示字段名称。",
+    inputLabel: "授权检索条件",
+    inputValue: "街道=07 ∧ 年龄≥60 ∧ 职业=退休",
+    callLabel: "检索授权记录",
+    outputLabel: "检索结果",
+    outputValue: "3 条授权记录",
+    outputDetail: "返回记录编号、街道、年龄和职业；收入、补贴和保障类型保持受保护。",
+  });
   let seriesIndex = 0;
   let productIndex = 0;
   let phase = 0;
@@ -149,13 +159,34 @@
         <span>当前条件</span>
         <strong>${escapeHtml(product.inputValue)}</strong>
       </div>
-      <div class="existence-result" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
+      <div class="existence-result ${ready ? product.outputValue === "TRUE" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
       ${exposed ? '<div class="attack-overlay">重复改变条件并比较真假响应，可逐步缩小隐藏成员范围。</div>' : ""}
+    </div>`;
+  }
+
+  function authorizedResidentRecords() {
+    return residentStore.records.filter((record) => record.street === "07" && record.age >= 60 && record.occupation === "退休");
+  }
+
+  function authorizedResidentVisual(product, currentPhase) {
+    const ready = currentPhase >= 3;
+    const rows = authorizedResidentRecords();
+    return `<div class="authorized-records-view">
+      <div class="query-ribbon ${currentPhase >= 1 ? "active" : ""}"><span>${escapeHtml(product.inputLabel)}</span><strong>${escapeHtml(product.inputValue)}</strong></div>
+      <div class="authorized-record-table" aria-label="授权居民记录检索结果">
+        <div class="authorized-record-row authorized-record-head"><span>记录编号</span><span>公开字段</span><span>受保护字段（＊）</span></div>
+        ${ready ? rows.map((record) => `<div class="authorized-record-row">
+          <strong>${escapeHtml(record.residentId)}</strong>
+          <div class="public-features"><span><b>街道</b>${escapeHtml(record.street)}</span><span><b>年龄</b>${escapeHtml(record.age)}</span><span><b>职业</b>${escapeHtml(record.occupation)}</span></div>
+          <div class="protected-features"><span><b>＊ 收入区间</b><i>••••</i></span><span><b>＊ 补贴状态</b><i>••••</i></span><span><b>＊ 保障类型</b><i>••••</i></span></div>
+        </div>`).join("") : '<div class="authorized-record-waiting">运行检索后显示授权记录</div>'}
+      </div>
     </div>`;
   }
 
   function dataVisual(product, currentPhase) {
     if (product.id === "city-existence") return residentExistenceVisual(product, currentPhase);
+    if (product.id === "content-library") return authorizedResidentVisual(product, currentPhase);
     const isVerification = product.category.startsWith("0304");
     const exposed = currentPhase >= 4;
     return `<div class="data-product-view">
@@ -240,6 +271,11 @@
         output: `{ "exists": ${product.outputValue === "TRUE"}, "records": "protected" }`,
       };
     }
+    if (product.id === "content-library") return {
+      language: "SQL / JSON",
+      code: `SELECT resident_id, street, age, occupation\nFROM residents\nWHERE street = ?\n  AND age >= ?\n  AND occupation = ?;\n\nparams = ["07", 60, "退休"]`,
+      output: `{ "records": 3, "public_fields": ["resident_id", "street", "age", "occupation"], "protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
+    };
     if (activeSeries.visual === "gradient") return {
       language: "PYTORCH",
       code: `batch_x, batch_y = next(train_loader)\nlogits = model(batch_x)\nloss = criterion(logits, batch_y)\nloss.backward()\ngradient = model.classifier.weight.grad`,
