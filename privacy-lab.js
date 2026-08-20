@@ -41,13 +41,14 @@
     outputDetail: "返回样本数、平均年龄、平均家庭人数和保障房占比。",
   });
   if (productsById["finance-derived"]) Object.assign(productsById["finance-derived"], {
-    tagline: "选择企业和特征范围，返回明确的经营特征名称、数值与统计口径。",
-    inputLabel: "加工条件",
-    inputValue: "远澜科技 ∧ 全部经营特征",
-    callLabel: "生成经营特征",
-    outputLabel: "特征结果",
-    outputValue: "12 项具体经营特征",
-    outputDetail: "直接列出加工后的业务特征，不使用匿名记录编号或抽象特征编码。",
+    name: "居民数据加工服务",
+    tagline: "对居民公共服务数据库执行重采样、子采样或合成数据生成，交付加工后的数据样本。",
+    inputLabel: "加工设置",
+    inputValue: "Bootstrap 有放回重采样 · 返回12条",
+    callLabel: "生成加工数据",
+    outputLabel: "加工结果",
+    outputValue: "12 条加工样本",
+    outputDetail: "返回加工后的居民样本，并明确标注重复抽中、无放回抽取或合成生成。",
   });
   const structuredProductConfigs = {
     "city-existence": {
@@ -88,12 +89,12 @@
     },
     "finance-derived": {
       schema: [
-        { key: "enterprise", label: "企业", type: "enum", values: ["远澜科技", "海岸智造", "星桥能源"] },
-        { key: "featurePack", label: "特征范围", type: "enum", values: ["全部经营特征", "财务与现金流", "客户与供应链", "经营稳定性"] },
+        { key: "processingMethod", label: "加工方式", type: "enum", values: ["Bootstrap 有放回重采样", "Subsampling 无放回子采样", "Synthetic Data 合成数据"] },
+        { key: "sampleSize", label: "返回样本数", type: "enum", values: ["6", "12", "20"] },
       ],
       defaults: [
-        { field: "enterprise", operator: "eq", value: "远澜科技" },
-        { field: "featurePack", operator: "eq", value: "全部经营特征" },
+        { field: "processingMethod", operator: "eq", value: "Bootstrap 有放回重采样" },
+        { field: "sampleSize", operator: "eq", value: "12" },
       ],
     },
     "city-verify": {
@@ -174,6 +175,9 @@
 
   function formatStructuredConditions(product = current().product) {
     const fields = structuredFields(product);
+    if (product?.id === "finance-derived") {
+      return structuredConditions.map((condition) => `${fields.get(condition.field)?.label ?? condition.field}：${condition.value}`).join(" · ");
+    }
     return structuredConditions.map((condition) => {
       const field = fields.get(condition.field);
       const operator = operatorFor(field, condition.operator);
@@ -261,7 +265,7 @@
       return { ...product, inputValue: formattedInput, outputValue: `${matches.length} 条样本` };
     }
     if (product.id === "finance-derived") {
-      return { ...product, inputValue: formattedInput, outputValue: `${enterpriseFeatureRows().length} 项具体经营特征` };
+      return { ...product, inputValue: formattedInput, outputValue: `${processedResidentRows().length} 条加工样本` };
     }
     if (product.id === "finance-graph") {
       return { ...product, inputValue: formattedInput, outputValue: "已返回授权关系路径" };
@@ -336,67 +340,61 @@
     </div>`;
   }
 
-  const enterpriseFeatureData = {
-    "远澜科技": [
-      { group: "财务与现金流", name: "营收同比增长率", value: "+12.4%", basis: "2026年1—7月同比" },
-      { group: "财务与现金流", name: "毛利率", value: "28.4%", basis: "2026年1—7月" },
-      { group: "财务与现金流", name: "现金流覆盖率", value: "1.38", basis: "经营现金流 ÷ 到期债务" },
-      { group: "财务与现金流", name: "资产负债率", value: "46.8%", basis: "2026年7月末" },
-      { group: "客户与供应链", name: "客户留存率", value: "82.6%", basis: "近12个月" },
-      { group: "客户与供应链", name: "最大客户订单占比", value: "31.0%", basis: "2026年1—7月" },
-      { group: "客户与供应链", name: "库存周转次数", value: "6.2 次/年", basis: "近12个月年化" },
-      { group: "客户与供应链", name: "交付准时率", value: "94.1%", basis: "近6个月" },
-      { group: "经营稳定性", name: "用工稳定率", value: "91.2%", basis: "近12个月" },
-      { group: "经营稳定性", name: "研发投入占比", value: "8.6%", basis: "研发投入 ÷ 营收" },
-      { group: "经营稳定性", name: "产能利用率", value: "76.3%", basis: "2026年7月" },
-      { group: "经营稳定性", name: "月度营收波动系数", value: "0.18", basis: "近12个月" },
-    ],
-    "海岸智造": [
-      { group: "财务与现金流", name: "营收同比增长率", value: "+8.7%", basis: "2026年1—7月同比" },
-      { group: "财务与现金流", name: "毛利率", value: "24.9%", basis: "2026年1—7月" },
-      { group: "财务与现金流", name: "现金流覆盖率", value: "1.16", basis: "经营现金流 ÷ 到期债务" },
-      { group: "财务与现金流", name: "资产负债率", value: "52.3%", basis: "2026年7月末" },
-      { group: "客户与供应链", name: "客户留存率", value: "78.4%", basis: "近12个月" },
-      { group: "客户与供应链", name: "最大客户订单占比", value: "36.5%", basis: "2026年1—7月" },
-      { group: "客户与供应链", name: "库存周转次数", value: "5.4 次/年", basis: "近12个月年化" },
-      { group: "客户与供应链", name: "交付准时率", value: "90.8%", basis: "近6个月" },
-      { group: "经营稳定性", name: "用工稳定率", value: "87.5%", basis: "近12个月" },
-      { group: "经营稳定性", name: "研发投入占比", value: "6.9%", basis: "研发投入 ÷ 营收" },
-      { group: "经营稳定性", name: "产能利用率", value: "71.8%", basis: "2026年7月" },
-      { group: "经营稳定性", name: "月度营收波动系数", value: "0.24", basis: "近12个月" },
-    ],
-    "星桥能源": [
-      { group: "财务与现金流", name: "营收同比增长率", value: "+18.1%", basis: "2026年1—7月同比" },
-      { group: "财务与现金流", name: "毛利率", value: "31.6%", basis: "2026年1—7月" },
-      { group: "财务与现金流", name: "现金流覆盖率", value: "1.52", basis: "经营现金流 ÷ 到期债务" },
-      { group: "财务与现金流", name: "资产负债率", value: "43.7%", basis: "2026年7月末" },
-      { group: "客户与供应链", name: "客户留存率", value: "86.9%", basis: "近12个月" },
-      { group: "客户与供应链", name: "最大客户订单占比", value: "27.8%", basis: "2026年1—7月" },
-      { group: "客户与供应链", name: "库存周转次数", value: "7.1 次/年", basis: "近12个月年化" },
-      { group: "客户与供应链", name: "交付准时率", value: "96.3%", basis: "近6个月" },
-      { group: "经营稳定性", name: "用工稳定率", value: "93.4%", basis: "近12个月" },
-      { group: "经营稳定性", name: "研发投入占比", value: "10.2%", basis: "研发投入 ÷ 营收" },
-      { group: "经营稳定性", name: "产能利用率", value: "81.5%", basis: "2026年7月" },
-      { group: "经营稳定性", name: "月度营收波动系数", value: "0.15", basis: "近12个月" },
-    ],
-  };
-
-  function enterpriseFeatureRows() {
-    const enterprise = structuredConditionValue("enterprise", "远澜科技");
-    const scope = structuredConditionValue("featurePack", "全部经营特征");
-    const rows = enterpriseFeatureData[enterprise] ?? enterpriseFeatureData["远澜科技"];
-    return scope === "全部经营特征" ? rows : rows.filter((row) => row.group === scope);
+  function processedResidentRows() {
+    const method = structuredConditionValue("processingMethod", "Bootstrap 有放回重采样");
+    const count = Math.max(1, Math.min(20, Number(structuredConditionValue("sampleSize", "12")) || 12));
+    const records = residentStore.records;
+    if (method.startsWith("Subsampling")) {
+      return Array.from({ length: count }, (_, index) => {
+        const sourceIndex = (index * 37 + 9) % records.length;
+        return { record: records[sourceIndex], source: `第 ${sourceIndex + 1} 条原始记录`, marker: "无放回抽取" };
+      });
+    }
+    if (method.startsWith("Synthetic")) {
+      return Array.from({ length: count }, (_, index) => {
+        const left = records[(index * 13 + 4) % records.length];
+        const right = records[(index * 29 + 11) % records.length];
+        return {
+          record: {
+            street: index % 2 === 0 ? left.street : right.street,
+            age: Math.max(18, Math.min(84, Math.round((left.age + right.age) / 2 + index % 3 - 1))),
+            occupation: index % 2 === 0 ? left.occupation : right.occupation,
+            householdSize: Math.max(1, Math.min(6, Math.round((left.householdSize + right.householdSize) / 2))),
+            housing: index % 2 === 0 ? right.housing : left.housing,
+          },
+          source: "合成生成",
+          marker: "非真实居民",
+        };
+      });
+    }
+    const sampled = Array.from({ length: count }, (_, index) => {
+      const sourceIndex = index > 0 && index % 4 === 0 ? ((index - 1) * 17 + 6) % records.length : (index * 17 + 6) % records.length;
+      return { record: records[sourceIndex], sourceIndex };
+    });
+    const frequencies = sampled.reduce((counts, item) => counts.set(item.sourceIndex, (counts.get(item.sourceIndex) ?? 0) + 1), new Map());
+    return sampled.map((item) => ({
+      record: item.record,
+      source: `第 ${item.sourceIndex + 1} 条原始记录`,
+      marker: frequencies.get(item.sourceIndex) > 1 ? "重复抽中" : "有放回抽取",
+    }));
   }
 
-  function enterpriseFeatureVisual(product, currentPhase) {
+  function residentProcessingInfo() {
+    const method = structuredConditionValue("processingMethod", "Bootstrap 有放回重采样");
+    const rows = processedResidentRows();
+    if (method.startsWith("Subsampling")) return { method, action: `从100条原始记录中无放回抽取 ${rows.length} 条`, rows };
+    if (method.startsWith("Synthetic")) return { method, action: `学习原始字段分布并生成 ${rows.length} 条非真实居民样本`, rows };
+    return { method, action: `从100条原始记录中有放回抽取 ${rows.length} 次`, rows };
+  }
+
+  function residentProcessingVisual(product, currentPhase) {
     const ready = currentPhase >= 3;
-    const rows = enterpriseFeatureRows();
-    return `<div class="enterprise-feature-view">
-      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前条件</span><strong>${escapeHtml(product.inputValue)}</strong></div>
-      ${ready ? `<div class="enterprise-feature-table" aria-label="企业经营特征加工结果">
-        <div class="enterprise-feature-row enterprise-feature-head"><span>特征类别</span><span>具体特征</span><span>返回值</span><span>统计口径</span></div>
-        ${rows.map((row) => `<div class="enterprise-feature-row"><span>${escapeHtml(row.group)}</span><strong>${escapeHtml(row.name)}</strong><b>${escapeHtml(row.value)}</b><span>${escapeHtml(row.basis)}</span></div>`).join("")}
-      </div>` : ""}
+    const processing = residentProcessingInfo();
+    return `<div class="resident-processing-view">
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前加工设置</span><strong>${escapeHtml(product.inputValue)}</strong></div>
+      ${ready ? `<div class="processing-flow" aria-label="居民数据加工过程"><div><span>输入数据</span><strong>居民公共服务数据库</strong><small>100 条原始记录</small></div><b>→</b><div class="active"><span>加工操作</span><strong>${escapeHtml(processing.method)}</strong><small>${escapeHtml(processing.action)}</small></div><b>→</b><div><span>交付结果</span><strong>${processing.rows.length} 条加工样本</strong><small>不是原始记录直接查询</small></div></div>
+      <p class="processing-difference"><b>返回内容不同：</b>03-01-01 只返回 TRUE/FALSE，03-01-02 返回原始授权记录，03-01-04 返回群体统计；这里返回经过重采样、子采样或合成生成后的新数据集。</p>
+      <div class="processed-resident-table" aria-label="居民数据加工结果"><div class="processed-resident-row processed-resident-head"><span>样本</span><span>来源</span><span>街道</span><span>年龄</span><span>职业</span><span>家庭人数</span><span>居住类型</span></div>${processing.rows.map((item, index) => `<div class="processed-resident-row"><strong>第 ${index + 1} 条</strong><span>${escapeHtml(item.source)}<i class="${item.marker === "重复抽中" ? "is-repeat" : item.marker === "非真实居民" ? "is-synthetic" : ""}">${escapeHtml(item.marker)}</i></span><span>${escapeHtml(item.record.street)}</span><span>${escapeHtml(item.record.age)}</span><span>${escapeHtml(item.record.occupation)}</span><span>${escapeHtml(item.record.householdSize)}</span><span>${escapeHtml(item.record.housing)}</span></div>`).join("")}</div>` : ""}
     </div>`;
   }
 
@@ -456,7 +454,7 @@
     if (product.id === "content-library") return authorizedResidentVisual(product, currentPhase);
     if (product.id === "finance-graph") return enterpriseGraphVisual(product, currentPhase);
     if (product.id === "finance-aggregate") return residentStatisticsVisual(product, currentPhase);
-    if (product.id === "finance-derived") return enterpriseFeatureVisual(product, currentPhase);
+    if (product.id === "finance-derived") return residentProcessingVisual(product, currentPhase);
     const isVerification = product.category.startsWith("0304");
     const exposed = currentPhase >= 4;
     return `<div class="data-product-view">
@@ -564,13 +562,16 @@
       };
     }
     if (product.id === "finance-derived") {
-      const enterprise = structuredConditionValue("enterprise", "远澜科技");
-      const scope = structuredConditionValue("featurePack", "全部经营特征");
-      const rows = enterpriseFeatureRows();
+      const processing = residentProcessingInfo();
+      const operation = processing.method.startsWith("Bootstrap")
+        ? "bootstrap(residents, { size, replace: true })"
+        : processing.method.startsWith("Subsampling")
+          ? "subsample(residents, { size, replace: false })"
+          : "synthesize(residents, { size, preserveDistribution: true })";
       return {
-        language: "SQL / JSON",
-        code: `SELECT feature_group, feature_name, feature_value, statistical_basis\nFROM enterprise_operating_features\nWHERE enterprise_name = "${enterprise}"\n  AND ("${scope}" = "全部经营特征" OR feature_group = "${scope}");`,
-        output: JSON.stringify({ enterprise, features: rows }, null, 2),
+        language: "JAVASCRIPT / JSON",
+        code: `const residents = await load("resident-public-service");\nconst size = ${processing.rows.length};\nconst processed = ${operation};\nreturn processed;`,
+        output: JSON.stringify({ method: processing.method, source_records: 100, output_records: processing.rows.length, preview: processing.rows.slice(0, 3).map((item) => ({ source: item.source, marker: item.marker, ...item.record })) }, null, 2),
       };
     }
     if (activeSeries.visual === "gradient") return {
@@ -626,6 +627,12 @@
   function renderStructuredProductControl(product) {
     const schema = structuredSchema(product);
     const fields = structuredFields(product);
+    if (product.id === "finance-derived") {
+      return `<form class="product-control structured-query-control" data-product-form><div class="condition-builder"><div class="condition-builder-heading"><span>加工设置</span></div><div class="processing-setting-list">${structuredConditions.map((condition, index) => {
+        const field = fields.get(condition.field) ?? schema[index];
+        return `<label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, index)}</label>`;
+      }).join("")}</div></div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
+    }
     return `<form class="product-control structured-query-control" data-product-form>
       <div class="condition-builder">
         <div class="condition-builder-heading"><span>组合条件</span></div>
