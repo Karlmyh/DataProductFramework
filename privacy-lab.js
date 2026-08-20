@@ -109,7 +109,7 @@
       schema: [
         { key: "streetRange", label: "街道范围", type: "enum", values: ["01—05", "07—09"] },
         { key: "ageStage", label: "年龄阶段", type: "enum", values: ["青年（18—39岁）", "中年（40—59岁）", "老年（60岁及以上）"] },
-        { key: "occupation", label: "职业", type: "enum", values: ["退休", "制造业", "服务业", "自由职业", "学生", "无业"] },
+        { key: "occupation", label: "职业", type: "enum", values: ["退休", "学生", "其他职业", "无业"] },
         { key: "householdRange", label: "家庭人数", type: "enum", values: ["1—2人", "3—4人", "5人及以上"] },
         { key: "processingMethod", label: "加工方式", type: "enum", values: ["Bootstrap 有放回重采样", "Subsampling 无放回子采样", "Synthetic Data 合成数据"] },
         { key: "sampleSize", label: "返回样本数", type: "enum", values: ["6", "12", "20"] },
@@ -412,7 +412,10 @@
         if (condition.value.startsWith("3")) return record.householdSize >= 3 && record.householdSize <= 4;
         return record.householdSize >= 5;
       }
-      if (condition.field === "occupation") return record.occupation === condition.value;
+      if (condition.field === "occupation") {
+        if (condition.value === "其他职业") return ["制造业", "服务业", "自由职业"].includes(record.occupation);
+        return record.occupation === condition.value;
+      }
       return true;
     }));
   }
