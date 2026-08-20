@@ -754,7 +754,7 @@
         <div class="condition-builder-heading"><span>人脸身份核验</span></div>
         <div class="face-verification-input-list">
           <label class="face-signature-input"><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, 0)}</label>
-          <div class="face-image-input"><span>待核验图片</span><label class="face-image-picker"><img src="${escapeHtml(faceImageUrl)}" alt="当前选择的待核验人脸" data-face-image-preview /><small>选择图片</small><input type="file" accept="image/*" data-face-image-input aria-label="选择待核验人脸图片" /></label></div>
+          <div class="face-image-input"><span>待核验图片</span><label class="face-image-picker"><img src="${escapeHtml(faceImageUrl)}" alt="当前选择的待核验人脸" data-face-image-preview /><small>选择图片</small><input type="file" accept="image/*" data-face-image-input aria-label="选择待核验人脸图片" hidden /></label></div>
         </div>
       </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
     }
