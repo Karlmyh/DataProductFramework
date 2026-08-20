@@ -336,6 +336,18 @@ th { font-weight: 700; }
 .resident-stat-card strong { margin-top: 8px; font: 700 25px Arial, sans-serif; }
 .resident-stat-card small { margin-top: 3px; color: var(--muted); font-size: 9px; }
 
+.enterprise-feature-view { padding: 18px; }
+.enterprise-feature-table { margin-top: 14px; border: 1px solid var(--ink); background: var(--paper); }
+.enterprise-feature-row { display: grid; grid-template-columns: 130px minmax(170px, 1.2fr) minmax(105px, .7fr) minmax(160px, 1fr); align-items: center; min-height: 42px; }
+.enterprise-feature-row + .enterprise-feature-row { border-top: 1px solid var(--line-soft); }
+.enterprise-feature-row > * { min-width: 0; padding: 9px 11px; }
+.enterprise-feature-row > * + * { border-left: 1px solid var(--line-soft); }
+.enterprise-feature-row > span { color: var(--muted); font-size: 9px; }
+.enterprise-feature-row > strong { font-size: 10px; }
+.enterprise-feature-row > b { font: 700 13px Arial, sans-serif; }
+.enterprise-feature-head { min-height: 34px; background: var(--soft); }
+.enterprise-feature-head > span { color: var(--muted); font-size: 9px; font-weight: 700; }
+
 .embedded-product-flow { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); background: var(--soft); }
 .embedded-product-flow span { color: var(--muted); font-size: 10px; font-weight: 700; opacity: .55; transition: color .25s ease, opacity .25s ease; }
 .embedded-product-flow span.active { color: var(--ink); opacity: 1; }
@@ -495,6 +507,10 @@ th { font-weight: 700; }
   .authorized-record-row > * + * { border-top: 1px solid var(--line-soft); border-left: 0; }
   .authorized-record-head { display: none; }
   .resident-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .enterprise-feature-row { grid-template-columns: 1fr 1fr; }
+  .enterprise-feature-row > * + * { border-left: 0; }
+  .enterprise-feature-row > *:nth-child(even) { border-left: 1px solid var(--line-soft); }
+  .enterprise-feature-head { display: none; }
   .vision-product-view, .chat-product-view, .attribute-product-view { grid-template-columns: 1fr; }
   .vision-frame, .chat-thread { min-height: 270px; border-right: 0; border-bottom: 1px solid var(--ink); }
   .vision-readout, .retrieval-drawer { min-height: 150px; }

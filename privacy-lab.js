@@ -40,6 +40,15 @@
     outputValue: "10 条样本",
     outputDetail: "返回样本数、平均年龄、平均家庭人数和保障房占比。",
   });
+  if (productsById["finance-derived"]) Object.assign(productsById["finance-derived"], {
+    tagline: "选择企业和特征范围，返回明确的经营特征名称、数值与统计口径。",
+    inputLabel: "加工条件",
+    inputValue: "远澜科技 ∧ 全部经营特征",
+    callLabel: "生成经营特征",
+    outputLabel: "特征结果",
+    outputValue: "12 项具体经营特征",
+    outputDetail: "直接列出加工后的业务特征，不使用匿名记录编号或抽象特征编码。",
+  });
   const structuredProductConfigs = {
     "city-existence": {
       schema: residentStore.schema,
@@ -79,14 +88,12 @@
     },
     "finance-derived": {
       schema: [
-        { key: "enterprise", label: "企业编号", type: "enum", values: ["E-204", "E-318", "E-506"] },
-        { key: "featurePack", label: "特征包", type: "enum", values: ["经营稳定性 V3", "现金流 V2", "供应链 V1"] },
-        { key: "normalization", label: "标准化方式", type: "enum", values: ["Z-Score", "Min-Max", "分位数"] },
-        { key: "maskLevel", label: "脱敏级别", type: "enum", values: ["标准", "严格", "审核后原值"] },
+        { key: "enterprise", label: "企业", type: "enum", values: ["远澜科技", "海岸智造", "星桥能源"] },
+        { key: "featurePack", label: "特征范围", type: "enum", values: ["全部经营特征", "财务与现金流", "客户与供应链", "经营稳定性"] },
       ],
       defaults: [
-        { field: "enterprise", operator: "eq", value: "E-204" },
-        { field: "featurePack", operator: "eq", value: "经营稳定性 V3" },
+        { field: "enterprise", operator: "eq", value: "远澜科技" },
+        { field: "featurePack", operator: "eq", value: "全部经营特征" },
       ],
     },
     "city-verify": {
@@ -253,6 +260,9 @@
       const matches = queryResidents();
       return { ...product, inputValue: formattedInput, outputValue: `${matches.length} 条样本` };
     }
+    if (product.id === "finance-derived") {
+      return { ...product, inputValue: formattedInput, outputValue: `${enterpriseFeatureRows().length} 项具体经营特征` };
+    }
     if (product.id === "finance-graph") {
       return { ...product, inputValue: formattedInput, outputValue: "已返回授权关系路径" };
     }
@@ -326,6 +336,70 @@
     </div>`;
   }
 
+  const enterpriseFeatureData = {
+    "远澜科技": [
+      { group: "财务与现金流", name: "营收同比增长率", value: "+12.4%", basis: "2026年1—7月同比" },
+      { group: "财务与现金流", name: "毛利率", value: "28.4%", basis: "2026年1—7月" },
+      { group: "财务与现金流", name: "现金流覆盖率", value: "1.38", basis: "经营现金流 ÷ 到期债务" },
+      { group: "财务与现金流", name: "资产负债率", value: "46.8%", basis: "2026年7月末" },
+      { group: "客户与供应链", name: "客户留存率", value: "82.6%", basis: "近12个月" },
+      { group: "客户与供应链", name: "最大客户订单占比", value: "31.0%", basis: "2026年1—7月" },
+      { group: "客户与供应链", name: "库存周转次数", value: "6.2 次/年", basis: "近12个月年化" },
+      { group: "客户与供应链", name: "交付准时率", value: "94.1%", basis: "近6个月" },
+      { group: "经营稳定性", name: "用工稳定率", value: "91.2%", basis: "近12个月" },
+      { group: "经营稳定性", name: "研发投入占比", value: "8.6%", basis: "研发投入 ÷ 营收" },
+      { group: "经营稳定性", name: "产能利用率", value: "76.3%", basis: "2026年7月" },
+      { group: "经营稳定性", name: "月度营收波动系数", value: "0.18", basis: "近12个月" },
+    ],
+    "海岸智造": [
+      { group: "财务与现金流", name: "营收同比增长率", value: "+8.7%", basis: "2026年1—7月同比" },
+      { group: "财务与现金流", name: "毛利率", value: "24.9%", basis: "2026年1—7月" },
+      { group: "财务与现金流", name: "现金流覆盖率", value: "1.16", basis: "经营现金流 ÷ 到期债务" },
+      { group: "财务与现金流", name: "资产负债率", value: "52.3%", basis: "2026年7月末" },
+      { group: "客户与供应链", name: "客户留存率", value: "78.4%", basis: "近12个月" },
+      { group: "客户与供应链", name: "最大客户订单占比", value: "36.5%", basis: "2026年1—7月" },
+      { group: "客户与供应链", name: "库存周转次数", value: "5.4 次/年", basis: "近12个月年化" },
+      { group: "客户与供应链", name: "交付准时率", value: "90.8%", basis: "近6个月" },
+      { group: "经营稳定性", name: "用工稳定率", value: "87.5%", basis: "近12个月" },
+      { group: "经营稳定性", name: "研发投入占比", value: "6.9%", basis: "研发投入 ÷ 营收" },
+      { group: "经营稳定性", name: "产能利用率", value: "71.8%", basis: "2026年7月" },
+      { group: "经营稳定性", name: "月度营收波动系数", value: "0.24", basis: "近12个月" },
+    ],
+    "星桥能源": [
+      { group: "财务与现金流", name: "营收同比增长率", value: "+18.1%", basis: "2026年1—7月同比" },
+      { group: "财务与现金流", name: "毛利率", value: "31.6%", basis: "2026年1—7月" },
+      { group: "财务与现金流", name: "现金流覆盖率", value: "1.52", basis: "经营现金流 ÷ 到期债务" },
+      { group: "财务与现金流", name: "资产负债率", value: "43.7%", basis: "2026年7月末" },
+      { group: "客户与供应链", name: "客户留存率", value: "86.9%", basis: "近12个月" },
+      { group: "客户与供应链", name: "最大客户订单占比", value: "27.8%", basis: "2026年1—7月" },
+      { group: "客户与供应链", name: "库存周转次数", value: "7.1 次/年", basis: "近12个月年化" },
+      { group: "客户与供应链", name: "交付准时率", value: "96.3%", basis: "近6个月" },
+      { group: "经营稳定性", name: "用工稳定率", value: "93.4%", basis: "近12个月" },
+      { group: "经营稳定性", name: "研发投入占比", value: "10.2%", basis: "研发投入 ÷ 营收" },
+      { group: "经营稳定性", name: "产能利用率", value: "81.5%", basis: "2026年7月" },
+      { group: "经营稳定性", name: "月度营收波动系数", value: "0.15", basis: "近12个月" },
+    ],
+  };
+
+  function enterpriseFeatureRows() {
+    const enterprise = structuredConditionValue("enterprise", "远澜科技");
+    const scope = structuredConditionValue("featurePack", "全部经营特征");
+    const rows = enterpriseFeatureData[enterprise] ?? enterpriseFeatureData["远澜科技"];
+    return scope === "全部经营特征" ? rows : rows.filter((row) => row.group === scope);
+  }
+
+  function enterpriseFeatureVisual(product, currentPhase) {
+    const ready = currentPhase >= 3;
+    const rows = enterpriseFeatureRows();
+    return `<div class="enterprise-feature-view">
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前条件</span><strong>${escapeHtml(product.inputValue)}</strong></div>
+      ${ready ? `<div class="enterprise-feature-table" aria-label="企业经营特征加工结果">
+        <div class="enterprise-feature-row enterprise-feature-head"><span>特征类别</span><span>具体特征</span><span>返回值</span><span>统计口径</span></div>
+        ${rows.map((row) => `<div class="enterprise-feature-row"><span>${escapeHtml(row.group)}</span><strong>${escapeHtml(row.name)}</strong><b>${escapeHtml(row.value)}</b><span>${escapeHtml(row.basis)}</span></div>`).join("")}
+      </div>` : ""}
+    </div>`;
+  }
+
   function structuredConditionValue(fieldKey, fallback = "") {
     return structuredConditions.find((condition) => condition.field === fieldKey)?.value ?? fallback;
   }
@@ -382,6 +456,7 @@
     if (product.id === "content-library") return authorizedResidentVisual(product, currentPhase);
     if (product.id === "finance-graph") return enterpriseGraphVisual(product, currentPhase);
     if (product.id === "finance-aggregate") return residentStatisticsVisual(product, currentPhase);
+    if (product.id === "finance-derived") return enterpriseFeatureVisual(product, currentPhase);
     const isVerification = product.category.startsWith("0304");
     const exposed = currentPhase >= 4;
     return `<div class="data-product-view">
@@ -486,6 +561,16 @@
         language: "CYPHER / JSON",
         code: `MATCH p=(source)-[r*1..2]-(target:Company {name: "${structuredConditionValue("company", "远澜科技")}"})\nWHERE $relation = "全部关系" OR all(edge IN relationships(p) WHERE edge.family = $relation)\nRETURN p;`,
         output: `{ "paths": ${paths.length}, "entities": ${entities}, "relation": "${structuredConditionValue("relation", "全部关系")}" }`,
+      };
+    }
+    if (product.id === "finance-derived") {
+      const enterprise = structuredConditionValue("enterprise", "远澜科技");
+      const scope = structuredConditionValue("featurePack", "全部经营特征");
+      const rows = enterpriseFeatureRows();
+      return {
+        language: "SQL / JSON",
+        code: `SELECT feature_group, feature_name, feature_value, statistical_basis\nFROM enterprise_operating_features\nWHERE enterprise_name = "${enterprise}"\n  AND ("${scope}" = "全部经营特征" OR feature_group = "${scope}");`,
+        output: JSON.stringify({ enterprise, features: rows }, null, 2),
       };
     }
     if (activeSeries.visual === "gradient") return {
