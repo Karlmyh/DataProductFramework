@@ -89,7 +89,7 @@
     callLabel: "核验居民身份",
     outputLabel: "核验结果",
     outputValue: "认证",
-    outputDetail: "对外只返回认证或非认证，不返回人脸相似度或登记模板。",
+    outputDetail: "对外只返回认证或不认证，不返回人脸相似度或登记模板。",
   });
   const structuredProductConfigs = {
     "city-existence": {
@@ -189,6 +189,9 @@
   let viewMode = "interface";
   let inputValue = "";
   let structuredConditions = structuredProductConfigs["city-existence"].defaults.map((condition) => ({ ...condition }));
+  const defaultFaceImageUrl = "assets/resident-face-verification-demo.jpg";
+  let faceImageUrl = defaultFaceImageUrl;
+  let faceImageMatchesResident = true;
   let timers = [];
 
   const escapeHtml = (value) => String(value)
@@ -337,8 +340,8 @@
       return { ...product, inputValue: formattedInput, outputValue: qualifies ? "符合" : "不符合" };
     }
     if (product.id === "content-voice") {
-      const authenticated = structuredConditionValue("identitySignature") === "9F2C-7A18-D4E6-03B9-AC51";
-      return { ...product, inputValue: formattedInput, outputValue: authenticated ? "认证" : "非认证" };
+      const authenticated = structuredConditionValue("identitySignature") === "9F2C-7A18-D4E6-03B9-AC51" && faceImageMatchesResident;
+      return { ...product, inputValue: formattedInput, outputValue: authenticated ? "认证" : "不认证" };
     }
     return { ...product, inputValue: formattedInput };
   };
@@ -380,15 +383,8 @@
   function residentFaceVerificationVisual(product, currentPhase) {
     const exposed = currentPhase >= 4;
     const ready = currentPhase >= 3;
-    return `<div class="resident-face-verification-view">
-      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}">
-        <span>居民身份签名</span>
-        <strong>${escapeHtml(product.inputValue)}</strong>
-      </div>
-      <div class="face-verification-body">
-        <figure><img src="assets/resident-face-verification-demo.jpg" alt="虚构居民的待核验人脸" /><figcaption>待核验人脸</figcaption></figure>
-        <div class="face-verification-status"><span>身份核验结果</span><div class="existence-result ${ready ? product.outputValue === "认证" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div></div>
-      </div>
+    return `<div class="resident-face-verification-result-view">
+      <div class="existence-result ${ready ? product.outputValue === "认证" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
       ${exposed ? '<div class="attack-overlay">反复提交人脸探针并观察认证边界，可能逼近登记人脸模板。</div>' : ""}
     </div>`;
   }
@@ -756,7 +752,10 @@
       const field = fields.get(condition.field) ?? schema[0];
       return `<form class="product-control structured-query-control" data-product-form><div class="condition-builder">
         <div class="condition-builder-heading"><span>人脸身份核验</span></div>
-        <div class="processing-setting-list verification-setting-list"><label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, 0)}</label></div>
+        <div class="face-verification-input-list">
+          <label class="face-signature-input"><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, 0)}</label>
+          <div class="face-image-input"><span>待核验图片</span><label class="face-image-picker"><img src="${escapeHtml(faceImageUrl)}" alt="当前选择的待核验人脸" data-face-image-preview /><small>选择图片</small><input type="file" accept="image/*" data-face-image-input aria-label="选择待核验人脸图片" /></label></div>
+        </div>
       </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
     }
     if (product.id === "finance-derived") {
@@ -816,6 +815,12 @@
   function refreshProductControl() {
     const control = root.querySelector("[data-product-form]");
     if (control) control.outerHTML = renderProductControl(current().product);
+  }
+
+  function resetFaceVerificationImage() {
+    if (faceImageUrl.startsWith("blob:")) window.URL.revokeObjectURL(faceImageUrl);
+    faceImageUrl = defaultFaceImageUrl;
+    faceImageMatchesResident = true;
   }
 
   function renderLab() {
@@ -953,10 +958,12 @@
       seriesIndex = Number(seriesButton.getAttribute("data-series"));
       productIndex = 0;
       structuredConditions = defaultStructuredConditions(current().product);
+      resetFaceVerificationImage();
       renderLab();
     } else if (productButton) {
       productIndex = Number(productButton.getAttribute("data-product"));
       structuredConditions = defaultStructuredConditions(current().product);
+      resetFaceVerificationImage();
       renderLab();
     } else if (viewButton) {
       viewMode = viewButton.getAttribute("data-view-mode") || "interface";
@@ -968,6 +975,7 @@
       updateProductPhase(phase);
     } else if (target?.closest("[data-reset-query]")) {
       structuredConditions = defaultStructuredConditions(current().product);
+      if (current().product.id === "content-voice") resetFaceVerificationImage();
       refreshProductControl();
       resetAfterControlEdit();
     } else if (target?.closest("[data-add-condition]")) {
@@ -1017,6 +1025,17 @@
 
   root.addEventListener("change", (event) => {
     const target = event.target;
+    if (target instanceof HTMLInputElement && target.matches("[data-face-image-input]")) {
+      const file = target.files?.[0];
+      if (!file) return;
+      if (faceImageUrl.startsWith("blob:")) window.URL.revokeObjectURL(faceImageUrl);
+      faceImageUrl = window.URL.createObjectURL(file);
+      faceImageMatchesResident = false;
+      const preview = root.querySelector("[data-face-image-preview]");
+      if (preview instanceof HTMLImageElement) preview.src = faceImageUrl;
+      resetAfterControlEdit();
+      return;
+    }
     if (!(target instanceof HTMLSelectElement)) return;
     if (target.matches("[data-condition-field]")) {
       const index = Number(target.getAttribute("data-condition-field"));
