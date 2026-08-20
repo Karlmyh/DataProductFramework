@@ -40,7 +40,7 @@
       ],
     },
     "content-library": {
-      schema: residentStore.schema,
+      schema: residentStore.schema.filter((field) => ["street", "age", "occupation", "householdSize", "housing"].includes(field.key)),
       defaults: [
         { field: "street", operator: "eq", value: "07" },
         { field: "age", operator: "gte", value: "60" },
@@ -50,13 +50,13 @@
     "finance-graph": {
       schema: [
         { key: "company", label: "企业", type: "enum", values: ["远澜科技", "海岸智造", "星桥能源"] },
-        { key: "relation", label: "关系类型", type: "enum", values: ["控制关系", "股权关系", "项目关系"] },
+        { key: "relation", label: "关系类型", type: "enum", values: ["全部关系", "控制关系", "股权关系", "项目关系"] },
         { key: "hops", label: "最大跳数", type: "number", min: 1, max: 3 },
         { key: "direction", label: "关系方向", type: "enum", values: ["向外", "向内", "双向"] },
       ],
       defaults: [
         { field: "company", operator: "eq", value: "远澜科技" },
-        { field: "relation", operator: "eq", value: "控制关系" },
+        { field: "relation", operator: "eq", value: "全部关系" },
         { field: "hops", operator: "lte", value: "2" },
       ],
     },
@@ -246,6 +246,11 @@
       const matches = queryResidents();
       return { ...product, inputValue: formattedInput, outputValue: `${matches.length} 条授权记录` };
     }
+    if (product.id === "finance-graph") {
+      const paths = filteredEnterpriseGraphPaths();
+      const entityCount = new Set(paths.flatMap((path) => path.nodes.map((node) => node.key))).size;
+      return { ...product, inputValue: formattedInput, outputValue: `${paths.length} 条路径 / ${entityCount} 个实体` };
+    }
     return { ...product, inputValue: formattedInput };
   };
 
@@ -283,16 +288,71 @@
         <div class="authorized-record-row authorized-record-head"><span>记录编号</span><span>公开字段</span><span>受保护字段（＊）</span></div>
         ${rows.map((record) => `<div class="authorized-record-row">
           <strong>${escapeHtml(record.residentId)}</strong>
-          <div class="public-features"><span><b>街道</b>${escapeHtml(record.street)}</span><span><b>年龄</b>${escapeHtml(record.age)}</span><span><b>职业</b>${escapeHtml(record.occupation)}</span></div>
+          <div class="public-features"><span><b>街道</b>${escapeHtml(record.street)}</span><span><b>年龄</b>${escapeHtml(record.age)}</span><span><b>职业</b>${escapeHtml(record.occupation)}</span><span><b>家庭人数</b>${escapeHtml(record.householdSize)}</span><span><b>居住类型</b>${escapeHtml(record.housing)}</span></div>
           <div class="protected-features"><span><b>＊ 收入区间</b><i>••••</i></span><span><b>＊ 补贴状态</b><i>••••</i></span><span><b>＊ 保障类型</b><i>••••</i></span></div>
         </div>`).join("")}
       </div>` : ""}
     </div>`;
   }
 
+  function structuredConditionValue(fieldKey, fallback = "") {
+    return structuredConditions.find((condition) => condition.field === fieldKey)?.value ?? fallback;
+  }
+
+  function enterpriseGraphPaths() {
+    const targetCompany = structuredConditionValue("company", "远澜科技");
+    const target = { key: "target-company", label: targetCompany, kind: "目标企业" };
+    return [
+      {
+        id: "P1",
+        type: "控制关系",
+        direction: "向内",
+        nodes: [{ key: "zhou-haining", label: "周海宁", kind: "自然人" }, { key: "haiyue-holding", label: "海岳控股", kind: "控股企业" }, target],
+        edges: ["实际控制", "控制"],
+      },
+      {
+        id: "P2",
+        type: "股权关系",
+        direction: "向内",
+        nodes: [{ key: "guochuang-capital", label: "国创资本", kind: "管理人" }, { key: "langang-fund", label: "蓝港产业基金", kind: "股东" }, target],
+        edges: ["出资管理", "持股 18.6%"],
+      },
+      {
+        id: "P3",
+        type: "项目关系",
+        direction: "向外",
+        nodes: [target, { key: "xinyuan-project", label: "新源储能项目", kind: "项目" }, { key: "xingqiao-energy", label: "星桥能源", kind: "合作方" }],
+        edges: ["参与投资", "联合建设"],
+      },
+    ];
+  }
+
+  function filteredEnterpriseGraphPaths() {
+    const relation = structuredConditionValue("relation", "全部关系");
+    const maxHops = Number(structuredConditionValue("hops", "2"));
+    const direction = structuredConditionValue("direction", "双向");
+    return enterpriseGraphPaths().filter((path) =>
+      (relation === "全部关系" || path.type === relation)
+      && path.edges.length <= maxHops
+      && (direction === "双向" || path.direction === direction));
+  }
+
+  function enterpriseGraphVisual(product, currentPhase) {
+    const ready = currentPhase >= 3;
+    const paths = filteredEnterpriseGraphPaths();
+    const entityCount = new Set(paths.flatMap((path) => path.nodes.map((node) => node.key))).size;
+    return `<div class="enterprise-graph-view">
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前条件</span><strong>${escapeHtml(product.inputValue)}</strong></div>
+      ${ready ? `<div class="graph-result-summary"><strong>${paths.length} 条路径</strong><span>${entityCount} 个去重实体</span></div>
+      <div class="relation-path-list">${paths.map((path) => `<article class="relation-path-card"><header><b>${path.id}</b><strong>${escapeHtml(path.type)}</strong><span>${escapeHtml(path.direction)}</span></header><div class="relation-path-chain">${path.nodes.map((node, index) => `<span class="relation-entity"><b>${escapeHtml(node.label)}</b><small>${escapeHtml(node.kind)}</small></span>${index < path.edges.length ? `<i><small>${escapeHtml(path.edges[index])}</small><b>→</b></i>` : ""}`).join("")}</div></article>`).join("")}</div>
+      <div class="relation-legend"><div><b>控制关系</b><span>对企业决策、人事或经营具有实际支配权。</span></div><div><b>股权关系</b><span>通过直接或间接持股、出资形成的所有权联系。</span></div><div><b>项目关系</b><span>企业因共同投资、参与或建设同一项目而关联。</span></div></div>` : ""}
+    </div>`;
+  }
+
   function dataVisual(product, currentPhase) {
     if (product.id === "city-existence") return residentExistenceVisual(product, currentPhase);
     if (product.id === "content-library") return authorizedResidentVisual(product, currentPhase);
+    if (product.id === "finance-graph") return enterpriseGraphVisual(product, currentPhase);
     const isVerification = product.category.startsWith("0304");
     const exposed = currentPhase >= 4;
     return `<div class="data-product-view">
@@ -373,13 +433,22 @@
       const parameters = structuredConditions.map((condition) => residentFields.get(condition.field)?.type === "number" ? Number(condition.value) : condition.value);
       if (product.id === "content-library") return {
         language: "SQL / JSON",
-        code: `SELECT resident_id, street, age, occupation\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
-        output: `{ "records": ${queryResidents().length}, "public_fields": ["resident_id", "street", "age", "occupation"], "protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
+        code: `SELECT resident_id, street, age, occupation, household_size, housing\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
+        output: `{ "records": ${queryResidents().length}, "public_fields": ["resident_id", "street", "age", "occupation", "household_size", "housing"], "protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
       };
       return {
         language: "SQL / JSON",
         code: `SELECT EXISTS (\n  SELECT 1\n  FROM residents\n  WHERE ${where}\n) AS exists;\n\nparams = ${JSON.stringify(parameters)}`,
         output: `{ "exists": ${product.outputValue === "TRUE"}, "records": "protected" }`,
+      };
+    }
+    if (product.id === "finance-graph") {
+      const paths = filteredEnterpriseGraphPaths();
+      const entities = new Set(paths.flatMap((path) => path.nodes.map((node) => node.key))).size;
+      return {
+        language: "CYPHER / JSON",
+        code: `MATCH p=(source)-[r*1..2]-(target:Company {name: "${structuredConditionValue("company", "远澜科技")}"})\nWHERE $relation = "全部关系" OR all(edge IN relationships(p) WHERE edge.family = $relation)\nRETURN p;`,
+        output: `{ "paths": ${paths.length}, "entities": ${entities}, "relation": "${structuredConditionValue("relation", "全部关系")}" }`,
       };
     }
     if (activeSeries.visual === "gradient") return {
