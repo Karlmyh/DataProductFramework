@@ -81,6 +81,16 @@
     outputValue: "符合",
     outputDetail: "对外只返回符合或不符合，不返回居民原始记录和政策判定细节。",
   });
+  if (productsById["content-voice"]) Object.assign(productsById["content-voice"], {
+    name: "居民人脸身份核验",
+    tagline: "将待核验人脸与居民身份签名对应的登记人脸进行同一性核验。",
+    inputLabel: "居民身份签名",
+    inputValue: "9F2C-7A18-D4E6-03B9-AC51",
+    callLabel: "核验居民身份",
+    outputLabel: "核验结果",
+    outputValue: "认证",
+    outputDetail: "对外只返回认证或非认证，不返回人脸相似度或登记模板。",
+  });
   const structuredProductConfigs = {
     "city-existence": {
       schema: residentStore.schema,
@@ -147,6 +157,14 @@
         { field: "policy", operator: "eq", value: "养老服务补贴" },
         { field: "period", operator: "eq", value: "2026年第3季度" },
         { field: "region", operator: "eq", value: "东城区" },
+      ],
+    },
+    "content-voice": {
+      schema: [
+        { key: "identitySignature", label: "居民身份签名", type: "enum", values: ["9F2C-7A18-D4E6-03B9-AC51", "4A8D-21F0-B7C3-6E92-D145"] },
+      ],
+      defaults: [
+        { field: "identitySignature", operator: "eq", value: "9F2C-7A18-D4E6-03B9-AC51" },
       ],
     },
     "finance-verify": {
@@ -318,6 +336,10 @@
         && structuredConditionValue("region") === "东城区";
       return { ...product, inputValue: formattedInput, outputValue: qualifies ? "符合" : "不符合" };
     }
+    if (product.id === "content-voice") {
+      const authenticated = structuredConditionValue("identitySignature") === "9F2C-7A18-D4E6-03B9-AC51";
+      return { ...product, inputValue: formattedInput, outputValue: authenticated ? "认证" : "非认证" };
+    }
     return { ...product, inputValue: formattedInput };
   };
 
@@ -352,6 +374,22 @@
       </div>
       <div class="existence-result ${ready ? product.outputValue === "符合" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
       ${exposed ? '<div class="attack-overlay">反复替换政策项目、季度和地区，可以逐步推断居民的受惠资格。</div>' : ""}
+    </div>`;
+  }
+
+  function residentFaceVerificationVisual(product, currentPhase) {
+    const exposed = currentPhase >= 4;
+    const ready = currentPhase >= 3;
+    return `<div class="resident-face-verification-view">
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}">
+        <span>居民身份签名</span>
+        <strong>${escapeHtml(product.inputValue)}</strong>
+      </div>
+      <div class="face-verification-body">
+        <figure><img src="assets/resident-face-verification-demo.jpg" alt="虚构居民的待核验人脸" /><figcaption>待核验人脸</figcaption></figure>
+        <div class="face-verification-status"><span>身份核验结果</span><div class="existence-result ${ready ? product.outputValue === "认证" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div></div>
+      </div>
+      ${exposed ? '<div class="attack-overlay">反复提交人脸探针并观察认证边界，可能逼近登记人脸模板。</div>' : ""}
     </div>`;
   }
 
@@ -583,6 +621,7 @@
   }
 
   function renderVisual(activeSeries, product, currentPhase) {
+    if (product.id === "content-voice") return residentFaceVerificationVisual(product, currentPhase);
     if (activeSeries.visual === "vision") return visionVisual(product, currentPhase);
     if (activeSeries.visual === "chat") return chatVisual(product, currentPhase);
     if (activeSeries.visual === "graph") return graphVisual(product, currentPhase);
@@ -710,6 +749,14 @@
           const field = fields.get(condition.field) ?? schema[index];
           return `<label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, index)}</label>`;
         }).join("")}</div>
+      </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
+    }
+    if (product.id === "content-voice") {
+      const condition = structuredConditions[0];
+      const field = fields.get(condition.field) ?? schema[0];
+      return `<form class="product-control structured-query-control" data-product-form><div class="condition-builder">
+        <div class="condition-builder-heading"><span>人脸身份核验</span></div>
+        <div class="processing-setting-list verification-setting-list"><label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, 0)}</label></div>
       </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
     }
     if (product.id === "finance-derived") {
