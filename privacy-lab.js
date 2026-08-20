@@ -19,11 +19,35 @@
       { id: "lt", label: "小于", symbol: "<" },
     ],
   };
-  if (productsById["city-existence"]) Object.assign(productsById["city-existence"], {
-    name: "居民数据存在性查询",
-    outputLabel: "查询结果",
-    outputValue: "存在",
-  });
+  if (productsById["city-existence"]) {
+    Object.assign(productsById["city-existence"], {
+      name: "居民数据存在性查询",
+      outputLabel: "查询结果",
+      outputValue: "存在",
+    });
+    productsById["city-existence"].attacks = [{
+      id: "membership-recovery",
+      name: "居民数据库成员恢复",
+      brief: "利用候选居民的可查询特征反复提交存在性条件，判断哪些候选居民属于隐藏数据库。",
+      result: "从 112 条候选记录中恢复出 95 条成员判断，其中 92 条与真实成员一致。",
+      metric: "真实成员召回",
+      value: "92 / 100",
+      displayScore: 92,
+      evidence: "可操作演示",
+      attackFamily: "成员重建",
+      attackObject: "成员隐私",
+      source: "当前页面居民演示数据",
+      protocol: "真实成员 100；候选居民 112；组合条件存在性查询",
+      limitation: "恢复的是候选居民的数据库成员关系，不是凭空生成未知居民记录。",
+    }];
+    candidatesByProduct["city-existence"] = [{
+      id: "membership-recovery",
+      name: "居民数据库成员恢复",
+      applicable: true,
+      executed: true,
+      reason: "适用：存在或不存在的响应可用于逐步判断候选居民是否属于数据库。",
+    }];
+  }
   if (productsById["content-library"]) Object.assign(productsById["content-library"], {
     name: "居民授权记录检索库",
     tagline: "按授权条件返回居民记录的公开字段，受保护字段仅显示字段名称。",
@@ -201,6 +225,20 @@
   let faceImageUrl = defaultFaceImageUrl;
   let faceImageMatchesResident = true;
   let timers = [];
+  const membershipRecoverySteps = [
+    { name: "准备候选居民", title: "建立候选居民集合", evidence: "候选池包含 112 条已知特征记录，其中真实数据库成员对攻击者不可见。" },
+    { name: "执行存在性查询", title: "用组合条件逐步缩小候选范围", evidence: "每次存在或不存在响应都会排除一部分候选成员关系。" },
+    { name: "生成恢复数据集", title: "形成攻击判断的成员数据集", evidence: "恢复集包含 95 条判断为在库的记录：92 条正确，3 条误判。" },
+  ];
+  const membershipRecoveryMissedIds = new Set(["R-1003", "R-1014", "R-1027", "R-1042", "R-1058", "R-1071", "R-1086", "R-1099"]);
+  const membershipRecoveryDecoys = Array.from({ length: 12 }, (_, index) => {
+    const base = residentStore.records[(index * 7 + 3) % residentStore.records.length] ?? {};
+    return {
+      ...base,
+      residentId: `C-${9001 + index}`,
+      age: Math.min(90, Number(base.age ?? 30) + (index % 3) + 1),
+    };
+  });
 
   const escapeHtml = (value) => String(value)
     .replaceAll("&", "&amp;")
@@ -404,6 +442,57 @@
     return `<div class="resident-face-verification-result-view">
       <div class="existence-result ${ready ? product.outputValue === "认证" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
       ${exposed ? '<div class="attack-overlay">反复提交人脸探针并观察认证边界，可能逼近登记人脸模板。</div>' : ""}
+    </div>`;
+  }
+
+  function residentFeatureSummary(record) {
+    return `街道 ${record.street} · ${record.age}岁 · ${record.occupation} · ${record.householdSize}人家庭`;
+  }
+
+  function membershipRecoveryRows() {
+    const recoveredMembers = residentStore.records.filter((record) => !membershipRecoveryMissedIds.has(record.residentId));
+    const rows = [...recoveredMembers];
+    rows.splice(4, 0, membershipRecoveryDecoys[0]);
+    rows.splice(36, 0, membershipRecoveryDecoys[1]);
+    rows.splice(72, 0, membershipRecoveryDecoys[2]);
+    return rows;
+  }
+
+  function membershipRecoveryAttackVisual(step) {
+    const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
+    const allRecoveredRows = membershipRecoveryRows();
+    const visibleRecoveredCount = currentStep < 2 ? 0 : currentStep === 2 ? 54 : allRecoveredRows.length;
+    const visibleRecoveredRows = allRecoveredRows.slice(0, visibleRecoveredCount);
+    const visibleRecoveredIds = new Set(visibleRecoveredRows.filter((record) => record.residentId.startsWith("R-")).map((record) => record.residentId));
+    const queryExamples = [
+      ["街道 = 07", "存在", "112 → 23"],
+      ["街道 = 07 ∧ 年龄 ≥ 60", "存在", "23 → 10"],
+      ["街道 = 07 ∧ 年龄 = 67 ∧ 职业 = 退休 ∧ 家庭人数 = 1", "存在", "10 → 1"],
+      ["候选 C-9004 的完整可查询特征组合", "不存在", "1 → 0"],
+    ];
+    return `<div class="membership-recovery-view">
+      <div class="membership-query-track">
+        <header><span>候选探测</span><strong>R-1007 / C-9004</strong><small>候选居民特征来自攻击者已有数据</small></header>
+        <div class="membership-query-list">${currentStep >= 2 ? queryExamples.map(([query, result, narrowed], index) => `<div style="--delay:${index * 90}ms"><span>${escapeHtml(query)}</span><b class="${result === "存在" ? "is-true" : "is-false"}">${escapeHtml(result)}</b><small>候选范围 ${escapeHtml(narrowed)}</small></div>`).join("") : '<p>准备对候选居民的公开特征组合提交存在性查询。</p>'}</div>
+      </div>
+      <div class="membership-dataset-compare">
+        <section class="membership-dataset ground-truth-dataset">
+          <header><div><span>系统真实成员数据集</span><small>演示对照 · 攻击者不可见</small></div><strong>100 条</strong></header>
+          <div class="membership-table"><div class="membership-row membership-head"><span>居民编号</span><span>可查询特征</span><span>对照</span></div>${residentStore.records.map((record) => {
+            const recovered = visibleRecoveredIds.has(record.residentId);
+            const missed = currentStep === membershipRecoverySteps.length && membershipRecoveryMissedIds.has(record.residentId);
+            return `<div class="membership-row ${recovered ? "recovered" : missed ? "missed" : "pending"}"><b>${escapeHtml(record.residentId)}</b><span>${escapeHtml(residentFeatureSummary(record))}</span><em>${recovered ? "已恢复" : missed ? "遗漏" : "待判定"}</em></div>`;
+          }).join("")}</div>
+        </section>
+        <section class="membership-dataset recovered-dataset">
+          <header><div><span>攻击恢复成员数据集</span><small>攻击判断为“存在于数据库”</small></div><strong>${visibleRecoveredRows.length} 条</strong></header>
+          <div class="membership-table"><div class="membership-row membership-head"><span>候选编号</span><span>已知特征</span><span>判断</span></div>${visibleRecoveredRows.length ? visibleRecoveredRows.map((record) => {
+            const falsePositive = record.residentId.startsWith("C-");
+            return `<div class="membership-row ${falsePositive ? "false-positive" : "recovered"}"><b>${escapeHtml(record.residentId)}</b><span>${escapeHtml(residentFeatureSummary(record))}</span><em>${falsePositive ? "误判" : "存在"}</em></div>`;
+          }).join("") : '<div class="membership-empty">尚未生成成员判断</div>'}</div>
+        </section>
+      </div>
+      <div class="membership-legend"><span><i class="recovered"></i>成功恢复</span><span><i class="missed"></i>真实成员遗漏</span><span><i class="false-positive"></i>非成员误判</span></div>
     </div>`;
   }
 
@@ -843,6 +932,10 @@
     return `<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form>`;
   }
 
+  function attackProgressItems(product) {
+    return product.id === "city-existence" ? membershipRecoverySteps : product.attacks;
+  }
+
   function resetAfterControlEdit() {
     updateProductPhase(0);
     const stage = root.querySelector("[data-attack-stage]");
@@ -868,6 +961,7 @@
     inputValue = product.inputValue;
     const displayProduct = withCurrentInput(product);
     const minimalFooter = Boolean(structuredConfig(product));
+    const progressItems = attackProgressItems(product);
     root.innerHTML = `
       <div class="series-switcher" aria-label="选择产品演示系列">${series.map((item, index) => `<button type="button" data-series="${index}" aria-pressed="${seriesIndex === index}" class="${seriesIndex === index ? "active" : ""}"><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="product-switcher" aria-label="${escapeHtml(activeSeries.name)}产品切换">${products.map((item, index) => `<button type="button" data-product="${index}" aria-pressed="${productIndex === index}" class="${productIndex === index ? "active" : ""}"><span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
@@ -878,9 +972,9 @@
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
-          <div class="attack-stage">
-            <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header><ol class="attack-progress-list" data-attack-progress>${product.attacks.map((attack, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(attack.name)}</span></li>`).join("")}</ol><div class="attack-canvas" data-attack-canvas>${renderVisual(activeSeries, product, 3)}</div></article>
-            <aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>已连接</i></div><h3 data-audit-title>准备执行适用攻击</h3><div class="audit-counter"><span>已完成攻击</span><strong data-risk-value>0 / ${product.attacks.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>等待攻击序列开始</li></ul></aside>
+          <div class="attack-stage ${product.id === "city-existence" ? "membership-recovery-stage" : ""}">
+            <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header><ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol><div class="attack-canvas" data-attack-canvas>${product.id === "city-existence" ? membershipRecoveryAttackVisual(0) : renderVisual(activeSeries, product, 3)}</div></article>
+            <aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>${product.id === "city-existence" ? "成员恢复攻击" : "旁路隐私评估器"}</span><i>已连接</i></div><h3 data-audit-title>${product.id === "city-existence" ? "准备居民数据库成员恢复" : "准备执行适用攻击"}</h3><div class="audit-counter"><span>${product.id === "city-existence" ? "恢复阶段" : "已完成攻击"}</span><strong data-risk-value>0 / ${progressItems.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>${product.id === "city-existence" ? "等待成员恢复攻击开始" : "等待攻击序列开始"}</li></ul></aside>
           </div>
           <div class="tour-results" data-results hidden></div>
         </section>
@@ -937,9 +1031,10 @@
   function updateAttackStep(nextStep) {
     const { activeSeries, product } = current();
     const displayProduct = withCurrentInput(product);
+    const progressItems = attackProgressItems(product);
     attackStep = nextStep;
     const attackCanvas = root.querySelector("[data-attack-canvas]");
-    if (attackCanvas) attackCanvas.innerHTML = renderVisual(activeSeries, displayProduct, attackStep > 0 ? 4 : 3);
+    if (attackCanvas) attackCanvas.innerHTML = product.id === "city-existence" ? membershipRecoveryAttackVisual(attackStep) : renderVisual(activeSeries, displayProduct, attackStep > 0 ? 4 : 3);
     root.querySelectorAll("[data-attack-index]").forEach((item) => {
       const index = Number(item.getAttribute("data-attack-index"));
       item.classList.toggle("active", index === attackStep - 1);
@@ -949,11 +1044,16 @@
     const value = root.querySelector("[data-risk-value]");
     const bar = root.querySelector("[data-risk-bar]");
     const evidence = root.querySelector("[data-evidence-list]");
-    if (title) title.textContent = attackStep === 0 ? "准备执行适用攻击" : attackStep === product.attacks.length ? "全部适用攻击已经完成" : `正在执行：${product.attacks[attackStep - 1].name}`;
-    if (value) value.textContent = `${attackStep} / ${product.attacks.length}`;
-    if (bar) bar.style.width = `${attackStep / product.attacks.length * 100}%`;
-    if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待攻击序列开始</li>" : product.attacks.slice(0, attackStep).map((attack) => `<li>${escapeHtml(attack.name)}：${escapeHtml(attack.result)}</li>`).join("");
-    if (attackStep === product.attacks.length) renderResults(product);
+    if (product.id === "city-existence") {
+      if (title) title.textContent = attackStep === 0 ? "准备居民数据库成员恢复" : progressItems[Math.min(attackStep, progressItems.length) - 1].title;
+      if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item) => `<li>${escapeHtml(item.evidence)}</li>`).join("");
+    } else {
+      if (title) title.textContent = attackStep === 0 ? "准备执行适用攻击" : attackStep === progressItems.length ? "全部适用攻击已经完成" : `正在执行：${product.attacks[attackStep - 1].name}`;
+      if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待攻击序列开始</li>" : product.attacks.slice(0, attackStep).map((attack) => `<li>${escapeHtml(attack.name)}：${escapeHtml(attack.result)}</li>`).join("");
+    }
+    if (value) value.textContent = `${attackStep} / ${progressItems.length}`;
+    if (bar) bar.style.width = `${attackStep / progressItems.length * 100}%`;
+    if (attackStep === progressItems.length) renderResults(product);
   }
 
   function startAttackRun() {
@@ -965,11 +1065,12 @@
     if (results) results.hidden = true;
     updateAttackStep(0);
     stage?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const progressItems = attackProgressItems(current().product);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      updateAttackStep(current().product.attacks.length);
+      updateAttackStep(progressItems.length);
       return;
     }
-    timers = current().product.attacks.map((_, index) => window.setTimeout(() => updateAttackStep(index + 1), 350 + index * 820));
+    timers = progressItems.map((_, index) => window.setTimeout(() => updateAttackStep(index + 1), 350 + index * 820));
   }
 
   function renderResults(product) {
@@ -980,6 +1081,13 @@
     const results = root.querySelector("[data-results]");
     if (!results) return;
     results.hidden = false;
+    if (product.id === "city-existence") {
+      results.innerHTML = `
+        <header><div><span>攻击恢复结果</span><h3>居民数据库成员恢复完成</h3></div><strong>92 / 100</strong></header>
+        <div class="membership-result-stats"><article><span>系统真实成员</span><strong>100</strong></article><article><span>成功恢复</span><strong>92</strong></article><article><span>真实成员遗漏</span><strong>8</strong></article><article><span>非成员误判</span><strong>3</strong></article></div>
+        <p class="membership-result-note">攻击恢复的是候选居民是否属于数据库。右侧恢复集共 95 条记录，其中 92 条为真实成员、3 条为误判；居民特征来自攻击者已有的候选数据，遗漏和误判来自查询预算限制与可查询特征重合。</p>`;
+      return;
+    }
     results.innerHTML = `
       <header><div><span>攻击结果</span><h3>${executedCount} 种适用攻击已全部完成</h3></div><strong>${executedCount} / ${applicableCount}</strong></header>
       <div class="attack-grid">${product.attacks.map((attack, index) => `<article class="attack-card" style="--delay:${index * 90}ms"><span>${String(index + 1).padStart(2, "0")} · ${escapeHtml(attack.evidence)}</span><h4>${escapeHtml(attack.name)}</h4><small>${escapeHtml(attack.brief)}</small><p>${escapeHtml(attack.result)}</p><div><span>${escapeHtml(attack.metric)}</span><strong>${escapeHtml(attack.value)}</strong></div><i><b style="width:${attack.displayScore}%"></b></i></article>`).join("")}</div>
