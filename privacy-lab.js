@@ -91,6 +91,16 @@
     outputValue: "认证",
     outputDetail: "对外只返回认证或不认证，不返回人脸相似度或登记模板。",
   });
+  if (productsById["finance-verify"]) Object.assign(productsById["finance-verify"], {
+    name: "账户归属核验",
+    tagline: "核验企业主体（实体一）与银行账户（实体二）之间是否存在账户归属关系。",
+    inputLabel: "两主体关系核验",
+    inputValue: "远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q · 东海银行｜账户尾号 8421",
+    callLabel: "核验账户归属",
+    outputLabel: "核验结果",
+    outputValue: "认证",
+    outputDetail: "对外只返回认证或非认证，不返回账户明细或底层关系记录。",
+  });
   const structuredProductConfigs = {
     "city-existence": {
       schema: residentStore.schema,
@@ -169,14 +179,12 @@
     },
     "finance-verify": {
       schema: [
-        { key: "company", label: "企业", type: "enum", values: ["远澜科技", "海岸智造", "星桥能源"] },
-        { key: "account", label: "账户尾号", type: "enum", values: ["8421", "1936", "5708"] },
-        { key: "relation", label: "核验关系", type: "enum", values: ["开户归属", "资金授权", "代付关系"] },
-        { key: "institution", label: "机构", type: "enum", values: ["东海银行", "华城银行", "联合支付"] },
+        { key: "enterpriseEntity", label: "企业主体（实体一）", type: "enum", values: ["远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q", "海岸智造｜统一社会信用代码 91320000MA5T8N4R2L", "星桥能源｜统一社会信用代码 91330000MA6C9P7W4K"] },
+        { key: "accountEntity", label: "银行账户（实体二）", type: "enum", values: ["东海银行｜账户尾号 8421", "华城银行｜账户尾号 1936", "联合支付｜账户尾号 5708"] },
       ],
       defaults: [
-        { field: "company", operator: "eq", value: "远澜科技" },
-        { field: "account", operator: "eq", value: "8421" },
+        { field: "enterpriseEntity", operator: "eq", value: "远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q" },
+        { field: "accountEntity", operator: "eq", value: "东海银行｜账户尾号 8421" },
       ],
     },
   };
@@ -343,6 +351,16 @@
       const authenticated = structuredConditionValue("identitySignature") === "9F2C-7A18-D4E6-03B9-AC51" && faceImageMatchesResident;
       return { ...product, inputValue: formattedInput, outputValue: authenticated ? "认证" : "不认证" };
     }
+    if (product.id === "finance-verify") {
+      const verifiedRelationships = new Map([
+        ["远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q", "东海银行｜账户尾号 8421"],
+        ["海岸智造｜统一社会信用代码 91320000MA5T8N4R2L", "华城银行｜账户尾号 1936"],
+        ["星桥能源｜统一社会信用代码 91330000MA6C9P7W4K", "联合支付｜账户尾号 5708"],
+      ]);
+      const enterprise = structuredConditionValue("enterpriseEntity");
+      const account = structuredConditionValue("accountEntity");
+      return { ...product, inputValue: formattedInput, outputValue: verifiedRelationships.get(enterprise) === account ? "认证" : "非认证" };
+    }
     return { ...product, inputValue: formattedInput };
   };
 
@@ -386,6 +404,15 @@
     return `<div class="resident-face-verification-result-view">
       <div class="existence-result ${ready ? product.outputValue === "认证" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
       ${exposed ? '<div class="attack-overlay">反复提交人脸探针并观察认证边界，可能逼近登记人脸模板。</div>' : ""}
+    </div>`;
+  }
+
+  function relationshipVerificationVisual(product, currentPhase) {
+    const exposed = currentPhase >= 4;
+    const ready = currentPhase >= 3;
+    return `<div class="resident-face-verification-result-view">
+      <div class="existence-result ${ready ? product.outputValue === "认证" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
+      ${exposed ? '<div class="attack-overlay">反复替换企业主体与银行账户，可能枚举出未公开的账户归属关系。</div>' : ""}
     </div>`;
   }
 
@@ -562,6 +589,7 @@
     if (product.id === "finance-graph") return enterpriseGraphVisual(product, currentPhase);
     if (product.id === "finance-aggregate") return residentStatisticsVisual(product, currentPhase);
     if (product.id === "finance-derived") return residentProcessingVisual(product, currentPhase);
+    if (product.id === "finance-verify") return relationshipVerificationVisual(product, currentPhase);
     const isVerification = product.category.startsWith("0304");
     const exposed = currentPhase >= 4;
     return `<div class="data-product-view">
@@ -756,6 +784,15 @@
           <label class="face-signature-input"><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, 0)}</label>
           <div class="face-image-input"><span>待核验图片</span><label class="face-image-picker"><img src="${escapeHtml(faceImageUrl)}" alt="当前选择的待核验人脸" data-face-image-preview /><small>选择图片</small><input type="file" accept="image/*" data-face-image-input aria-label="选择待核验人脸图片" hidden /></label></div>
         </div>
+      </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
+    }
+    if (product.id === "finance-verify") {
+      return `<form class="product-control structured-query-control" data-product-form><div class="condition-builder">
+        <div class="condition-builder-heading"><span>两主体关系核验</span></div>
+        <div class="processing-setting-list verification-setting-list">${structuredConditions.map((condition, index) => {
+          const field = fields.get(condition.field) ?? schema[index];
+          return `<label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, index)}</label>`;
+        }).join("")}</div>
       </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
     }
     if (product.id === "finance-derived") {
