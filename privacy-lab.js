@@ -41,15 +41,33 @@
     outputDetail: "返回样本数、平均年龄、平均家庭人数和保障房占比。",
   });
   if (productsById["finance-derived"]) Object.assign(productsById["finance-derived"], {
-    name: "居民数据加工服务",
+    name: "居民派生与处理查询",
     tagline: "对居民公共服务数据库执行重采样、子采样或合成数据生成，交付加工后的数据样本。",
     inputLabel: "加工设置",
     inputValue: "Bootstrap 有放回重采样 · 返回12条",
     callLabel: "生成加工数据",
+    flow: ["选择居民数据", "执行采样或合成", "交付加工后数据"],
     outputLabel: "加工结果",
     outputValue: "12 条加工样本",
     outputDetail: "返回加工后的居民样本，并明确标注重复抽中、无放回抽取或合成生成。",
   });
+  if (productsById["finance-derived"]?.attacks?.length >= 3) {
+    Object.assign(productsById["finance-derived"].attacks[0], {
+      name: "重采样成员暴露",
+      brief: "比较多次 Bootstrap 输出中同一来源记录的重复出现情况。",
+      result: "高频重复出现的居民记录更容易被判断为原始数据成员。",
+    });
+    Object.assign(productsById["finance-derived"].attacks[1], {
+      name: "子样本关联",
+      brief: "将 Subsampling 返回的公开字段与外部居民特征组合匹配。",
+      result: "部分加工样本可被重新关联到原始居民候选范围。",
+    });
+    Object.assign(productsById["finance-derived"].attacks[2], {
+      name: "合成样本逼近",
+      brief: "分析 Synthetic Data 中反复保留的稀有字段组合。",
+      result: "稀有组合可能过度接近原始居民记录并泄露其属性范围。",
+    });
+  }
   const structuredProductConfigs = {
     "city-existence": {
       schema: residentStore.schema,
