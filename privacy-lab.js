@@ -30,6 +30,16 @@
     outputValue: "3 条授权记录",
     outputDetail: "返回记录编号、街道、年龄和职业；收入、补贴和保障类型保持受保护。",
   });
+  if (productsById["finance-aggregate"]) Object.assign(productsById["finance-aggregate"], {
+    name: "居民群体统计查询",
+    tagline: "按居民条件返回群体统计，不返回任何个人记录。",
+    inputLabel: "统计条件",
+    inputValue: "街道=07 ∧ 年龄≥60",
+    callLabel: "生成居民统计",
+    outputLabel: "统计结果",
+    outputValue: "10 条样本",
+    outputDetail: "返回样本数、平均年龄、平均家庭人数和保障房占比。",
+  });
   const structuredProductConfigs = {
     "city-existence": {
       schema: residentStore.schema,
@@ -61,17 +71,10 @@
       ],
     },
     "finance-aggregate": {
-      schema: [
-        { key: "region", label: "地区", type: "enum", values: ["华东", "华北", "华南"] },
-        { key: "industry", label: "行业", type: "enum", values: ["制造业", "服务业", "新能源"] },
-        { key: "month", label: "月份", type: "enum", values: ["2026-05", "2026-06", "2026-07"] },
-        { key: "metric", label: "统计指标", type: "enum", values: ["经营指数", "营收增长", "就业人数"] },
-        { key: "minSample", label: "最小样本数", type: "number", min: 10, max: 100 },
-      ],
+      schema: residentStore.schema.filter((field) => ["street", "age", "occupation", "householdSize", "housing"].includes(field.key)),
       defaults: [
-        { field: "region", operator: "eq", value: "华东" },
-        { field: "industry", operator: "eq", value: "制造业" },
-        { field: "month", operator: "eq", value: "2026-07" },
+        { field: "street", operator: "eq", value: "07" },
+        { field: "age", operator: "gte", value: "60" },
       ],
     },
     "finance-derived": {
@@ -111,7 +114,7 @@
       ],
     },
   };
-  const residentQueryProductIds = new Set(["city-existence", "content-library"]);
+  const residentQueryProductIds = new Set(["city-existence", "content-library", "finance-aggregate"]);
   let seriesIndex = 0;
   let productIndex = 0;
   let phase = 0;
@@ -232,7 +235,7 @@
   const withCurrentInput = (product) => {
     if (!structuredConfig(product)) return { ...product, inputValue: inputValue.trim() || product.inputValue };
     const formattedInput = formatStructuredConditions(product);
-    if (residentQueryProductIds.has(product.id)) {
+    if (product.id === "city-existence") {
       const matches = queryResidents();
       return {
         ...product,
@@ -246,10 +249,12 @@
       const matches = queryResidents();
       return { ...product, inputValue: formattedInput, outputValue: `${matches.length} 条授权记录` };
     }
+    if (product.id === "finance-aggregate") {
+      const matches = queryResidents();
+      return { ...product, inputValue: formattedInput, outputValue: `${matches.length} 条样本` };
+    }
     if (product.id === "finance-graph") {
-      const paths = filteredEnterpriseGraphPaths();
-      const entityCount = new Set(paths.flatMap((path) => path.nodes.map((node) => node.key))).size;
-      return { ...product, inputValue: formattedInput, outputValue: `${paths.length} 条路径 / ${entityCount} 个实体` };
+      return { ...product, inputValue: formattedInput, outputValue: "已返回授权关系路径" };
     }
     return { ...product, inputValue: formattedInput };
   };
@@ -291,6 +296,32 @@
           <div class="public-features"><span><b>街道</b>${escapeHtml(record.street)}</span><span><b>年龄</b>${escapeHtml(record.age)}</span><span><b>职业</b>${escapeHtml(record.occupation)}</span><span><b>家庭人数</b>${escapeHtml(record.householdSize)}</span><span><b>居住类型</b>${escapeHtml(record.housing)}</span></div>
           <div class="protected-features"><span><b>＊ 收入区间</b><i>••••</i></span><span><b>＊ 补贴状态</b><i>••••</i></span><span><b>＊ 保障类型</b><i>••••</i></span></div>
         </div>`).join("")}
+      </div>` : ""}
+    </div>`;
+  }
+
+  function residentStatistics() {
+    const rows = queryResidents();
+    const count = rows.length;
+    const total = (field) => rows.reduce((sum, record) => sum + Number(record[field] ?? 0), 0);
+    return {
+      count,
+      averageAge: count ? total("age") / count : 0,
+      averageHouseholdSize: count ? total("householdSize") / count : 0,
+      protectedHousingRate: count ? rows.filter((record) => record.housing === "保障房").length / count * 100 : 0,
+    };
+  }
+
+  function residentStatisticsVisual(product, currentPhase) {
+    const ready = currentPhase >= 3;
+    const statistics = residentStatistics();
+    return `<div class="resident-statistics-view">
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前条件</span><strong>${escapeHtml(product.inputValue)}</strong></div>
+      ${ready ? `<div class="resident-stat-grid" aria-label="居民群体统计结果">
+        <div class="resident-stat-card"><span>样本数</span><strong>${statistics.count}</strong><small>人</small></div>
+        <div class="resident-stat-card"><span>平均年龄</span><strong>${statistics.averageAge.toFixed(1)}</strong><small>岁</small></div>
+        <div class="resident-stat-card"><span>平均家庭人数</span><strong>${statistics.averageHouseholdSize.toFixed(1)}</strong><small>人</small></div>
+        <div class="resident-stat-card"><span>保障房占比</span><strong>${statistics.protectedHousingRate.toFixed(1)}</strong><small>%</small></div>
       </div>` : ""}
     </div>`;
   }
@@ -340,12 +371,9 @@
   function enterpriseGraphVisual(product, currentPhase) {
     const ready = currentPhase >= 3;
     const paths = filteredEnterpriseGraphPaths();
-    const entityCount = new Set(paths.flatMap((path) => path.nodes.map((node) => node.key))).size;
     return `<div class="enterprise-graph-view">
       <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前条件</span><strong>${escapeHtml(product.inputValue)}</strong></div>
-      ${ready ? `<div class="graph-result-summary"><strong>${paths.length} 条路径</strong><span>${entityCount} 个去重实体</span></div>
-      <div class="relation-path-list">${paths.map((path) => `<article class="relation-path-card"><header><b>${path.id}</b><strong>${escapeHtml(path.type)}</strong><span>${escapeHtml(path.direction)}</span></header><div class="relation-path-chain">${path.nodes.map((node, index) => `<span class="relation-entity"><b>${escapeHtml(node.label)}</b><small>${escapeHtml(node.kind)}</small></span>${index < path.edges.length ? `<i><small>${escapeHtml(path.edges[index])}</small><b>→</b></i>` : ""}`).join("")}</div></article>`).join("")}</div>
-      <div class="relation-legend"><div><b>控制关系</b><span>对企业决策、人事或经营具有实际支配权。</span></div><div><b>股权关系</b><span>通过直接或间接持股、出资形成的所有权联系。</span></div><div><b>项目关系</b><span>企业因共同投资、参与或建设同一项目而关联。</span></div></div>` : ""}
+      ${ready ? `<div class="relation-path-list">${paths.map((path) => `<article class="relation-path-card"><header><b>${path.id}</b><strong>${escapeHtml(path.type)}</strong><span>${escapeHtml(path.direction)}</span></header><div class="relation-path-chain">${path.nodes.map((node, index) => `<span class="relation-entity"><b>${escapeHtml(node.label)}</b><small>${escapeHtml(node.kind)}</small></span>${index < path.edges.length ? `<i><small>${escapeHtml(path.edges[index])}</small><b>→</b></i>` : ""}`).join("")}</div></article>`).join("")}</div>` : ""}
     </div>`;
   }
 
@@ -353,6 +381,7 @@
     if (product.id === "city-existence") return residentExistenceVisual(product, currentPhase);
     if (product.id === "content-library") return authorizedResidentVisual(product, currentPhase);
     if (product.id === "finance-graph") return enterpriseGraphVisual(product, currentPhase);
+    if (product.id === "finance-aggregate") return residentStatisticsVisual(product, currentPhase);
     const isVerification = product.category.startsWith("0304");
     const exposed = currentPhase >= 4;
     return `<div class="data-product-view">
@@ -417,7 +446,7 @@
   }
 
   function technicalExample(activeSeries, product) {
-    if (product.id === "city-existence") {
+    if (residentQueryProductIds.has(product.id)) {
       const sqlFields = {
         street: "street",
         age: "age",
@@ -436,6 +465,14 @@
         code: `SELECT resident_id, street, age, occupation, household_size, housing\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
         output: `{ "records": ${queryResidents().length}, "public_fields": ["resident_id", "street", "age", "occupation", "household_size", "housing"], "protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
       };
+      if (product.id === "finance-aggregate") {
+        const statistics = residentStatistics();
+        return {
+          language: "SQL / JSON",
+          code: `SELECT COUNT(*) AS sample_count,\n       AVG(age) AS average_age,\n       AVG(household_size) AS average_household_size,\n       AVG(CASE WHEN housing = '保障房' THEN 1.0 ELSE 0.0 END) AS protected_housing_rate\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
+          output: `{ "sample_count": ${statistics.count}, "average_age": ${statistics.averageAge.toFixed(1)}, "average_household_size": ${statistics.averageHouseholdSize.toFixed(1)}, "protected_housing_rate": ${statistics.protectedHousingRate.toFixed(3)} }`,
+        };
+      }
       return {
         language: "SQL / JSON",
         code: `SELECT EXISTS (\n  SELECT 1\n  FROM residents\n  WHERE ${where}\n) AS exists;\n\nparams = ${JSON.stringify(parameters)}`,
