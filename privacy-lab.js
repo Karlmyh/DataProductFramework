@@ -42,14 +42,14 @@
   });
   if (productsById["finance-derived"]) Object.assign(productsById["finance-derived"], {
     name: "居民派生与处理查询",
-    tagline: "对居民公共服务数据库执行重采样、子采样或合成数据生成，交付加工后的数据样本。",
-    inputLabel: "加工设置",
-    inputValue: "Bootstrap 有放回重采样 · 返回12条",
+    tagline: "先用有限条件筛选居民数据，再执行重采样、子采样或合成数据生成。",
+    inputLabel: "筛选与加工设置",
+    inputValue: "街道01—05 · 老年 · 家庭人数1—2人 · Bootstrap 有放回重采样 · 返回12条",
     callLabel: "生成加工数据",
     flow: ["选择居民数据", "执行采样或合成", "交付加工后数据"],
     outputLabel: "加工结果",
     outputValue: "12 条加工样本",
-    outputDetail: "返回加工后的居民样本，并明确标注重复抽中、无放回抽取或合成生成。",
+    outputDetail: "返回筛选后经过重采样、无放回子采样或合成生成的居民数据。",
   });
   if (productsById["finance-derived"]?.attacks?.length >= 3) {
     Object.assign(productsById["finance-derived"].attacks[0], {
@@ -107,10 +107,17 @@
     },
     "finance-derived": {
       schema: [
+        { key: "streetRange", label: "街道范围", type: "enum", values: ["01—05", "07—09"] },
+        { key: "ageStage", label: "年龄阶段", type: "enum", values: ["青年（18—39岁）", "中年（40—59岁）", "老年（60岁及以上）"] },
+        { key: "occupation", label: "职业", type: "enum", values: ["退休", "制造业", "服务业", "自由职业", "学生", "无业"] },
+        { key: "householdRange", label: "家庭人数", type: "enum", values: ["1—2人", "3—4人", "5人及以上"] },
         { key: "processingMethod", label: "加工方式", type: "enum", values: ["Bootstrap 有放回重采样", "Subsampling 无放回子采样", "Synthetic Data 合成数据"] },
         { key: "sampleSize", label: "返回样本数", type: "enum", values: ["6", "12", "20"] },
       ],
       defaults: [
+        { field: "streetRange", operator: "eq", value: "01—05" },
+        { field: "ageStage", operator: "eq", value: "老年（60岁及以上）" },
+        { field: "householdRange", operator: "eq", value: "1—2人" },
         { field: "processingMethod", operator: "eq", value: "Bootstrap 有放回重采样" },
         { field: "sampleSize", operator: "eq", value: "12" },
       ],
@@ -141,6 +148,7 @@
     },
   };
   const residentQueryProductIds = new Set(["city-existence", "content-library", "finance-aggregate"]);
+  const residentProcessingSettingKeys = new Set(["processingMethod", "sampleSize"]);
   let seriesIndex = 0;
   let productIndex = 0;
   let phase = 0;
@@ -361,12 +369,13 @@
   function processedResidentRows() {
     const method = structuredConditionValue("processingMethod", "Bootstrap 有放回重采样");
     const count = Math.max(1, Math.min(20, Number(structuredConditionValue("sampleSize", "12")) || 12));
-    const records = residentStore.records;
+    const records = residentProcessingPool();
+    if (!records.length) return [];
     if (method.startsWith("Subsampling")) {
-      return Array.from({ length: count }, (_, index) => {
-        const sourceIndex = (index * 37 + 9) % records.length;
-        return { record: records[sourceIndex], source: `第 ${sourceIndex + 1} 条原始记录`, marker: "无放回抽取" };
-      });
+      return records
+        .map((record, index) => ({ record, order: (index * 37 + 9) % 101 }))
+        .sort((left, right) => left.order - right.order)
+        .slice(0, Math.min(count, records.length));
     }
     if (method.startsWith("Synthetic")) {
       return Array.from({ length: count }, (_, index) => {
@@ -380,39 +389,46 @@
             householdSize: Math.max(1, Math.min(6, Math.round((left.householdSize + right.householdSize) / 2))),
             housing: index % 2 === 0 ? right.housing : left.housing,
           },
-          source: "合成生成",
-          marker: "非真实居民",
         };
       });
     }
-    const sampled = Array.from({ length: count }, (_, index) => {
-      const sourceIndex = index > 0 && index % 4 === 0 ? ((index - 1) * 17 + 6) % records.length : (index * 17 + 6) % records.length;
-      return { record: records[sourceIndex], sourceIndex };
-    });
-    const frequencies = sampled.reduce((counts, item) => counts.set(item.sourceIndex, (counts.get(item.sourceIndex) ?? 0) + 1), new Map());
-    return sampled.map((item) => ({
-      record: item.record,
-      source: `第 ${item.sourceIndex + 1} 条原始记录`,
-      marker: frequencies.get(item.sourceIndex) > 1 ? "重复抽中" : "有放回抽取",
+    return Array.from({ length: count }, (_, index) => ({ record: records[(index * 7 + 3) % records.length] }));
+  }
+
+  function residentProcessingPool() {
+    const filters = structuredConditions.filter((condition) => !residentProcessingSettingKeys.has(condition.field));
+    return residentStore.records.filter((record) => filters.every((condition) => {
+      if (condition.field === "streetRange") {
+        const [minimum, maximum] = condition.value.split("—").map(Number);
+        return Number(record.street) >= minimum && Number(record.street) <= maximum;
+      }
+      if (condition.field === "ageStage") {
+        if (condition.value.startsWith("青年")) return record.age >= 18 && record.age <= 39;
+        if (condition.value.startsWith("中年")) return record.age >= 40 && record.age <= 59;
+        return record.age >= 60;
+      }
+      if (condition.field === "householdRange") {
+        if (condition.value.startsWith("1")) return record.householdSize <= 2;
+        if (condition.value.startsWith("3")) return record.householdSize >= 3 && record.householdSize <= 4;
+        return record.householdSize >= 5;
+      }
+      if (condition.field === "occupation") return record.occupation === condition.value;
+      return true;
     }));
   }
 
   function residentProcessingInfo() {
     const method = structuredConditionValue("processingMethod", "Bootstrap 有放回重采样");
     const rows = processedResidentRows();
-    if (method.startsWith("Subsampling")) return { method, action: `从100条原始记录中无放回抽取 ${rows.length} 条`, rows };
-    if (method.startsWith("Synthetic")) return { method, action: `学习原始字段分布并生成 ${rows.length} 条非真实居民样本`, rows };
-    return { method, action: `从100条原始记录中有放回抽取 ${rows.length} 次`, rows };
+    return { method, poolSize: residentProcessingPool().length, rows };
   }
 
   function residentProcessingVisual(product, currentPhase) {
     const ready = currentPhase >= 3;
     const processing = residentProcessingInfo();
     return `<div class="resident-processing-view">
-      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前加工设置</span><strong>${escapeHtml(product.inputValue)}</strong></div>
-      ${ready ? `<div class="processing-flow" aria-label="居民数据加工过程"><div><span>输入数据</span><strong>居民公共服务数据库</strong><small>100 条原始记录</small></div><b>→</b><div class="active"><span>加工操作</span><strong>${escapeHtml(processing.method)}</strong><small>${escapeHtml(processing.action)}</small></div><b>→</b><div><span>交付结果</span><strong>${processing.rows.length} 条加工样本</strong><small>不是原始记录直接查询</small></div></div>
-      <p class="processing-difference"><b>返回内容不同：</b>03-01-01 只返回 TRUE/FALSE，03-01-02 返回原始授权记录，03-01-04 返回群体统计；这里返回经过重采样、子采样或合成生成后的新数据集。</p>
-      <div class="processed-resident-table" aria-label="居民数据加工结果"><div class="processed-resident-row processed-resident-head"><span>样本</span><span>来源</span><span>街道</span><span>年龄</span><span>职业</span><span>家庭人数</span><span>居住类型</span></div>${processing.rows.map((item, index) => `<div class="processed-resident-row"><strong>第 ${index + 1} 条</strong><span>${escapeHtml(item.source)}<i class="${item.marker === "重复抽中" ? "is-repeat" : item.marker === "非真实居民" ? "is-synthetic" : ""}">${escapeHtml(item.marker)}</i></span><span>${escapeHtml(item.record.street)}</span><span>${escapeHtml(item.record.age)}</span><span>${escapeHtml(item.record.occupation)}</span><span>${escapeHtml(item.record.householdSize)}</span><span>${escapeHtml(item.record.housing)}</span></div>`).join("")}</div>` : ""}
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前筛选与加工设置</span><strong>${escapeHtml(product.inputValue)}</strong></div>
+      ${ready ? `<div class="processed-resident-table" aria-label="居民数据加工结果"><div class="processed-resident-row processed-resident-head"><span>街道</span><span>年龄</span><span>职业</span><span>家庭人数</span><span>居住类型</span></div>${processing.rows.map((item) => `<div class="processed-resident-row"><span>${escapeHtml(item.record.street)}</span><span>${escapeHtml(item.record.age)}</span><span>${escapeHtml(item.record.occupation)}</span><span>${escapeHtml(item.record.householdSize)}</span><span>${escapeHtml(item.record.housing)}</span></div>`).join("")}</div>` : ""}
     </div>`;
   }
 
@@ -581,15 +597,18 @@
     }
     if (product.id === "finance-derived") {
       const processing = residentProcessingInfo();
+      const filters = structuredConditions
+        .filter((condition) => !residentProcessingSettingKeys.has(condition.field))
+        .map((condition) => `${structuredFields(product).get(condition.field)?.label}: ${condition.value}`);
       const operation = processing.method.startsWith("Bootstrap")
-        ? "bootstrap(residents, { size, replace: true })"
+        ? "bootstrap(filtered, { size, replace: true })"
         : processing.method.startsWith("Subsampling")
-          ? "subsample(residents, { size, replace: false })"
-          : "synthesize(residents, { size, preserveDistribution: true })";
+          ? "subsample(filtered, { size, replace: false })"
+          : "synthesize(filtered, { size, preserveDistribution: true })";
       return {
         language: "JAVASCRIPT / JSON",
-        code: `const residents = await load("resident-public-service");\nconst size = ${processing.rows.length};\nconst processed = ${operation};\nreturn processed;`,
-        output: JSON.stringify({ method: processing.method, source_records: 100, output_records: processing.rows.length, preview: processing.rows.slice(0, 3).map((item) => ({ source: item.source, marker: item.marker, ...item.record })) }, null, 2),
+        code: `const residents = await load("resident-public-service");\nconst filtered = applyFilters(residents, ${JSON.stringify(filters)});\nconst size = ${processing.rows.length};\nconst processed = ${operation};\nreturn processed;`,
+        output: JSON.stringify({ method: processing.method, filtered_records: processing.poolSize, output_records: processing.rows.length, preview: processing.rows.slice(0, 3).map((item) => item.record) }, null, 2),
       };
     }
     if (activeSeries.visual === "gradient") return {
@@ -646,10 +665,26 @@
     const schema = structuredSchema(product);
     const fields = structuredFields(product);
     if (product.id === "finance-derived") {
-      return `<form class="product-control structured-query-control" data-product-form><div class="condition-builder"><div class="condition-builder-heading"><span>加工设置</span></div><div class="processing-setting-list">${structuredConditions.map((condition, index) => {
-        const field = fields.get(condition.field) ?? schema[index];
-        return `<label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, index)}</label>`;
-      }).join("")}</div></div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
+      const filterSchema = schema.filter((field) => !residentProcessingSettingKeys.has(field.key));
+      const filterConditions = structuredConditions.map((condition, index) => ({ condition, index })).filter(({ condition }) => !residentProcessingSettingKeys.has(condition.field));
+      const settings = structuredConditions.map((condition, index) => ({ condition, index })).filter(({ condition }) => residentProcessingSettingKeys.has(condition.field));
+      return `<form class="product-control structured-query-control" data-product-form><div class="condition-builder processing-query-builder">
+        <div class="condition-builder-heading"><span>筛选条件</span></div>
+        <div class="condition-list">${filterConditions.map(({ condition, index }, rowIndex) => {
+          const field = fields.get(condition.field) ?? filterSchema[0];
+          return `<div class="condition-row processing-filter-row" data-condition-row="${index}">
+            <select data-condition-field="${index}" aria-label="第 ${rowIndex + 1} 个筛选字段">${filterSchema.map((candidate) => `<option value="${escapeHtml(candidate.key)}" ${candidate.key === field.key ? "selected" : ""}>${escapeHtml(candidate.label)}</option>`).join("")}</select>
+            ${renderStructuredValueControl(condition, field, index)}
+            <button type="button" class="condition-remove" data-remove-condition="${index}" ${filterConditions.length === 1 ? "disabled" : ""} aria-label="删除第 ${rowIndex + 1} 个筛选条件">删除</button>
+          </div>`;
+        }).join("")}</div>
+        <button type="button" class="condition-add" data-add-condition ${filterConditions.length >= filterSchema.length ? "disabled" : ""}>+ 添加筛选条件</button>
+        <div class="condition-builder-heading processing-setting-heading"><span>加工设置</span></div>
+        <div class="processing-setting-list">${settings.map(({ condition, index }) => {
+          const field = fields.get(condition.field);
+          return `<label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, index)}</label>`;
+        }).join("")}</div>
+      </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
     }
     return `<form class="product-control structured-query-control" data-product-form>
       <div class="condition-builder">
