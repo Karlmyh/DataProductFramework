@@ -149,20 +149,7 @@
         <span>当前条件</span>
         <strong>${escapeHtml(product.inputValue)}</strong>
       </div>
-      <div class="existence-call">
-        <div class="resident-store-card ${currentPhase >= 2 ? "searching" : ""}">
-          <span>共享数据域</span>
-          <strong>${escapeHtml(residentStore.name)}</strong>
-          <small>${residentStore.records.length} 条受保护记录 · ${residentStore.schema.length} 个可查询字段</small>
-          <div class="masked-records" aria-label="受保护居民记录"><i></i><i></i><i></i></div>
-        </div>
-        <div class="existence-arrow" aria-hidden="true">→</div>
-        <div class="existence-response ${ready ? "ready" : ""}">
-          <span>公开响应</span>
-          <strong>${ready ? escapeHtml(product.outputValue) : currentPhase >= 2 ? "查询中…" : "等待运行"}</strong>
-          <small>不返回居民记录</small>
-        </div>
-      </div>
+      <div class="existence-result" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
       ${exposed ? '<div class="attack-overlay">重复改变条件并比较真假响应，可逐步缩小隐藏成员范围。</div>' : ""}
     </div>`;
   }
@@ -220,7 +207,7 @@
 
   function gradientVisual(product, currentPhase) {
     const cells = Array.from({ length: 48 }, (_, index) => `<i class="${currentPhase >= 2 ? "active" : ""}" style="--delay:${index * 8}ms"></i>`).join("");
-    return `<div class="gradient-product-view"><div class="gradient-header"><span>${escapeHtml(product.inputLabel)}</span><strong>${escapeHtml(product.inputValue)}</strong></div><div class="gradient-matrix">${cells}</div><div class="gradient-output"><span>${escapeHtml(product.outputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待聚合…"}</strong></div>${currentPhase >= 4 ? '<div class="gradient-leak"><div class="reconstructed-record">重建样本轮廓</div><strong>标签与群体属性已暴露</strong></div>' : ""}</div>`;
+    return `<div class="gradient-product-view"><div class="gradient-header"><span>${escapeHtml(product.inputLabel)}</span><strong>${escapeHtml(product.inputValue)}</strong></div><div class="embedded-product-flow" aria-label="训练更新流程">${product.flow.map((step, index) => `<span class="${currentPhase > index ? "active" : ""}">${escapeHtml(step)}</span>`).join('<i aria-hidden="true">→</i>')}</div><div class="gradient-matrix">${cells}</div><div class="gradient-output"><span>${escapeHtml(product.outputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待聚合…"}</strong></div>${currentPhase >= 4 ? '<div class="gradient-leak"><div class="reconstructed-record">重建样本轮廓</div><strong>标签与群体属性已暴露</strong></div>' : ""}</div>`;
   }
 
   function renderVisual(activeSeries, product, currentPhase) {
@@ -230,15 +217,6 @@
     if (activeSeries.visual === "attribute") return attributeVisual(product, currentPhase);
     if (activeSeries.visual === "gradient") return gradientVisual(product, currentPhase);
     return dataVisual(product, currentPhase);
-  }
-
-  function workflowVisual(activeSeries, product, currentPhase) {
-    const isGradient = activeSeries.visual === "gradient";
-    const steps = isGradient
-      ? ["训练批次", "模型 fθ(x)", "损失函数 L", "自动求导 ∂L/∂θ", "梯度更新 Δθ"]
-      : [product.inputLabel, ...product.flow, product.outputLabel];
-    const activeLimit = currentPhase === 0 ? 0 : currentPhase === 1 ? 1 : currentPhase === 2 ? Math.max(2, steps.length - 1) : steps.length;
-    return `<div class="workflow-view ${isGradient ? "gradient-model-flow" : ""}"><div class="workflow-caption"><span>${isGradient ? "模型训练与求导链路" : "产品内部处理流程"}</span><strong>${escapeHtml(product.name)}</strong></div><div class="workflow-chain">${steps.map((step, index) => `<div class="workflow-node ${index < activeLimit ? "active" : ""} ${index < activeLimit - 1 ? "done" : ""}"><b>${String(index + 1).padStart(2, "0")}</b><span>${escapeHtml(step)}</span>${index < steps.length - 1 ? '<i aria-hidden="true">→</i>' : ""}</div>`).join("")}</div>${isGradient ? `<div class="autodiff-equation ${currentPhase >= 2 ? "active" : ""}"><span>前向传播</span><code>ŷ = fθ(x) · L = ℓ(ŷ, y)</code><span>反向传播</span><code>g = ∇θL · θ ← θ − ηg</code></div>` : `<div class="workflow-io"><span>输入</span><strong>${escapeHtml(product.inputValue)}</strong><span>输出</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待产品运行"}</strong></div>`}</div>`;
   }
 
   function technicalExample(activeSeries, product) {
@@ -301,7 +279,6 @@
   }
 
   function renderProductPresentation(activeSeries, product, currentPhase) {
-    if (viewMode === "flow") return workflowVisual(activeSeries, product, currentPhase);
     if (viewMode === "technical") return technicalVisual(activeSeries, product, currentPhase);
     return renderVisual(activeSeries, product, currentPhase);
   }
@@ -364,7 +341,7 @@
       <div class="guided-tour">
         <section class="demo-act product-demo-act">
           <header class="demo-act-heading"><strong>产品演示</strong></header>
-          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["flow", "运行流程"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header><form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer><button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span><button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
+          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header><form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${product.id === "city-existence" ? "resident-product-footer" : ""}">${product.id === "city-existence" ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
@@ -399,9 +376,7 @@
     const status = root.querySelector("[data-product-status]");
     const startButton = root.querySelector("[data-start-attack]");
     const runButton = root.querySelector("[data-run-product]");
-    const statuses = product.id === "city-existence"
-      ? ["请设置条件并运行产品", "已提交结构化条件", "正在查询共享居民数据库", "已返回存在性结果"]
-      : ["请编辑输入并运行产品", "产品已收到用户请求", "产品正在完成内部处理", "产品正常输出已完成，可继续查看攻击"];
+    const statuses = ["请编辑输入并运行产品", "产品已收到用户请求", "产品正在完成内部处理", "产品正常输出已完成，可继续查看攻击"];
     if (status) status.textContent = statuses[phase];
     if (startButton instanceof HTMLButtonElement) startButton.disabled = phase < 3;
     if (runButton instanceof HTMLButtonElement) runButton.disabled = phase > 0 && phase < 3;
