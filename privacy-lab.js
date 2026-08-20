@@ -19,7 +19,11 @@
       { id: "lt", label: "小于", symbol: "<" },
     ],
   };
-  if (productsById["city-existence"]) productsById["city-existence"].name = "居民数据存在性查询";
+  if (productsById["city-existence"]) Object.assign(productsById["city-existence"], {
+    name: "居民数据存在性查询",
+    outputLabel: "查询结果",
+    outputValue: "存在",
+  });
   if (productsById["content-library"]) Object.assign(productsById["content-library"], {
     name: "居民授权记录检索库",
     tagline: "按授权条件返回居民记录的公开字段，受保护字段仅显示字段名称。",
@@ -68,6 +72,15 @@
       result: "稀有组合可能过度接近原始居民记录并泄露其属性范围。",
     });
   }
+  if (productsById["city-verify"]) Object.assign(productsById["city-verify"], {
+    tagline: "输入匿名居民签名，选择政策项目、核验季度和政策地区，只返回是否符合受惠条件。",
+    inputLabel: "资格核验条件",
+    inputValue: "9F2C-7A18-D4E6-03B9-AC51 · 养老服务补贴 · 2026年第3季度 · 东城区",
+    callLabel: "核验是否符合",
+    outputLabel: "核验结果",
+    outputValue: "符合",
+    outputDetail: "对外只返回符合或不符合，不返回居民原始记录和政策判定细节。",
+  });
   const structuredProductConfigs = {
     "city-existence": {
       schema: residentStore.schema,
@@ -124,14 +137,16 @@
     },
     "city-verify": {
       schema: [
-        { key: "credential", label: "居民凭证", type: "enum", values: ["R-2048", "R-3186", "R-4207"] },
-        { key: "policy", label: "政策项目", type: "enum", values: ["养老补贴 Q3", "住房补贴 Q3", "医疗救助 Q3"] },
-        { key: "period", label: "核验周期", type: "enum", values: ["2026-Q3", "2026-Q2", "2026-Q1"] },
+        { key: "credential", label: "居民身份签名", type: "enum", values: ["9F2C-7A18-D4E6-03B9-AC51"] },
+        { key: "policy", label: "政策项目", type: "enum", values: ["养老服务补贴", "住房租赁补贴", "医疗救助"] },
+        { key: "period", label: "核验季度", type: "enum", values: ["2026年第3季度", "2026年第2季度", "2026年第1季度"] },
         { key: "region", label: "政策地区", type: "enum", values: ["东城区", "西城区", "南城区"] },
       ],
       defaults: [
-        { field: "credential", operator: "eq", value: "R-2048" },
-        { field: "policy", operator: "eq", value: "养老补贴 Q3" },
+        { field: "credential", operator: "eq", value: "9F2C-7A18-D4E6-03B9-AC51" },
+        { field: "policy", operator: "eq", value: "养老服务补贴" },
+        { field: "period", operator: "eq", value: "2026年第3季度" },
+        { field: "region", operator: "eq", value: "东城区" },
       ],
     },
     "finance-verify": {
@@ -278,7 +293,7 @@
         ...product,
         inputLabel: "查询条件",
         inputValue: formattedInput,
-        outputValue: matches.length > 0 ? "TRUE" : "FALSE",
+        outputValue: matches.length > 0 ? "存在" : "不存在",
         outputDetail: "对外只返回是否存在，不返回命中数量或居民记录。",
       };
     }
@@ -295,6 +310,13 @@
     }
     if (product.id === "finance-graph") {
       return { ...product, inputValue: formattedInput, outputValue: "已返回授权关系路径" };
+    }
+    if (product.id === "city-verify") {
+      const qualifies = structuredConditionValue("credential") === "9F2C-7A18-D4E6-03B9-AC51"
+        && structuredConditionValue("policy") === "养老服务补贴"
+        && structuredConditionValue("period") === "2026年第3季度"
+        && structuredConditionValue("region") === "东城区";
+      return { ...product, inputValue: formattedInput, outputValue: qualifies ? "符合" : "不符合" };
     }
     return { ...product, inputValue: formattedInput };
   };
@@ -315,8 +337,21 @@
         <span>当前条件</span>
         <strong>${escapeHtml(product.inputValue)}</strong>
       </div>
-      <div class="existence-result ${ready ? product.outputValue === "TRUE" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
+      <div class="existence-result ${ready ? product.outputValue === "存在" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
       ${exposed ? '<div class="attack-overlay">重复改变条件并比较真假响应，可逐步缩小隐藏成员范围。</div>' : ""}
+    </div>`;
+  }
+
+  function residentVerificationVisual(product, currentPhase) {
+    const exposed = currentPhase >= 4;
+    const ready = currentPhase >= 3;
+    return `<div class="resident-existence-view">
+      <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}">
+        <span>当前核验条件</span>
+        <strong>${escapeHtml(product.inputValue)}</strong>
+      </div>
+      <div class="existence-result ${ready ? product.outputValue === "符合" ? "is-true" : "is-false" : ""}" aria-live="polite">${ready ? `<strong>${escapeHtml(product.outputValue)}</strong>` : ""}</div>
+      ${exposed ? '<div class="attack-overlay">反复替换政策项目、季度和地区，可以逐步推断居民的受惠资格。</div>' : ""}
     </div>`;
   }
 
@@ -488,6 +523,7 @@
 
   function dataVisual(product, currentPhase) {
     if (product.id === "city-existence") return residentExistenceVisual(product, currentPhase);
+    if (product.id === "city-verify") return residentVerificationVisual(product, currentPhase);
     if (product.id === "content-library") return authorizedResidentVisual(product, currentPhase);
     if (product.id === "finance-graph") return enterpriseGraphVisual(product, currentPhase);
     if (product.id === "finance-aggregate") return residentStatisticsVisual(product, currentPhase);
@@ -586,7 +622,7 @@
       return {
         language: "SQL / JSON",
         code: `SELECT EXISTS (\n  SELECT 1\n  FROM residents\n  WHERE ${where}\n) AS exists;\n\nparams = ${JSON.stringify(parameters)}`,
-        output: `{ "exists": ${product.outputValue === "TRUE"}, "records": "protected" }`,
+        output: `{ "exists": ${product.outputValue === "存在"}, "records": "protected" }`,
       };
     }
     if (product.id === "finance-graph") {
@@ -667,6 +703,15 @@
   function renderStructuredProductControl(product) {
     const schema = structuredSchema(product);
     const fields = structuredFields(product);
+    if (product.id === "city-verify") {
+      return `<form class="product-control structured-query-control" data-product-form><div class="condition-builder">
+        <div class="condition-builder-heading"><span>资格核验条件</span></div>
+        <div class="processing-setting-list verification-setting-list">${structuredConditions.map((condition, index) => {
+          const field = fields.get(condition.field) ?? schema[index];
+          return `<label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, index)}</label>`;
+        }).join("")}</div>
+      </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
+    }
     if (product.id === "finance-derived") {
       const filterSchema = schema.filter((field) => !residentProcessingSettingKeys.has(field.key));
       const filterConditions = structuredConditions.map((condition, index) => ({ condition, index })).filter(({ condition }) => !residentProcessingSettingKeys.has(condition.field));
