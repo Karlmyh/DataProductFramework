@@ -7,6 +7,16 @@
   const residentStore = window.__RESIDENT_DATA__ ?? { name: "居民公共服务数据库", schema: [], records: [] };
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
   const protectedResidentFieldKeys = new Set(["monthlyIncome", "subsidyStatus", "insurance"]);
+  const qualificationPolicies = ["养老服务补贴", "住房租赁补贴", "医疗救助"];
+  const qualificationPeriods = ["2026年第3季度", "2026年第2季度", "2026年第1季度"];
+  const qualificationRegions = ["东城区", "西城区", "南城区"];
+  const qualificationProfiles = residentStore.records.slice(0, 30).map((record, index) => ({
+    record,
+    credential: qualificationCredential(record, index),
+    region: qualificationRegion(record),
+    period: qualificationPeriod(record),
+  }));
+  const qualificationProfileByCredential = new Map(qualificationProfiles.map((profile) => [profile.credential, profile]));
   const residentOperators = {
     enum: [
       { id: "eq", label: "等于", symbol: "=" },
@@ -154,6 +164,30 @@
     outputValue: "符合",
     outputDetail: "对外只返回符合或不符合，不返回居民原始记录和政策判定细节。",
   });
+  if (productsById["city-verify"]) {
+    productsById["city-verify"].attacks = [{
+      id: "qualification-matrix-recovery",
+      name: "居民资格矩阵恢复",
+      brief: "固定居民身份签名，枚举政策项目、核验季度和政策地区，并记录每次符合或不符合的真实响应。",
+      result: "运行攻击代码后，将所有符合响应拼接为居民的政策资格矩阵。",
+      metric: "资格组合恢复",
+      value: "运行后计算",
+      displayScore: 0,
+      evidence: "代码实测",
+      attackFamily: "属性枚举",
+      attackObject: "政策资格隐私",
+      source: "当前页面居民资格演示数据",
+      protocol: "30 个居民签名；3 项政策；3 个季度；3 个地区；调用产品同一符合/不符合核验逻辑",
+      limitation: "恢复范围受已知居民签名集合和可用核验次数限制。",
+    }];
+    candidatesByProduct["city-verify"] = [{
+      id: "qualification-matrix-recovery",
+      name: "居民资格矩阵恢复",
+      applicable: true,
+      executed: true,
+      reason: "适用：重复提交政策、季度和地区组合，可以将符合响应拼接为居民资格矩阵。",
+    }];
+  }
   if (productsById["content-voice"]) Object.assign(productsById["content-voice"], {
     name: "居民人脸身份核验",
     tagline: "将待核验人脸与居民身份签名对应的登记人脸进行同一性核验。",
@@ -221,10 +255,10 @@
     },
     "city-verify": {
       schema: [
-        { key: "credential", label: "居民身份签名", type: "enum", values: ["9F2C-7A18-D4E6-03B9-AC51"] },
-        { key: "policy", label: "政策项目", type: "enum", values: ["养老服务补贴", "住房租赁补贴", "医疗救助"] },
-        { key: "period", label: "核验季度", type: "enum", values: ["2026年第3季度", "2026年第2季度", "2026年第1季度"] },
-        { key: "region", label: "政策地区", type: "enum", values: ["东城区", "西城区", "南城区"] },
+        { key: "credential", label: "居民身份签名", type: "enum", values: qualificationProfiles.slice(0, 6).map((profile) => profile.credential) },
+        { key: "policy", label: "政策项目", type: "enum", values: qualificationPolicies },
+        { key: "period", label: "核验季度", type: "enum", values: qualificationPeriods },
+        { key: "region", label: "政策地区", type: "enum", values: qualificationRegions },
       ],
       defaults: [
         { field: "credential", operator: "eq", value: "9F2C-7A18-D4E6-03B9-AC51" },
@@ -344,12 +378,22 @@
   const residentAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: residentFeatureSummary(record) }));
   const protectedAttributeFieldOrder = ["monthlyIncome", "subsidyStatus", "insurance"];
   const protectedAttributeAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: completeResidentSummary(record) }));
+  const qualificationProbeCandidates = qualificationProfiles.flatMap((profile) => qualificationPolicies.flatMap((policy) => qualificationPeriods.flatMap((period) => qualificationRegions.map((region) => ({
+    id: `Q-${profile.record.residentId.slice(2)}-${qualificationPolicies.indexOf(policy) + 1}${qualificationPeriods.indexOf(period) + 1}${qualificationRegions.indexOf(region) + 1}`,
+    credential: profile.credential,
+    policy,
+    period,
+    region,
+    qualifies: qualificationCheck(profile.credential, policy, period, region),
+    summary: `${profile.credential} · ${policy} · ${period} · ${region}`,
+  })))));
+  const qualificationAttackTargets = qualificationProbeCandidates.filter((candidate) => candidate.qualifies).map((candidate) => ({ id: candidate.id, summary: `${candidate.summary} · 符合` }));
   const recoveryAttackConfigs = new Map([
     ["content-library", { queriesPerTarget: 10, groundTruthLabel: "系统完整居民记录", recoveredLabel: "攻击拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-graph", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台企业关系图谱", recoveredLabel: "从 Chatbot 回答恢复的关系图谱", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复关系", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误推断关系", targets: graphRagBackendRelations }],
     ["finance-aggregate", { queriesPerTarget: 2, groundTruthLabel: "系统完整居民记录", recoveredLabel: "由相邻统计拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
-    ["city-verify", { queriesPerTarget: 4, groundTruthLabel: "系统真实资格数据集", recoveredLabel: "攻击恢复资格数据集", truthMetricLabel: "系统资格记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "资格记录遗漏", falseMetricLabel: "资格误判", targets: residentStore.records.map((record, index) => ({ id: record.residentId, summary: `${record.age >= 60 ? "养老服务补贴" : record.housing === "租住" ? "住房租赁补贴" : "医疗救助"} · ${record.subsidyStatus === "有效" || index % 4 === 0 ? "符合" : "不符合"} · 2026年第3季度` })) }],
+    ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
     ["content-voice", { queriesPerTarget: 10, groundTruthLabel: "系统真实身份绑定集", recoveredLabel: "攻击恢复身份绑定集", truthMetricLabel: "系统身份绑定", recoveredMetricLabel: "成功恢复", missedMetricLabel: "身份绑定遗漏", falseMetricLabel: "身份误判", targets: residentStore.records.map((record, index) => ({ id: record.residentId, summary: `${String(index + 17).padStart(3, "0")}F-${String(record.age * 97).padStart(4, "0")}-${record.street}A · 登记人脸绑定` })) }],
     ["finance-verify", { queriesPerTarget: 5, groundTruthLabel: "系统真实账户关系集", recoveredLabel: "攻击恢复账户关系集", truthMetricLabel: "系统账户关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "账户关系遗漏", falseMetricLabel: "关系误判", targets: Array.from({ length: 100 }, (_, index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, summary: `${graphCompanies[index % graphCompanies.length]} → ${accountInstitutions[index % accountInstitutions.length]} · 尾号 ${String(1000 + (index * 791) % 9000).padStart(4, "0")}` })) }],
   ]);
@@ -717,6 +761,33 @@
         quotaBlocked: budgetExhausted ? 1 : 0,
       };
     }
+    if (productId === "city-verify") {
+      const queryCount = Math.min(Math.max(0, queryBudget), qualificationProbeCandidates.length);
+      const recoveredIds = new Set();
+      qualificationProbeCandidates.slice(0, queryCount).forEach((candidate) => {
+        const response = qualificationCheck(candidate.credential, candidate.policy, candidate.period, candidate.region);
+        if (response) recoveredIds.add(candidate.id);
+      });
+      const candidateResults = config.targets.map((candidate) => ({
+        candidate,
+        actualMember: true,
+        predictedMember: recoveredIds.has(candidate.id),
+        determined: recoveredIds.has(candidate.id),
+      }));
+      const truePositives = candidateResults.filter((result) => result.predictedMember).length;
+      return {
+        productId,
+        queryBudget,
+        queryCount,
+        candidateResults,
+        recoveredRows: candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate),
+        truePositives,
+        falseNegatives: config.targets.length - truePositives,
+        falsePositives: 0,
+        recall: config.targets.length ? truePositives / config.targets.length : 0,
+        quotaBlocked: queryCount < qualificationProbeCandidates.length ? 1 : 0,
+      };
+    }
     if (productId === "finance-graph") {
       const queryCount = Math.min(Math.max(0, queryBudget), graphRagAttackConversations.length);
       const allCandidates = [...config.targets, ...graphRagFalseRelations];
@@ -843,6 +914,15 @@
         protocol: `可用查询次数 ${queryBudget}；实际统计查询 ${run.queryCount}；完整恢复 ${run.truePositives}；错误拼接 ${run.falsePositives}`,
       });
     }
+    if (product.id === "city-verify" && product.attacks[0]) {
+      const config = recoveryAttackConfigs.get(product.id);
+      Object.assign(product.attacks[0], {
+        result: `代码执行 ${run.queryCount} 次资格核验，枚举居民签名、政策、季度和地区，并恢复 ${run.truePositives}/${config.targets.length} 个真实资格组合。`,
+        value: `${run.truePositives} / ${config.targets.length}`,
+        displayScore: Math.round(run.recall * 100),
+        protocol: `可用核验次数 ${queryBudget}；实际核验 ${run.queryCount}；资格组合恢复 ${run.truePositives}；错误组合 ${run.falsePositives}`,
+      });
+    }
     refreshProductUsageCounter(product);
     return run;
   }
@@ -912,10 +992,12 @@
       return { ...product, inputValue: formattedInput, outputValue: `${processedResidentRows().length} 条加工样本` };
     }
     if (product.id === "city-verify") {
-      const qualifies = structuredConditionValue("credential") === "9F2C-7A18-D4E6-03B9-AC51"
-        && structuredConditionValue("policy") === "养老服务补贴"
-        && structuredConditionValue("period") === "2026年第3季度"
-        && structuredConditionValue("region") === "东城区";
+      const qualifies = qualificationCheck(
+        structuredConditionValue("credential"),
+        structuredConditionValue("policy"),
+        structuredConditionValue("period"),
+        structuredConditionValue("region"),
+      );
       return { ...product, inputValue: formattedInput, outputValue: qualifies ? "符合" : "不符合" };
     }
     if (product.id === "content-voice") {
@@ -988,6 +1070,37 @@
 
   function completeResidentSummary(record) {
     return `${residentFeatureSummary(record)} · ${record.housing} · ${protectedAttributeSummary(record)}`;
+  }
+
+  function qualificationCredential(record, index) {
+    if (record.residentId === "R-1002") return "9F2C-7A18-D4E6-03B9-AC51";
+    const serial = Number(record.residentId.slice(2));
+    const segment = (multiplier, width = 4) => ((serial * multiplier + record.age * 97 + index * 211) % (16 ** width)).toString(16).toUpperCase().padStart(width, "0");
+    return `${segment(17)}-${segment(29)}-${segment(43)}-${segment(61)}-${segment(79)}`;
+  }
+
+  function qualificationRegion(record) {
+    if (["01", "03"].includes(record.street)) return "东城区";
+    if (record.street === "05") return "西城区";
+    return "南城区";
+  }
+
+  function qualificationPeriod(record) {
+    if (record.residentId === "R-1002") return "2026年第3季度";
+    return qualificationPeriods[(record.age + record.householdSize) % qualificationPeriods.length];
+  }
+
+  function recordQualifiesForPolicy(record, policy) {
+    if (policy === "养老服务补贴") return record.age >= 60 && record.subsidyStatus === "有效";
+    if (policy === "住房租赁补贴") return record.housing !== "自有" && record.monthlyIncome <= 5000;
+    if (policy === "医疗救助") return record.insurance === "未参保" || (record.monthlyIncome <= 3500 && record.subsidyStatus === "有效");
+    return false;
+  }
+
+  function qualificationCheck(credential, policy, period, region) {
+    const profile = qualificationProfileByCredential.get(credential);
+    if (!profile) return false;
+    return profile.region === region && profile.period === period && recordQualifiesForPolicy(profile.record, policy);
   }
 
   function membershipRecoveryAttackVisual(step) {
