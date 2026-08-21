@@ -5,6 +5,7 @@
 
   const { series, productsById, candidatesByProduct } = payload;
   const residentStore = window.__RESIDENT_DATA__ ?? { name: "居民公共服务数据库", schema: [], records: [] };
+  const syntheticFaceLibrary = window.__SYNTHETIC_FACE_LIBRARY__ ?? { gridSize: 5, sheets: [], targetDescriptor: [], faces: [] };
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
   const protectedResidentFieldKeys = new Set(["monthlyIncome", "subsidyStatus", "insurance"]);
   const qualificationPolicies = ["养老服务补贴", "住房租赁补贴", "医疗救助"];
@@ -201,25 +202,25 @@
   if (productsById["content-voice"]) {
     productsById["content-voice"].attacks = [{
       id: "face-boundary-hill-climb",
-      name: "离线人脸相似度爬山",
-      brief: "在本地仿真环境中反复调整 16 维候选人脸表征，保留相似度更高的方向并逐步逼近登记模板。",
-      result: "运行离线攻击代码后，直接展示当前核验次数下最终恢复出来的合成人脸。",
-      metric: "模板余弦相似度",
+      name: "合成人脸库爬山搜索",
+      brief: "从 100 张合成人脸中选择起点，实际比较图像像素描述，只在相似度上升时移动，并在局部停滞时重新选择起点。",
+      result: "运行代码后，展示爬山搜索在合成人脸库中实际找到的最相似人脸。",
+      metric: "图像描述相似度",
       value: "运行后计算",
       displayScore: 0,
       evidence: "代码实测",
-      attackFamily: "相似度爬山",
-      attackObject: "登记人脸模板",
-      source: "当前页面本地合成人脸模板",
-      protocol: "16 维归一化合成表征；确定性坐标爬山；仅调用页面内的本地相似度函数",
-      limitation: "纯离线机制演示，不连接真实身份系统；恢复的是合成模板向量，不是原始照片像素。",
+      attackFamily: "随机重启爬山",
+      attackObject: "登记人脸的近似外观",
+      source: "当前页面 100 张 AI 合成人脸候选库",
+      protocol: "100 张合成人脸；由实际图片像素生成描述；近邻评估、单调改进与随机重启；仅调用本地相似度函数",
+      limitation: "纯离线机制演示，不连接真实身份系统；结果只能从这 100 张合成人脸中选择。",
     }];
     candidatesByProduct["content-voice"] = [{
       id: "face-boundary-hill-climb",
-      name: "离线人脸相似度爬山",
+      name: "合成人脸库爬山搜索",
       applicable: true,
       executed: true,
-      reason: "离线演示：利用本地相似度反馈迭代候选表征，观察爬山过程如何逼近合成登记模板。",
+      reason: "离线演示：代码真实评估候选图片，只保留更接近登记人脸的合成人脸。",
     }];
   }
   if (productsById["finance-verify"]) Object.assign(productsById["finance-verify"], {
@@ -418,21 +419,15 @@
     ["finance-aggregate", { queriesPerTarget: 2, groundTruthLabel: "系统完整居民记录", recoveredLabel: "由相邻统计拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
-    ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "系统登记人脸模板", recoveredLabel: "爬山恢复人脸模板", truthMetricLabel: "登记模板维度", recoveredMetricLabel: "模板相似度", missedMetricLabel: "剩余差异", falseMetricLabel: "离线状态", targets: [{ id: "FACE-TEMPLATE-01", summary: "16 维合成居民登记人脸模板" }] }],
+    ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "100 张合成人脸候选库", recoveredLabel: "爬山搜索结果", truthMetricLabel: "候选人脸", recoveredMetricLabel: "最佳相似度", missedMetricLabel: "未评估人脸", falseMetricLabel: "随机重启", targets: syntheticFaceLibrary.faces.map((face) => ({ id: face.id, summary: `合成人脸候选 ${face.id}` })) }],
     ["finance-verify", { queriesPerTarget: 5, groundTruthLabel: "系统真实账户关系集", recoveredLabel: "攻击恢复账户关系集", truthMetricLabel: "系统账户关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "账户关系遗漏", falseMetricLabel: "关系误判", targets: Array.from({ length: 100 }, (_, index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, summary: `${graphCompanies[index % graphCompanies.length]} → ${accountInstitutions[index % accountInstitutions.length]} · 尾号 ${String(1000 + (index * 791) % 9000).padStart(4, "0")}` })) }],
   ]);
   const productRecoverySavedRuns = new Map();
   let membershipRecoveryRun = null;
   let productRecoveryRun = null;
-  const faceTemplateDimension = 16;
-  const faceVerificationThreshold = 0.98;
-  const normalizeFaceVector = (vector) => {
-    const magnitude = Math.hypot(...vector) || 1;
-    return vector.map((value) => value / magnitude);
-  };
+  const faceDescriptorDimension = syntheticFaceLibrary.targetDescriptor.length;
+  const faceVerificationThreshold = 0.94;
   const faceTemplateSimilarity = (left, right) => left.reduce((sum, value, index) => sum + value * right[index], 0);
-  const registeredFaceTemplate = normalizeFaceVector([0.42, -0.31, 0.18, 0.55, -0.27, 0.38, -0.46, 0.12, 0.33, -0.15, 0.49, -0.36, 0.21, 0.29, -0.24, 0.41]);
-  const initialFaceProbe = normalizeFaceVector([0.12, -0.08, -0.22, 0.31, 0.16, 0.05, -0.18, -0.11, 0.09, 0.21, 0.07, -0.16, -0.04, 0.27, 0.13, 0.02]);
 
   const escapeHtml = (value) => String(value)
     .replaceAll("&", "&amp;")
@@ -639,54 +634,82 @@
     const config = recoveryAttackConfigs.get(productId);
     if (!config) return null;
     if (productId === "content-voice") {
-      const availableQueries = Math.max(0, Math.floor(queryBudget));
-      let candidate = initialFaceProbe.slice();
+      const faces = syntheticFaceLibrary.faces;
+      const availableQueries = Math.min(faces.length, Math.max(0, Math.floor(queryBudget)));
+      const targetDescriptor = syntheticFaceLibrary.targetDescriptor;
+      const similarityToTarget = (faceIndex) => faceTemplateSimilarity(faces[faceIndex].descriptor, targetDescriptor);
+      const similarityBetweenCandidates = (leftIndex, rightIndex) => faceTemplateSimilarity(faces[leftIndex].descriptor, faces[rightIndex].descriptor);
+      const visited = new Set();
       let queryCount = 0;
-      let round = 0;
-      const trajectory = [{ query: 0, similarity: faceTemplateSimilarity(candidate, registeredFaceTemplate) }];
-      while (queryCount < availableQueries) {
-        const stepSize = 0.28 * (0.76 ** round);
-        for (let dimension = 0; dimension < faceTemplateDimension && queryCount < availableQueries; dimension += 1) {
-          const baseline = candidate.slice();
-          let bestCandidate = baseline;
-          let bestSimilarity = faceTemplateSimilarity(baseline, registeredFaceTemplate);
-          for (const direction of [1, -1]) {
-            if (queryCount >= availableQueries) break;
-            const probe = baseline.slice();
-            probe[dimension] += direction * stepSize;
-            const normalizedProbe = normalizeFaceVector(probe);
-            const similarity = faceTemplateSimilarity(normalizedProbe, registeredFaceTemplate);
-            queryCount += 1;
-            if (similarity > bestSimilarity) {
-              bestCandidate = normalizedProbe;
-              bestSimilarity = similarity;
-            }
-          }
-          candidate = bestCandidate;
-          if (queryCount % 16 === 0 || queryCount === availableQueries) trajectory.push({ query: queryCount, similarity: bestSimilarity });
+      let restartCount = 0;
+      let currentIndex = Math.min(25, Math.max(0, faces.length - 1));
+      let currentSimilarity = 0;
+      let bestIndex = currentIndex;
+      let bestSimilarity = -1;
+      const trajectory = [];
+      const queryCandidate = (faceIndex, reason) => {
+        if (visited.has(faceIndex) || queryCount >= availableQueries) return null;
+        const similarity = similarityToTarget(faceIndex);
+        visited.add(faceIndex);
+        queryCount += 1;
+        if (similarity > bestSimilarity) {
+          bestIndex = faceIndex;
+          bestSimilarity = similarity;
         }
-        round += 1;
+        trajectory.push({ query: queryCount, faceIndex, similarity, reason, accepted: similarity >= currentSimilarity });
+        return similarity;
+      };
+      if (faces.length && availableQueries) currentSimilarity = queryCandidate(currentIndex, "初始候选") ?? 0;
+      const initialSimilarity = currentSimilarity;
+      while (queryCount < availableQueries && visited.size < faces.length) {
+        const neighborIndexes = faces
+          .map((_, index) => index)
+          .filter((index) => !visited.has(index))
+          .sort((left, right) => similarityBetweenCandidates(currentIndex, right) - similarityBetweenCandidates(currentIndex, left))
+          .slice(0, 6);
+        let improvingMove = null;
+        neighborIndexes.forEach((neighborIndex) => {
+          const similarity = queryCandidate(neighborIndex, "近邻探针");
+          if (similarity !== null && similarity > currentSimilarity && (!improvingMove || similarity > improvingMove.similarity)) {
+            improvingMove = { index: neighborIndex, similarity };
+          }
+        });
+        if (improvingMove) {
+          currentIndex = improvingMove.index;
+          currentSimilarity = improvingMove.similarity;
+          continue;
+        }
+        if (queryCount >= availableQueries) break;
+        restartCount += 1;
+        const restartOrder = faces.map((_, offset) => (restartCount * 37 + 13 + offset * 17) % faces.length);
+        const restartIndex = restartOrder.find((index) => !visited.has(index));
+        if (restartIndex === undefined) break;
+        currentIndex = restartIndex;
+        currentSimilarity = queryCandidate(currentIndex, "随机重启") ?? currentSimilarity;
       }
-      const similarity = faceTemplateSimilarity(candidate, registeredFaceTemplate);
+      const similarity = Math.max(0, bestSimilarity);
       const authenticated = similarity >= faceVerificationThreshold;
+      const recoveredFace = faces[bestIndex] ?? null;
       return {
         productId,
         queryBudget: availableQueries,
         queryCount,
-        registeredTemplate: registeredFaceTemplate.slice(),
-        recoveredTemplate: candidate,
-        initialSimilarity: trajectory[0].similarity,
+        librarySize: faces.length,
+        visitedFaceIds: Array.from(visited).map((index) => faces[index].id),
+        recoveredFace,
+        initialSimilarity,
         similarity,
         authenticated,
         threshold: faceVerificationThreshold,
+        restartCount,
         trajectory,
         truePositives: authenticated ? 1 : 0,
         falseNegatives: authenticated ? 0 : 1,
         falsePositives: 0,
         recall: similarity,
-        quotaBlocked: similarity < 0.999 ? 1 : 0,
-        candidateResults: [{ candidate: config.targets[0], actualMember: true, predictedMember: authenticated, determined: true }],
-        recoveredRows: authenticated ? config.targets.slice() : [],
+        quotaBlocked: visited.size < faces.length ? 1 : 0,
+        candidateResults: config.targets.map((candidate) => ({ candidate, actualMember: true, predictedMember: candidate.id === recoveredFace?.id, determined: visited.has(faces.findIndex((face) => face.id === candidate.id)) })),
+        recoveredRows: recoveredFace ? [{ id: recoveredFace.id, summary: `爬山找到 ${recoveredFace.id}` }] : [],
       };
     }
     if (productId === "content-library") {
@@ -1009,10 +1032,10 @@
     }
     if (product.id === "content-voice" && product.attacks[0]) {
       Object.assign(product.attacks[0], {
-        result: `离线代码执行 ${run.queryCount} 次相似度评估，模板余弦相似度由 ${(run.initialSimilarity * 100).toFixed(1)}% 提升到 ${(run.similarity * 100).toFixed(2)}%。`,
+        result: `代码实际评估 ${run.queryCount}/${run.librarySize} 张合成人脸，经过 ${run.restartCount} 次随机重启找到 ${run.recoveredFace?.id ?? "无结果"}，图像描述相似度由 ${(run.initialSimilarity * 100).toFixed(1)}% 提升到 ${(run.similarity * 100).toFixed(2)}%。`,
         value: `${(run.similarity * 100).toFixed(2)}%`,
         displayScore: Math.round(run.similarity * 100),
-        protocol: `可用核验次数 ${queryBudget}；本地相似度评估 ${run.queryCount} 次；16 维合成模板；认证阈值 ${(run.threshold * 100).toFixed(1)}%；不连接真实系统`,
+        protocol: `可用核验次数 ${queryBudget}；候选库 ${run.librarySize} 张；实际图像评估 ${run.queryCount} 次；随机重启 ${run.restartCount} 次；描述维度 ${faceDescriptorDimension}；不连接真实系统`,
       });
     }
     refreshProductUsageCounter(product);
@@ -1228,10 +1251,15 @@
     </div>`;
   }
 
-  function faceRecoveryImageForRun(run) {
-    if (!run || run.queryCount <= 100) return "assets/face-recovery-100.jpg";
-    if (run.queryCount <= 500) return "assets/face-recovery-500.jpg";
-    return "assets/face-recovery-1000.jpg";
+  function faceSpriteStyle(face) {
+    if (!face) return "";
+    const positionStep = syntheticFaceLibrary.gridSize > 1 ? 100 / (syntheticFaceLibrary.gridSize - 1) : 0;
+    return `--face-sheet:url('${syntheticFaceLibrary.sheets[face.sheet]}');--face-x:${face.column * positionStep}%;--face-y:${face.row * positionStep}%`;
+  }
+
+  function faceLibraryGrid(run) {
+    const visitedIds = new Set(run?.visitedFaceIds ?? []);
+    return `<div class="face-library-grid" aria-label="100 张合成人脸候选库">${syntheticFaceLibrary.faces.map((face) => `<i class="face-library-item ${visitedIds.has(face.id) ? "visited" : ""} ${run?.recoveredFace?.id === face.id ? "best" : ""}" style="${faceSpriteStyle(face)}" title="${face.id}"><span>${face.id.slice(-3)}</span></i>`).join("")}</div>`;
   }
 
   function faceHillClimbAttackVisual(product, step) {
@@ -1239,8 +1267,11 @@
     const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
     const completed = currentStep === membershipRecoverySteps.length;
     return `<div class="face-hill-climb-view">
-      <div class="membership-query-track"><header><span>离线代码运行</span><strong>${run ? `${run.queryCount} 次本地相似度评估` : "等待执行"}</strong></header></div>
-      ${run ? `<div class="face-recovery-result"><span>最终恢复人脸</span><img src="${faceRecoveryImageForRun(run)}" alt="${run.queryCount} 次离线爬山后最终恢复的人脸" /><strong>${run.queryCount} 次 · ${(run.similarity * 100).toFixed(2)}%</strong><small>${completed ? run.authenticated ? "达到离线认证边界" : "未达到离线认证边界" : "正在生成最终结果"}</small></div>` : '<div class="face-recovery-waiting">攻击运行后显示最终恢复人脸</div>'}
+      <div class="membership-query-track"><header><span>离线代码运行</span><strong>${run ? `实际评估 ${run.queryCount} / ${run.librarySize} 张人脸` : "等待执行"}</strong></header></div>
+      <div class="face-library-attack-layout">
+        <section class="face-library-panel"><header><span>合成人脸候选库</span><strong>100 张</strong></header>${faceLibraryGrid(run)}</section>
+        ${run ? `<div class="face-recovery-result"><span>最终恢复人脸</span><div class="face-recovered-sprite" style="${faceSpriteStyle(run.recoveredFace)}" role="img" aria-label="爬山搜索最终找到的 ${run.recoveredFace?.id}"></div><strong>${run.recoveredFace?.id} · ${(run.similarity * 100).toFixed(2)}%</strong><small>${completed ? `实际评估 ${run.queryCount} 张 · 随机重启 ${run.restartCount} 次` : "正在生成最终结果"}</small></div>` : '<div class="face-recovery-waiting">运行攻击后显示代码实际找到的人脸</div>'}
+      </div>
     </div>`;
   }
 
@@ -1891,8 +1922,8 @@
       if (!run) return;
       results.innerHTML = `
         <header><div><h3>攻击结果</h3></div><strong>${(run.similarity * 100).toFixed(2)}%</strong></header>
-        <div class="face-final-result"><img src="${faceRecoveryImageForRun(run)}" alt="最终恢复的人脸" /></div>
-        <div class="membership-result-stats"><article><span>合成模板维度</span><strong>${faceTemplateDimension}</strong></article><article><span>本地相似度评估</span><strong>${run.queryCount}</strong></article><article><span>初始相似度</span><strong>${(run.initialSimilarity * 100).toFixed(1)}%</strong></article><article><span>离线仿真结果</span><strong>${run.authenticated ? "达到认证边界" : "未达到认证边界"}</strong></article></div>`;
+        <div class="face-final-result"><div class="face-recovered-sprite" style="${faceSpriteStyle(run.recoveredFace)}" role="img" aria-label="最终恢复的人脸 ${run.recoveredFace?.id}"></div></div>
+        <div class="membership-result-stats"><article><span>合成人脸库</span><strong>${run.librarySize}</strong></article><article><span>实际评估人脸</span><strong>${run.queryCount}</strong></article><article><span>随机重启</span><strong>${run.restartCount}</strong></article><article><span>最终恢复人脸</span><strong>${run.recoveredFace?.id ?? "—"}</strong></article></div>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {
