@@ -312,7 +312,8 @@ th { font-weight: 700; }
 .resident-face-verification-result-view { min-height: 61px; padding: 16px 22px; }
 .minimal-product-footer { justify-content: flex-end; }
 
-.membership-recovery-stage { grid-template-columns: minmax(0, 1.55fr) minmax(235px, .45fr); }
+.membership-recovery-stage { grid-template-columns: 1fr; }
+.membership-recovery-stage .attack-target { border-right: 0; }
 .membership-recovery-view { padding: 14px; }
 .membership-query-track { border: 1px solid var(--ink); background: var(--paper); }
 .membership-query-track > header { display: grid; grid-template-columns: auto auto 1fr; align-items: baseline; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--ink); }

@@ -617,7 +617,7 @@
       </div>
       <div class="membership-dataset-compare">
         <section class="membership-dataset ground-truth-dataset">
-          <header><div><span>系统真实成员数据集</span><small>演示对照 · 攻击者不可见</small></div><strong>${residentStore.records.length} 条</strong></header>
+          <header><div><span>系统真实成员数据集</span></div><strong>${residentStore.records.length} 条</strong></header>
           <div class="membership-table"><div class="membership-row membership-head"><span>居民编号</span><span>可查询特征</span><span>对照</span></div>${residentStore.records.map((record) => {
             const result = resultById.get(record.residentId);
             const recovered = result?.predictedMember === true;
@@ -626,7 +626,7 @@
           }).join("")}</div>
         </section>
         <section class="membership-dataset recovered-dataset">
-          <header><div><span>攻击恢复成员数据集</span><small>由存在性查询代码实际生成</small></div><strong>${visibleRecoveredResults.length} 条</strong></header>
+          <header><div><span>攻击恢复成员数据集</span></div><strong>${visibleRecoveredResults.length} 条</strong></header>
           <div class="membership-table"><div class="membership-row membership-head"><span>候选编号</span><span>已知特征</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => {
             const falsePositive = !result.actualMember;
             return `<div class="membership-row ${falsePositive ? "false-positive" : "recovered"}"><b>${escapeHtml(result.candidate.residentId)}</b><span>${escapeHtml(residentFeatureSummary(result.candidate))}</span><em>${falsePositive ? "误判" : "存在"}</em></div>`;
@@ -1114,8 +1114,8 @@
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
           <div class="attack-stage ${product.id === "city-existence" ? "membership-recovery-stage" : ""}">
-            <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header><ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol><div class="attack-canvas" data-attack-canvas>${product.id === "city-existence" ? membershipRecoveryAttackVisual(0) : renderVisual(activeSeries, product, 3)}</div></article>
-            <aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>${product.id === "city-existence" ? "成员恢复攻击" : "旁路隐私评估器"}</span><i>已连接</i></div><h3 data-audit-title>${product.id === "city-existence" ? "准备居民数据库成员恢复" : "准备执行适用攻击"}</h3><div class="audit-counter"><span>${product.id === "city-existence" ? "恢复阶段" : "已完成攻击"}</span><strong data-risk-value>0 / ${progressItems.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>${product.id === "city-existence" ? "等待成员恢复攻击开始" : "等待攻击序列开始"}</li></ul></aside>
+            <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header>${product.id === "city-existence" ? "" : `<ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol>`}<div class="attack-canvas" data-attack-canvas>${product.id === "city-existence" ? membershipRecoveryAttackVisual(0) : renderVisual(activeSeries, product, 3)}</div></article>
+            ${product.id === "city-existence" ? "" : `<aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>已连接</i></div><h3 data-audit-title>准备执行适用攻击</h3><div class="audit-counter"><span>已完成攻击</span><strong data-risk-value>0 / ${progressItems.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>等待攻击序列开始</li></ul></aside>`}
           </div>
           <div class="tour-results" data-results hidden></div>
         </section>
@@ -1231,9 +1231,8 @@
     if (product.id === "city-existence") {
       const run = membershipRecoveryRun ??= runMembershipRecoveryAttack();
       results.innerHTML = `
-        <header><div><span>代码运行结果</span><h3>居民数据库成员恢复完成</h3></div><strong>${run.truePositives} / ${residentStore.records.length}</strong></header>
-        <div class="membership-result-stats"><article><span>系统真实成员</span><strong>${residentStore.records.length}</strong></article><article><span>成功恢复</span><strong>${run.truePositives}</strong></article><article><span>真实成员遗漏</span><strong>${run.falseNegatives}</strong></article><article><span>非成员误判</span><strong>${run.falsePositives}</strong></article></div>
-        <p class="membership-result-note">本次代码实际处理 ${membershipRecoveryCandidates.length} 条候选记录，调用 ${run.queryCount} 次存在性查询：缓存命中 ${run.cacheHits} 次，新执行 ${run.cacheMisses} 次。右侧恢复集的 ${run.recoveredRows.length} 条记录和以上指标均由查询响应实时计算；有限条件结果已缓存在当前浏览器中，重复运行会直接复用。</p>`;
+        <header><div><h3>攻击结果</h3></div><strong>${run.truePositives} / ${residentStore.records.length}</strong></header>
+        <div class="membership-result-stats"><article><span>系统真实成员</span><strong>${residentStore.records.length}</strong></article><article><span>成功恢复</span><strong>${run.truePositives}</strong></article><article><span>真实成员遗漏</span><strong>${run.falseNegatives}</strong></article><article><span>非成员误判</span><strong>${run.falsePositives}</strong></article></div>`;
       return;
     }
     results.innerHTML = `
