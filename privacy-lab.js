@@ -364,7 +364,7 @@
   const membershipRecoveryCandidates = [...residentStore.records, ...membershipRecoveryDecoys];
   const membershipRecoveryFieldOrder = ["street", "age", "occupation", "householdSize", "housing", "monthlyIncome", "subsidyStatus", "insurance"];
   const membershipRecoverySavedRuns = new Map();
-  const seriesRecoveryProductIds = new Set(["city-existence", "content-library", "finance-graph", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify"]);
+  const seriesRecoveryProductIds = new Set(["city-existence", "content-library", "finance-graph", "finance-graph-query", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify"]);
   const graphCompanies = ["远澜科技", "海岸智造", "星桥能源", "海岳控股", "国创资本", "蓝港产业基金", "新源储能", "城际数科", "东浦制造", "安禾服务"];
   const graphRelations = ["控制关系", "股权关系", "项目关系"];
   const graphRagBackendRelations = [
@@ -435,6 +435,7 @@
   const recoveryAttackConfigs = new Map([
     ["content-library", { queriesPerTarget: 10, groundTruthLabel: "系统完整居民记录", recoveredLabel: "攻击拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-graph", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台企业关系图谱", recoveredLabel: "从 Chatbot 回答恢复的关系图谱", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复关系", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误推断关系", targets: graphRagBackendRelations }],
+    ["finance-graph-query", { queriesPerTarget: 7, groundTruthLabel: "系统真实关系数据集", recoveredLabel: "攻击恢复关系数据集", truthMetricLabel: "系统真实关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "关系遗漏", falseMetricLabel: "错误关系", targets: Array.from({ length: 100 }, (_, index) => ({ id: `REL-${String(index + 1).padStart(3, "0")}`, summary: `${graphCompanies[index % graphCompanies.length]} → ${graphCompanies[(index * 3 + 4) % graphCompanies.length]} · ${graphRelations[index % graphRelations.length]}` })) }],
     ["finance-aggregate", { queriesPerTarget: 2, groundTruthLabel: "系统完整居民记录", recoveredLabel: "由相邻统计拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
@@ -1346,7 +1347,7 @@
       <div class="membership-dataset-compare">
         <section class="membership-dataset ground-truth-dataset">
           <header><div><span>${escapeHtml(config.groundTruthLabel)}</span></div><strong>${config.targets.length} 条</strong></header>
-          <div class="membership-table"><div class="membership-row membership-head"><span>${product.id === "finance-graph" ? "关系编号" : "记录编号"}</span><span>真实内容</span><span>对照</span></div>${config.targets.map((target) => {
+          <div class="membership-table"><div class="membership-row membership-head"><span>${product.id === "finance-graph" || product.id === "finance-graph-query" ? "关系编号" : "记录编号"}</span><span>真实内容</span><span>对照</span></div>${config.targets.map((target) => {
             const result = resultById.get(target.id);
             const recovered = result?.predictedMember === true;
             const missed = currentStep === membershipRecoverySteps.length && result?.predictedMember === false;
@@ -1355,7 +1356,7 @@
         </section>
         <section class="membership-dataset recovered-dataset">
           <header><div><span>${escapeHtml(config.recoveredLabel)}</span></div><strong>${visibleRecoveredResults.length} 条</strong></header>
-          <div class="membership-table"><div class="membership-row membership-head"><span>${product.id === "finance-graph" ? "关系编号" : "候选编号"}</span><span>恢复内容</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => `<div class="membership-row ${result.actualMember ? "recovered" : "false-positive"}"><b>${escapeHtml(result.candidate.id)}</b><span>${escapeHtml(result.recoveredSummary || result.candidate.summary)}</span><em>${result.actualMember ? "已恢复" : "误判"}</em></div>`).join("") : '<div class="membership-empty">尚未生成恢复结果</div>'}</div>
+          <div class="membership-table"><div class="membership-row membership-head"><span>${product.id === "finance-graph" || product.id === "finance-graph-query" ? "关系编号" : "候选编号"}</span><span>恢复内容</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => `<div class="membership-row ${result.actualMember ? "recovered" : "false-positive"}"><b>${escapeHtml(result.candidate.id)}</b><span>${escapeHtml(result.recoveredSummary || result.candidate.summary)}</span><em>${result.actualMember ? "已恢复" : "误判"}</em></div>`).join("") : '<div class="membership-empty">尚未生成恢复结果</div>'}</div>
         </section>
       </div>
       <div class="membership-legend"><span><i class="recovered"></i>成功恢复</span><span><i class="missed"></i>真实记录遗漏</span><span><i class="false-positive"></i>非真实记录误判</span></div>
