@@ -1545,7 +1545,7 @@
     if (product.id === "city-existence") return residentExistenceVisual(product, currentPhase);
     if (product.id === "city-verify") return residentVerificationVisual(product, currentPhase);
     if (product.id === "content-library") return authorizedResidentVisual(product, currentPhase);
-    if (product.id === "finance-graph") return enterpriseGraphVisual(product, currentPhase);
+    if (product.id === "finance-graph" || product.id === "finance-graph-query") return enterpriseGraphVisual(product, currentPhase);
     if (product.id === "finance-aggregate") return residentStatisticsVisual(product, currentPhase);
     if (product.id === "finance-derived") return residentProcessingVisual(product, currentPhase);
     if (product.id === "finance-verify") return relationshipVerificationVisual(product, currentPhase);
