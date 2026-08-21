@@ -11,6 +11,22 @@
   const qualificationPolicies = ["养老服务补贴", "住房租赁补贴", "医疗救助"];
   const qualificationPeriods = ["2026年第3季度", "2026年第2季度", "2026年第1季度"];
   const qualificationRegions = ["东城区", "西城区", "南城区"];
+  const accountEnterpriseOptions = [
+    "远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q",
+    "海岸智造｜统一社会信用代码 91320000MA5T8N4R2L",
+    "星桥能源｜统一社会信用代码 91330000MA6C9P7W4K",
+  ];
+  const accountEntityOptions = [
+    "东海银行｜账户尾号 8421",
+    "华城银行｜账户尾号 1936",
+    "联合支付｜账户尾号 5708",
+  ];
+  const verifiedAccountRelationships = new Map([
+    [accountEnterpriseOptions[0], accountEntityOptions[0]],
+    [accountEnterpriseOptions[1], accountEntityOptions[1]],
+    [accountEnterpriseOptions[2], accountEntityOptions[2]],
+  ]);
+  const verifyAccountRelationship = (enterprise, account) => verifiedAccountRelationships.get(enterprise) === account;
   const qualificationProfiles = residentStore.records.slice(0, 30).map((record, index) => ({
     record,
     credential: qualificationCredential(record, index),
@@ -302,8 +318,8 @@
     },
     "finance-verify": {
       schema: [
-        { key: "enterpriseEntity", label: "企业主体（实体一）", type: "enum", values: ["远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q", "海岸智造｜统一社会信用代码 91320000MA5T8N4R2L", "星桥能源｜统一社会信用代码 91330000MA6C9P7W4K"] },
-        { key: "accountEntity", label: "银行账户（实体二）", type: "enum", values: ["东海银行｜账户尾号 8421", "华城银行｜账户尾号 1936", "联合支付｜账户尾号 5708"] },
+        { key: "enterpriseEntity", label: "企业主体（实体一）", type: "enum", values: accountEnterpriseOptions },
+        { key: "accountEntity", label: "银行账户（实体二）", type: "enum", values: accountEntityOptions },
       ],
       defaults: [
         { field: "enterpriseEntity", operator: "eq", value: "远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q" },
@@ -399,7 +415,6 @@
     if (index === 2) recovered.push(graphRagFalseRelations[0].summary);
     return { question, answer: `根据检索到的企业关系，可以确认：${recovered.join("；")}。` };
   });
-  const accountInstitutions = ["东海银行", "华城银行", "联合支付", "城市商业银行", "公共服务结算中心"];
   const residentAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: residentFeatureSummary(record) }));
   const protectedAttributeFieldOrder = ["monthlyIncome", "subsidyStatus", "insurance"];
   const protectedAttributeAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: completeResidentSummary(record) }));
@@ -420,7 +435,7 @@
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
     ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "100 张合成人脸候选库", recoveredLabel: "爬山搜索结果", truthMetricLabel: "候选人脸", recoveredMetricLabel: "最佳相似度", missedMetricLabel: "未评估人脸", falseMetricLabel: "随机重启", targets: syntheticFaceLibrary.faces.map((face) => ({ id: face.id, summary: `合成人脸候选 ${face.id}` })) }],
-    ["finance-verify", { queriesPerTarget: 5, groundTruthLabel: "系统真实账户关系集", recoveredLabel: "攻击恢复账户关系集", truthMetricLabel: "系统账户关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "账户关系遗漏", falseMetricLabel: "关系误判", targets: Array.from({ length: 100 }, (_, index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, summary: `${graphCompanies[index % graphCompanies.length]} → ${accountInstitutions[index % accountInstitutions.length]} · 尾号 ${String(1000 + (index * 791) % 9000).padStart(4, "0")}` })) }],
+    ["finance-verify", { queriesPerTarget: 1, groundTruthLabel: "系统真实账户关系集", recoveredLabel: "攻击恢复账户关系集", truthMetricLabel: "系统账户关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "账户关系遗漏", falseMetricLabel: "关系误判", targets: Array.from(verifiedAccountRelationships.entries()).map(([enterprise, account], index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, enterprise, account, summary: `${enterprise} → ${account}` })) }],
   ]);
   const productRecoverySavedRuns = new Map();
   let membershipRecoveryRun = null;
@@ -926,6 +941,37 @@
         quotaBlocked: queryCount < graphRagAttackConversations.length ? 1 : 0,
       };
     }
+    if (productId === "finance-verify") {
+      const candidates = accountEnterpriseOptions.flatMap((enterprise, enterpriseIndex) => accountEntityOptions.map((account, accountIndex) => ({
+        id: verifyAccountRelationship(enterprise, account)
+          ? `ACC-${String(enterpriseIndex + 1).padStart(3, "0")}`
+          : `PAIR-${enterpriseIndex + 1}-${accountIndex + 1}`,
+        enterprise,
+        account,
+        summary: `${enterprise} → ${account}`,
+        actual: verifyAccountRelationship(enterprise, account),
+      })));
+      const queryCount = Math.min(Math.max(0, Math.floor(queryBudget)), candidates.length);
+      const candidateResults = candidates.map((candidate, index) => {
+        const determined = index < queryCount;
+        const response = determined && verifyAccountRelationship(candidate.enterprise, candidate.account);
+        return { candidate, actualMember: candidate.actual, predictedMember: response, determined };
+      });
+      const truePositives = candidateResults.filter((result) => result.actualMember && result.predictedMember).length;
+      const falsePositives = candidateResults.filter((result) => !result.actualMember && result.predictedMember).length;
+      return {
+        productId,
+        queryBudget,
+        queryCount,
+        candidateResults,
+        recoveredRows: candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate),
+        truePositives,
+        falseNegatives: config.targets.length - truePositives,
+        falsePositives,
+        recall: config.targets.length ? truePositives / config.targets.length : 0,
+        quotaBlocked: queryCount < candidates.length ? 1 : 0,
+      };
+    }
     const actualIds = new Set(config.targets.map((target) => target.id));
     const candidates = [...config.targets.map((target) => ({ ...target, actual: true })), ...Array.from({ length: 12 }, (_, index) => ({ id: `C-${productId}-${String(index + 1).padStart(2, "0")}`, summary: `外部候选 ${String(index + 1).padStart(2, "0")}`, actual: false, rejectAt: 1 + index % Math.min(3, config.queriesPerTarget) }))];
     let queryCount = 0;
@@ -1038,6 +1084,15 @@
         protocol: `可用核验次数 ${queryBudget}；候选库 ${run.librarySize} 张；实际图像评估 ${run.queryCount} 次；随机重启 ${run.restartCount} 次；描述维度 ${faceDescriptorDimension}；不连接真实系统`,
       });
     }
+    if (product.id === "finance-verify" && product.attacks[0]) {
+      const config = recoveryAttackConfigs.get(product.id);
+      Object.assign(product.attacks[0], {
+        result: `代码调用同一个账户归属核验函数 ${run.queryCount} 次，恢复 ${run.truePositives}/${config.targets.length} 条真实账户关系。`,
+        value: `${run.truePositives} / ${config.targets.length}`,
+        displayScore: Math.round(run.recall * 100),
+        protocol: `可用核验次数 ${queryBudget}；实际核验 ${run.queryCount}；关系恢复 ${run.truePositives}；错误关系 ${run.falsePositives}`,
+      });
+    }
     refreshProductUsageCounter(product);
     return run;
   }
@@ -1120,14 +1175,9 @@
       return { ...product, inputValue: formattedInput, outputValue: authenticated ? "认证" : "不认证" };
     }
     if (product.id === "finance-verify") {
-      const verifiedRelationships = new Map([
-        ["远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q", "东海银行｜账户尾号 8421"],
-        ["海岸智造｜统一社会信用代码 91320000MA5T8N4R2L", "华城银行｜账户尾号 1936"],
-        ["星桥能源｜统一社会信用代码 91330000MA6C9P7W4K", "联合支付｜账户尾号 5708"],
-      ]);
       const enterprise = structuredConditionValue("enterpriseEntity");
       const account = structuredConditionValue("accountEntity");
-      return { ...product, inputValue: formattedInput, outputValue: verifiedRelationships.get(enterprise) === account ? "认证" : "非认证" };
+      return { ...product, inputValue: formattedInput, outputValue: verifyAccountRelationship(enterprise, account) ? "认证" : "非认证" };
     }
     return { ...product, inputValue: formattedInput };
   };
