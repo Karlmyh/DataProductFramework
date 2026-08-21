@@ -198,6 +198,30 @@
     outputValue: "认证",
     outputDetail: "对外只返回认证或不认证，不返回人脸相似度或登记模板。",
   });
+  if (productsById["content-voice"]) {
+    productsById["content-voice"].attacks = [{
+      id: "face-boundary-hill-climb",
+      name: "离线人脸相似度爬山",
+      brief: "在本地仿真环境中反复调整 16 维候选人脸表征，保留相似度更高的方向并逐步逼近登记模板。",
+      result: "运行离线攻击代码后，展示系统登记模板、爬山恢复模板及二者的最终相似度。",
+      metric: "模板余弦相似度",
+      value: "运行后计算",
+      displayScore: 0,
+      evidence: "代码实测",
+      attackFamily: "相似度爬山",
+      attackObject: "登记人脸模板",
+      source: "当前页面本地合成人脸模板",
+      protocol: "16 维归一化合成表征；确定性坐标爬山；仅调用页面内的本地相似度函数",
+      limitation: "纯离线机制演示，不连接真实身份系统；恢复的是合成模板向量，不是原始照片像素。",
+    }];
+    candidatesByProduct["content-voice"] = [{
+      id: "face-boundary-hill-climb",
+      name: "离线人脸相似度爬山",
+      applicable: true,
+      executed: true,
+      reason: "离线演示：利用本地相似度反馈迭代候选表征，观察爬山过程如何逼近合成登记模板。",
+    }];
+  }
   if (productsById["finance-verify"]) Object.assign(productsById["finance-verify"], {
     name: "账户归属核验",
     tagline: "核验企业主体（实体一）与银行账户（实体二）之间是否存在账户归属关系。",
@@ -394,12 +418,21 @@
     ["finance-aggregate", { queriesPerTarget: 2, groundTruthLabel: "系统完整居民记录", recoveredLabel: "由相邻统计拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
-    ["content-voice", { queriesPerTarget: 10, groundTruthLabel: "系统真实身份绑定集", recoveredLabel: "攻击恢复身份绑定集", truthMetricLabel: "系统身份绑定", recoveredMetricLabel: "成功恢复", missedMetricLabel: "身份绑定遗漏", falseMetricLabel: "身份误判", targets: residentStore.records.map((record, index) => ({ id: record.residentId, summary: `${String(index + 17).padStart(3, "0")}F-${String(record.age * 97).padStart(4, "0")}-${record.street}A · 登记人脸绑定` })) }],
+    ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "系统登记人脸模板", recoveredLabel: "爬山恢复人脸模板", truthMetricLabel: "登记模板维度", recoveredMetricLabel: "模板相似度", missedMetricLabel: "剩余差异", falseMetricLabel: "离线状态", targets: [{ id: "FACE-TEMPLATE-01", summary: "16 维合成居民登记人脸模板" }] }],
     ["finance-verify", { queriesPerTarget: 5, groundTruthLabel: "系统真实账户关系集", recoveredLabel: "攻击恢复账户关系集", truthMetricLabel: "系统账户关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "账户关系遗漏", falseMetricLabel: "关系误判", targets: Array.from({ length: 100 }, (_, index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, summary: `${graphCompanies[index % graphCompanies.length]} → ${accountInstitutions[index % accountInstitutions.length]} · 尾号 ${String(1000 + (index * 791) % 9000).padStart(4, "0")}` })) }],
   ]);
   const productRecoverySavedRuns = new Map();
   let membershipRecoveryRun = null;
   let productRecoveryRun = null;
+  const faceTemplateDimension = 16;
+  const faceVerificationThreshold = 0.98;
+  const normalizeFaceVector = (vector) => {
+    const magnitude = Math.hypot(...vector) || 1;
+    return vector.map((value) => value / magnitude);
+  };
+  const faceTemplateSimilarity = (left, right) => left.reduce((sum, value, index) => sum + value * right[index], 0);
+  const registeredFaceTemplate = normalizeFaceVector([0.42, -0.31, 0.18, 0.55, -0.27, 0.38, -0.46, 0.12, 0.33, -0.15, 0.49, -0.36, 0.21, 0.29, -0.24, 0.41]);
+  const initialFaceProbe = normalizeFaceVector([0.12, -0.08, -0.22, 0.31, 0.16, 0.05, -0.18, -0.11, 0.09, 0.21, 0.07, -0.16, -0.04, 0.27, 0.13, 0.02]);
 
   const escapeHtml = (value) => String(value)
     .replaceAll("&", "&amp;")
@@ -605,6 +638,57 @@
   function simulateProductRecoveryBudget(productId, queryBudget) {
     const config = recoveryAttackConfigs.get(productId);
     if (!config) return null;
+    if (productId === "content-voice") {
+      const availableQueries = Math.max(0, Math.floor(queryBudget));
+      let candidate = initialFaceProbe.slice();
+      let queryCount = 0;
+      let round = 0;
+      const trajectory = [{ query: 0, similarity: faceTemplateSimilarity(candidate, registeredFaceTemplate) }];
+      while (queryCount < availableQueries) {
+        const stepSize = 0.28 * (0.76 ** round);
+        for (let dimension = 0; dimension < faceTemplateDimension && queryCount < availableQueries; dimension += 1) {
+          const baseline = candidate.slice();
+          let bestCandidate = baseline;
+          let bestSimilarity = faceTemplateSimilarity(baseline, registeredFaceTemplate);
+          for (const direction of [1, -1]) {
+            if (queryCount >= availableQueries) break;
+            const probe = baseline.slice();
+            probe[dimension] += direction * stepSize;
+            const normalizedProbe = normalizeFaceVector(probe);
+            const similarity = faceTemplateSimilarity(normalizedProbe, registeredFaceTemplate);
+            queryCount += 1;
+            if (similarity > bestSimilarity) {
+              bestCandidate = normalizedProbe;
+              bestSimilarity = similarity;
+            }
+          }
+          candidate = bestCandidate;
+          if (queryCount % 16 === 0 || queryCount === availableQueries) trajectory.push({ query: queryCount, similarity: bestSimilarity });
+        }
+        round += 1;
+      }
+      const similarity = faceTemplateSimilarity(candidate, registeredFaceTemplate);
+      const authenticated = similarity >= faceVerificationThreshold;
+      return {
+        productId,
+        queryBudget: availableQueries,
+        queryCount,
+        registeredTemplate: registeredFaceTemplate.slice(),
+        recoveredTemplate: candidate,
+        initialSimilarity: trajectory[0].similarity,
+        similarity,
+        authenticated,
+        threshold: faceVerificationThreshold,
+        trajectory,
+        truePositives: authenticated ? 1 : 0,
+        falseNegatives: authenticated ? 0 : 1,
+        falsePositives: 0,
+        recall: similarity,
+        quotaBlocked: similarity < 0.999 ? 1 : 0,
+        candidateResults: [{ candidate: config.targets[0], actualMember: true, predictedMember: authenticated, determined: true }],
+        recoveredRows: authenticated ? config.targets.slice() : [],
+      };
+    }
     if (productId === "content-library") {
       let queryCount = 0;
       let budgetExhausted = false;
@@ -923,6 +1007,14 @@
         protocol: `可用核验次数 ${queryBudget}；实际核验 ${run.queryCount}；资格组合恢复 ${run.truePositives}；错误组合 ${run.falsePositives}`,
       });
     }
+    if (product.id === "content-voice" && product.attacks[0]) {
+      Object.assign(product.attacks[0], {
+        result: `离线代码执行 ${run.queryCount} 次相似度评估，模板余弦相似度由 ${(run.initialSimilarity * 100).toFixed(1)}% 提升到 ${(run.similarity * 100).toFixed(2)}%。`,
+        value: `${(run.similarity * 100).toFixed(2)}%`,
+        displayScore: Math.round(run.similarity * 100),
+        protocol: `可用核验次数 ${queryBudget}；本地相似度评估 ${run.queryCount} 次；16 维合成模板；认证阈值 ${(run.threshold * 100).toFixed(1)}%；不连接真实系统`,
+      });
+    }
     refreshProductUsageCounter(product);
     return run;
   }
@@ -1136,8 +1228,36 @@
     </div>`;
   }
 
+  function faceTemplateCells(vector) {
+    return vector.map((value, index) => `<span><b>D${String(index + 1).padStart(2, "0")}</b><i><em style="width:${Math.max(2, Math.abs(value) * 100)}%"></em></i><small>${value.toFixed(3)}</small></span>`).join("");
+  }
+
+  function faceHillClimbAttackVisual(product, step) {
+    const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
+    const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
+    const recoveredTemplate = run?.recoveredTemplate ?? initialFaceProbe;
+    const similarity = run?.similarity ?? faceTemplateSimilarity(initialFaceProbe, registeredFaceTemplate);
+    const completed = currentStep === membershipRecoverySteps.length;
+    return `<div class="face-hill-climb-view">
+      <div class="membership-query-track"><header><span>离线代码运行</span><strong>${run ? `${run.queryCount} 次本地相似度评估` : "等待执行"}</strong></header></div>
+      <div class="face-offline-note">本演示只操作页面内的 16 维合成模板，不连接任何真实人脸或身份系统。</div>
+      <div class="membership-dataset-compare face-template-compare">
+        <section class="membership-dataset face-template-panel">
+          <header><div><span>系统登记人脸模板</span></div><strong>16 维</strong></header>
+          <div class="face-template-grid">${faceTemplateCells(registeredFaceTemplate)}</div>
+        </section>
+        <section class="membership-dataset face-template-panel ${run ? "recovered-dataset" : ""}">
+          <header><div><span>爬山恢复人脸模板</span></div><strong>${run ? `${(similarity * 100).toFixed(2)}%` : "等待"}</strong></header>
+          <div class="face-template-grid">${faceTemplateCells(recoveredTemplate)}</div>
+        </section>
+      </div>
+      <div class="face-hill-summary"><article><span>初始相似度</span><strong>${run ? `${(run.initialSimilarity * 100).toFixed(1)}%` : "—"}</strong></article><article><span>恢复相似度</span><strong>${run ? `${(similarity * 100).toFixed(2)}%` : "—"}</strong></article><article><span>离线认证阈值</span><strong>${(faceVerificationThreshold * 100).toFixed(1)}%</strong></article><article><span>仿真结果</span><strong class="${completed && run?.authenticated ? "is-authenticated" : ""}">${completed ? run?.authenticated ? "达到认证边界" : "未达到认证边界" : "运行中"}</strong></article></div>
+    </div>`;
+  }
+
   function productRecoveryAttackVisual(product, step) {
     if (product.id === "city-existence") return membershipRecoveryAttackVisual(step);
+    if (product.id === "content-voice") return faceHillClimbAttackVisual(product, step);
     const config = recoveryAttackConfigs.get(product.id);
     if (!config) return renderVisual(current().activeSeries, product, 3);
     const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
@@ -1775,6 +1895,14 @@
       results.innerHTML = `
         <header><div><h3>攻击结果</h3></div><strong>${run.truePositives} / ${residentStore.records.length}</strong></header>
         <div class="membership-result-stats"><article><span>系统真实成员</span><strong>${residentStore.records.length}</strong></article><article><span>成功恢复</span><strong>${run.truePositives}</strong></article><article><span>真实成员遗漏</span><strong>${run.falseNegatives}</strong></article><article><span>非成员误判</span><strong>${run.falsePositives}</strong></article></div>`;
+      return;
+    }
+    if (product.id === "content-voice") {
+      const run = productRecoveryRun ??= runProductRecoveryAttack(product);
+      if (!run) return;
+      results.innerHTML = `
+        <header><div><h3>攻击结果</h3></div><strong>${(run.similarity * 100).toFixed(2)}%</strong></header>
+        <div class="membership-result-stats"><article><span>合成模板维度</span><strong>${faceTemplateDimension}</strong></article><article><span>本地相似度评估</span><strong>${run.queryCount}</strong></article><article><span>初始相似度</span><strong>${(run.initialSimilarity * 100).toFixed(1)}%</strong></article><article><span>离线仿真结果</span><strong>${run.authenticated ? "达到认证边界" : "未达到认证边界"}</strong></article></div>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {
