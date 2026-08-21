@@ -390,11 +390,13 @@ th { font-weight: 700; }
 .relation-path-chain > i b { margin-top: 2px; color: var(--ink); font: 700 14px Arial, sans-serif; }
 
 .resident-statistics-view { padding: 18px; }
-.resident-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
+.resident-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
 .resident-stat-card { display: grid; min-height: 112px; align-content: center; justify-items: start; padding: 16px; border: 1px solid var(--ink); background: var(--paper); }
 .resident-stat-card span { color: var(--muted); font-size: 9px; font-weight: 700; }
 .resident-stat-card strong { margin-top: 8px; font: 700 25px Arial, sans-serif; }
 .resident-stat-card small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+.resident-stat-card.protected-stat { background: var(--mint-soft); }
+.resident-stat-card.distribution strong { font-size: 13px; line-height: 1.55; }
 
 .processing-setting-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 .processing-setting-list label { display: grid; grid-template-columns: 116px minmax(0, 1fr); align-items: center; border: 1px solid var(--ink); }

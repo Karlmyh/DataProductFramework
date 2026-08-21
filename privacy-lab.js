@@ -85,14 +85,38 @@
   }
   if (productsById["finance-aggregate"]) Object.assign(productsById["finance-aggregate"], {
     name: "居民群体统计查询",
-    tagline: "按居民条件返回群体统计，不返回任何个人记录。",
-    inputLabel: "统计条件",
+    tagline: "按居民范围返回公开特征统计，以及受保护特征的均值或类别占比。",
+    inputLabel: "居民范围",
     inputValue: "街道=07 ∧ 年龄≥60",
     callLabel: "生成居民统计",
     outputLabel: "统计结果",
-    outputValue: "10 条样本",
-    outputDetail: "返回样本数、平均年龄、平均家庭人数和保障房占比。",
+    outputValue: "范围聚合统计",
+    outputDetail: "不返回个人记录；月收入返回平均值，补贴状态和保障类型返回各类别占比。",
   });
+  if (productsById["finance-aggregate"]) {
+    productsById["finance-aggregate"].attacks = [{
+      id: "aggregate-differencing",
+      name: "相邻范围差分恢复",
+      brief: "比较只相差一个居民的相邻范围统计，将均值还原为总量后做差，恢复该居民的受保护特征。",
+      result: "运行攻击代码后，恢复月收入、补贴状态和保障类型，并与公开字段拼接成完整记录。",
+      metric: "完整记录恢复",
+      value: "运行后计算",
+      displayScore: 0,
+      evidence: "代码实测",
+      attackFamily: "聚合差分",
+      attackObject: "属性隐私",
+      source: "当前页面居民演示数据",
+      protocol: "相同公开范围；年龄上界相差一个目标居民；均值乘样本数还原总量；相邻统计做差",
+      limitation: "依赖可构造只相差一个居民的相邻范围，并且产品返回精确样本数和未加噪聚合值。",
+    }];
+    candidatesByProduct["finance-aggregate"] = [{
+      id: "aggregate-differencing",
+      name: "相邻范围差分恢复",
+      applicable: true,
+      executed: true,
+      reason: "适用：精确样本数和聚合均值允许通过相邻范围差分恢复单条记录。",
+    }];
+  }
   if (productsById["finance-derived"]) Object.assign(productsById["finance-derived"], {
     name: "居民派生与处理查询",
     tagline: "先用有限条件筛选居民数据，再执行重采样、子采样或合成数据生成。",
@@ -170,7 +194,9 @@
       ],
     },
     "finance-aggregate": {
-      schema: residentStore.schema.filter((field) => ["street", "age", "occupation", "householdSize", "housing"].includes(field.key)),
+      schema: residentStore.schema.map((field) => protectedResidentFieldKeys.has(field.key)
+        ? { ...field, label: `${field.label}（受保护）` }
+        : field),
       defaults: [
         { field: "street", operator: "eq", value: "07" },
         { field: "age", operator: "gte", value: "60" },
@@ -321,7 +347,7 @@
   const recoveryAttackConfigs = new Map([
     ["content-library", { queriesPerTarget: 10, groundTruthLabel: "系统完整居民记录", recoveredLabel: "攻击拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-graph", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台企业关系图谱", recoveredLabel: "从 Chatbot 回答恢复的关系图谱", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复关系", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误推断关系", targets: graphRagBackendRelations }],
-    ["finance-aggregate", { queriesPerTarget: 8, groundTruthLabel: "系统真实统计源数据集", recoveredLabel: "攻击恢复居民数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
+    ["finance-aggregate", { queriesPerTarget: 2, groundTruthLabel: "系统完整居民记录", recoveredLabel: "由相邻统计拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["city-verify", { queriesPerTarget: 4, groundTruthLabel: "系统真实资格数据集", recoveredLabel: "攻击恢复资格数据集", truthMetricLabel: "系统资格记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "资格记录遗漏", falseMetricLabel: "资格误判", targets: residentStore.records.map((record, index) => ({ id: record.residentId, summary: `${record.age >= 60 ? "养老服务补贴" : record.housing === "租住" ? "住房租赁补贴" : "医疗救助"} · ${record.subsidyStatus === "有效" || index % 4 === 0 ? "符合" : "不符合"} · 2026年第3季度` })) }],
     ["content-voice", { queriesPerTarget: 10, groundTruthLabel: "系统真实身份绑定集", recoveredLabel: "攻击恢复身份绑定集", truthMetricLabel: "系统身份绑定", recoveredMetricLabel: "成功恢复", missedMetricLabel: "身份绑定遗漏", falseMetricLabel: "身份误判", targets: residentStore.records.map((record, index) => ({ id: record.residentId, summary: `${String(index + 17).padStart(3, "0")}F-${String(record.age * 97).padStart(4, "0")}-${record.street}A · 登记人脸绑定` })) }],
@@ -620,6 +646,67 @@
         quotaBlocked: budgetExhausted ? 1 : 0,
       };
     }
+    if (productId === "finance-aggregate") {
+      let queryCount = 0;
+      let budgetExhausted = false;
+      const runAggregateQuery = (conditions) => {
+        if (queryCount >= queryBudget) {
+          budgetExhausted = true;
+          return null;
+        }
+        queryCount += 1;
+        const rows = residentStore.records.filter((row) => conditions.every((condition) => recordMatchesCondition(row, condition)));
+        return statisticsForResidentRows(rows);
+      };
+      const candidateResults = config.targets.map((candidate) => {
+        const record = residentStore.records.find((row) => row.residentId === candidate.id);
+        if (!record || budgetExhausted) return { candidate, actualMember: true, predictedMember: false, determined: false };
+        const commonRange = [
+          { field: "street", operator: "eq", value: String(record.street) },
+          { field: "occupation", operator: "eq", value: String(record.occupation) },
+          { field: "householdSize", operator: "eq", value: String(record.householdSize) },
+          { field: "housing", operator: "eq", value: String(record.housing) },
+        ];
+        const includingTarget = runAggregateQuery([...commonRange, { field: "age", operator: "lte", value: String(record.age) }]);
+        const beforeTarget = runAggregateQuery([...commonRange, { field: "age", operator: "lt", value: String(record.age) }]);
+        if (!includingTarget || !beforeTarget) return { candidate, actualMember: true, predictedMember: false, determined: false };
+        const recoveredCount = includingTarget.count - beforeTarget.count;
+        const recoveredIncome = Math.round((includingTarget.averageMonthlyIncome * includingTarget.count - beforeTarget.averageMonthlyIncome * beforeTarget.count) / 100) * 100;
+        const recoverCategory = (shareKey, values) => values.find((value) => {
+          const difference = includingTarget[shareKey][value] * includingTarget.count - beforeTarget[shareKey][value] * beforeTarget.count;
+          return difference > 0.5;
+        });
+        const inferred = {
+          monthlyIncome: recoveredIncome,
+          subsidyStatus: recoverCategory("subsidyShares", residentFields.get("subsidyStatus")?.values ?? []),
+          insurance: recoverCategory("insuranceShares", residentFields.get("insurance")?.values ?? []),
+        };
+        const determined = recoveredCount === 1 && protectedAttributeFieldOrder.every((fieldKey) => inferred[fieldKey] !== undefined);
+        const correct = determined && protectedAttributeFieldOrder.every((fieldKey) => inferred[fieldKey] === record[fieldKey]);
+        return {
+          candidate,
+          actualMember: true,
+          predictedMember: correct,
+          determined,
+          inferred,
+          recoveredSummary: determined ? completeResidentSummary({ ...record, ...inferred }) : "",
+        };
+      });
+      const truePositives = candidateResults.filter((result) => result.predictedMember).length;
+      const falsePositives = candidateResults.filter((result) => result.determined && !result.predictedMember).length;
+      return {
+        productId,
+        queryBudget,
+        queryCount,
+        candidateResults,
+        recoveredRows: candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate),
+        truePositives,
+        falseNegatives: config.targets.length - truePositives,
+        falsePositives,
+        recall: config.targets.length ? truePositives / config.targets.length : 0,
+        quotaBlocked: budgetExhausted ? 1 : 0,
+      };
+    }
     if (productId === "finance-graph") {
       const queryCount = Math.min(Math.max(0, queryBudget), graphRagAttackConversations.length);
       const allCandidates = [...config.targets, ...graphRagFalseRelations];
@@ -735,6 +822,15 @@
         value: `${run.truePositives} / ${config.targets.length}`,
         displayScore: Math.round(run.recall * 100),
         protocol: `可用查询次数 ${queryBudget}；实际范围查询 ${run.queryCount}；完整推断 ${run.truePositives}；错误推断 ${run.falsePositives}`,
+      });
+    }
+    if (product.id === "finance-aggregate" && product.attacks[0]) {
+      const config = recoveryAttackConfigs.get(product.id);
+      Object.assign(product.attacks[0], {
+        result: `代码执行 ${run.queryCount} 次相邻范围统计查询，通过均值总量差恢复并完整拼接 ${run.truePositives}/${config.targets.length} 条居民记录。`,
+        value: `${run.truePositives} / ${config.targets.length}`,
+        displayScore: Math.round(run.recall * 100),
+        protocol: `可用查询次数 ${queryBudget}；实际统计查询 ${run.queryCount}；完整恢复 ${run.truePositives}；错误拼接 ${run.falsePositives}`,
       });
     }
     refreshProductUsageCounter(product);
@@ -977,16 +1073,22 @@
     </div>`;
   }
 
-  function residentStatistics() {
-    const rows = queryResidents();
+  function statisticsForResidentRows(rows) {
     const count = rows.length;
     const total = (field) => rows.reduce((sum, record) => sum + Number(record[field] ?? 0), 0);
+    const shares = (field, values) => Object.fromEntries(values.map((value) => [value, count ? rows.filter((record) => record[field] === value).length / count : 0]));
     return {
       count,
       averageAge: count ? total("age") / count : 0,
       averageHouseholdSize: count ? total("householdSize") / count : 0,
-      protectedHousingRate: count ? rows.filter((record) => record.housing === "保障房").length / count * 100 : 0,
+      averageMonthlyIncome: count ? total("monthlyIncome") / count : 0,
+      subsidyShares: shares("subsidyStatus", residentFields.get("subsidyStatus")?.values ?? []),
+      insuranceShares: shares("insurance", residentFields.get("insurance")?.values ?? []),
     };
+  }
+
+  function residentStatistics() {
+    return statisticsForResidentRows(queryResidents());
   }
 
   function residentStatisticsVisual(product, currentPhase) {
@@ -998,7 +1100,9 @@
         <div class="resident-stat-card"><span>样本数</span><strong>${statistics.count}</strong><small>人</small></div>
         <div class="resident-stat-card"><span>平均年龄</span><strong>${statistics.averageAge.toFixed(1)}</strong><small>岁</small></div>
         <div class="resident-stat-card"><span>平均家庭人数</span><strong>${statistics.averageHouseholdSize.toFixed(1)}</strong><small>人</small></div>
-        <div class="resident-stat-card"><span>保障房占比</span><strong>${statistics.protectedHousingRate.toFixed(1)}</strong><small>%</small></div>
+        <div class="resident-stat-card protected-stat"><span>平均月收入</span><strong>${Math.round(statistics.averageMonthlyIncome).toLocaleString("zh-CN")}</strong><small>元 · 受保护特征均值</small></div>
+        <div class="resident-stat-card protected-stat distribution"><span>补贴状态占比</span><strong>有效 ${(statistics.subsidyShares["有效"] * 100).toFixed(1)}%<br>暂停 ${(statistics.subsidyShares["暂停"] * 100).toFixed(1)}%<br>无 ${(statistics.subsidyShares["无"] * 100).toFixed(1)}%</strong><small>类别指示变量均值</small></div>
+        <div class="resident-stat-card protected-stat distribution"><span>保障类型占比</span><strong>职工 ${(statistics.insuranceShares["城镇职工"] * 100).toFixed(1)}%<br>居民 ${(statistics.insuranceShares["城乡居民"] * 100).toFixed(1)}%<br>未参保 ${(statistics.insuranceShares["未参保"] * 100).toFixed(1)}%</strong><small>类别指示变量均值</small></div>
       </div>` : ""}
     </div>`;
   }
@@ -1224,8 +1328,8 @@
         const statistics = residentStatistics();
         return {
           language: "SQL / JSON",
-          code: `SELECT COUNT(*) AS sample_count,\n       AVG(age) AS average_age,\n       AVG(household_size) AS average_household_size,\n       AVG(CASE WHEN housing = '保障房' THEN 1.0 ELSE 0.0 END) AS protected_housing_rate\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
-          output: `{ "sample_count": ${statistics.count}, "average_age": ${statistics.averageAge.toFixed(1)}, "average_household_size": ${statistics.averageHouseholdSize.toFixed(1)}, "protected_housing_rate": ${statistics.protectedHousingRate.toFixed(3)} }`,
+          code: `SELECT COUNT(*) AS sample_count,\n       AVG(age) AS average_age,\n       AVG(household_size) AS average_household_size,\n       AVG(monthly_income) AS average_monthly_income,\n       AVG(CASE WHEN subsidy_status = '有效' THEN 1.0 ELSE 0.0 END) AS active_subsidy_share,\n       AVG(CASE WHEN insurance = '城镇职工' THEN 1.0 ELSE 0.0 END) AS employee_insurance_share\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
+          output: `{ "sample_count": ${statistics.count}, "average_age": ${statistics.averageAge.toFixed(1)}, "average_household_size": ${statistics.averageHouseholdSize.toFixed(1)}, "average_monthly_income": ${statistics.averageMonthlyIncome.toFixed(1)}, "active_subsidy_share": ${statistics.subsidyShares["有效"].toFixed(3)}, "employee_insurance_share": ${statistics.insuranceShares["城镇职工"].toFixed(3)} }`,
         };
       }
       return {
