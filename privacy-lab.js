@@ -7,7 +7,6 @@
   const residentStore = window.__RESIDENT_DATA__ ?? { name: "居民公共服务数据库", schema: [], records: [] };
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
   const protectedResidentFieldKeys = new Set(["incomeBand", "subsidyStatus", "insurance"]);
-  const publicResidentFieldKeys = ["street", "age", "occupation", "householdSize", "housing"];
   const residentOperators = {
     enum: [
       { id: "eq", label: "等于", symbol: "=" },
@@ -51,21 +50,21 @@
     }];
   }
   if (productsById["content-library"]) Object.assign(productsById["content-library"], {
-    name: "居民受保护字段检索",
-    tagline: "受保护字段可以参与筛选，但响应只返回命中记录的公开字段。",
-    inputLabel: "检索条件",
-    inputValue: "街道=07 ∧ 收入区间=低 ∧ 补贴状态=有效",
-    callLabel: "检索公开记录",
+    name: "居民受保护记录检索",
+    tagline: "对受保护记录集提交范围条件，返回范围内全部样本的公开特征。",
+    inputLabel: "记录范围",
+    inputValue: "街道=07 ∧ 年龄≥60 ∧ 收入区间=低",
+    callLabel: "检索范围内样本",
     outputLabel: "检索结果",
-    outputValue: "公开记录",
-    outputDetail: "收入区间、补贴状态和保障类型只用于筛选，不会出现在返回字段中。",
+    outputValue: "范围内公开样本",
+    outputDetail: "条件可以包含受保护字段，但每条命中样本只返回非受保护特征。",
   });
   if (productsById["content-library"]) {
     productsById["content-library"].attacks = [{
       id: "protected-attribute-inference",
       name: "受保护属性推断",
-      brief: "固定目标居民的公开特征，枚举受保护字段条件，并观察该居民编号是否出现在公开响应中。",
-      result: "运行攻击代码后，根据真实检索响应恢复居民的收入区间、补贴状态和保障类型。",
+      brief: "按街道和年龄段提交分组范围，再轮换受保护字段条件，根据各批公开样本反推隐藏属性。",
+      result: "运行攻击代码后，合并多个范围查询返回的公开样本，恢复居民的收入区间、补贴状态和保障类型。",
       metric: "完整属性恢复",
       value: "运行后计算",
       displayScore: 0,
@@ -73,15 +72,15 @@
       attackFamily: "属性推断",
       attackObject: "属性隐私",
       source: "当前页面居民演示数据",
-      protocol: "已知公开居民特征；枚举受保护条件；调用产品同一检索逻辑；只观察公开记录是否返回",
-      limitation: "依赖公开字段能够唯一定位目标居民，以及接口允许受保护字段参与筛选。",
+      protocol: "街道与七岁年龄段范围；轮换三类受保护字段条件；调用产品同一批量检索逻辑；合并公开样本响应",
+      limitation: "依赖响应包含稳定的公开居民编号，以及接口允许受保护字段参与范围筛选。",
     }];
     candidatesByProduct["content-library"] = [{
       id: "protected-attribute-inference",
       name: "受保护属性推断",
       applicable: true,
       executed: true,
-      reason: "适用：受保护字段可以作为条件，公开记录是否返回会泄露条件是否成立。",
+      reason: "适用：受保护条件会改变每个范围返回的公开样本集合，多个集合可用于恢复隐藏属性。",
     }];
   }
   if (productsById["finance-aggregate"]) Object.assign(productsById["finance-aggregate"], {
@@ -166,8 +165,8 @@
         : field),
       defaults: [
         { field: "street", operator: "eq", value: "07" },
+        { field: "age", operator: "gte", value: "60" },
         { field: "incomeBand", operator: "eq", value: "低" },
-        { field: "subsidyStatus", operator: "eq", value: "有效" },
       ],
     },
     "finance-aggregate": {
@@ -539,33 +538,52 @@
     if (productId === "content-library") {
       let queryCount = 0;
       let budgetExhausted = false;
-      const candidateResults = config.targets.map((candidate) => {
-        const record = residentStore.records.find((row) => row.residentId === candidate.id);
-        if (!record || budgetExhausted) return { candidate, actualMember: true, predictedMember: false, determined: false, inferred: {} };
-        const publicConditions = publicResidentFieldKeys.map((field) => ({ field, operator: "eq", value: String(record[field]) }));
-        const inferred = {};
-        for (const fieldKey of protectedAttributeFieldOrder) {
-          const field = residentFields.get(fieldKey);
-          for (const value of field?.values ?? []) {
-            if (queryCount >= queryBudget) {
-              budgetExhausted = true;
-              break;
+      const inferredByResidentId = new Map(residentStore.records.map((record) => [record.residentId, {}]));
+      const ageRanges = Array.from({ length: 11 }, (_, index) => {
+        const minimum = 18 + index * 7;
+        return { minimum, maximum: Math.min(90, minimum + 6) };
+      });
+      for (const street of residentFields.get("street")?.values ?? []) {
+        for (const ageRange of ageRanges) {
+          const publicRange = [
+            { field: "street", operator: "eq", value: String(street) },
+            { field: "age", operator: "gte", value: String(ageRange.minimum) },
+            { field: "age", operator: "lte", value: String(ageRange.maximum) },
+          ];
+          for (const fieldKey of protectedAttributeFieldOrder) {
+            const field = residentFields.get(fieldKey);
+            for (const value of field?.values ?? []) {
+              if (queryCount >= queryBudget) {
+                budgetExhausted = true;
+                break;
+              }
+              queryCount += 1;
+              const conditions = [...publicRange, { field: fieldKey, operator: "eq", value: String(value) }];
+              const returnedPublicRows = residentStore.records
+                .filter((row) => conditions.every((condition) => recordMatchesCondition(row, condition)))
+                .map((row) => ({
+                  residentId: row.residentId,
+                  street: row.street,
+                  age: row.age,
+                  occupation: row.occupation,
+                  householdSize: row.householdSize,
+                  housing: row.housing,
+                }));
+              returnedPublicRows.forEach((row) => {
+                inferredByResidentId.get(row.residentId)[fieldKey] = value;
+              });
             }
-            queryCount += 1;
-            const conditions = [...publicConditions, { field: fieldKey, operator: "eq", value: String(value) }];
-            const returnedPublicIds = residentStore.records
-              .filter((row) => conditions.every((condition) => recordMatchesCondition(row, condition)))
-              .slice(0, 5)
-              .map((row) => row.residentId);
-            if (returnedPublicIds.includes(record.residentId)) {
-              inferred[fieldKey] = value;
-              break;
-            }
+            if (budgetExhausted) break;
           }
           if (budgetExhausted) break;
         }
+        if (budgetExhausted) break;
+      }
+      const candidateResults = config.targets.map((candidate) => {
+        const record = residentStore.records.find((row) => row.residentId === candidate.id);
+        const inferred = inferredByResidentId.get(candidate.id) ?? {};
         const determined = protectedAttributeFieldOrder.every((fieldKey) => Object.hasOwn(inferred, fieldKey));
-        const correct = determined && protectedAttributeFieldOrder.every((fieldKey) => inferred[fieldKey] === record[fieldKey]);
+        const correct = Boolean(record) && determined && protectedAttributeFieldOrder.every((fieldKey) => inferred[fieldKey] === record[fieldKey]);
         return {
           candidate,
           actualMember: true,
@@ -701,10 +719,10 @@
     if (product.id === "content-library" && product.attacks[0]) {
       const config = recoveryAttackConfigs.get(product.id);
       Object.assign(product.attacks[0], {
-        result: `代码执行 ${run.queryCount} 次受保护字段检索，根据公开记录是否返回，完整推断 ${run.truePositives}/${config.targets.length} 条居民属性。`,
+        result: `代码执行 ${run.queryCount} 次分组范围检索，合并每批返回的公开样本，完整推断 ${run.truePositives}/${config.targets.length} 条居民属性。`,
         value: `${run.truePositives} / ${config.targets.length}`,
         displayScore: Math.round(run.recall * 100),
-        protocol: `可用查询次数 ${queryBudget}；实际查询 ${run.queryCount}；完整推断 ${run.truePositives}；错误推断 ${run.falsePositives}`,
+        protocol: `可用查询次数 ${queryBudget}；实际范围查询 ${run.queryCount}；完整推断 ${run.truePositives}；错误推断 ${run.falsePositives}`,
       });
     }
     refreshProductUsageCounter(product);
@@ -925,7 +943,7 @@
   }
 
   function authorizedResidentRecords() {
-    return queryResidents().slice(0, 5);
+    return queryResidents();
   }
 
   function authorizedResidentVisual(product, currentPhase) {
