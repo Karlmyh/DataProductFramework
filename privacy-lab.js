@@ -6,6 +6,8 @@
   const { series, productsById, candidatesByProduct } = payload;
   const residentStore = window.__RESIDENT_DATA__ ?? { name: "居民公共服务数据库", schema: [], records: [] };
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
+  const protectedResidentFieldKeys = new Set(["incomeBand", "subsidyStatus", "insurance"]);
+  const publicResidentFieldKeys = ["street", "age", "occupation", "householdSize", "housing"];
   const residentOperators = {
     enum: [
       { id: "eq", label: "等于", symbol: "=" },
@@ -49,15 +51,39 @@
     }];
   }
   if (productsById["content-library"]) Object.assign(productsById["content-library"], {
-    name: "居民授权记录检索库",
-    tagline: "按授权条件返回居民记录的公开字段，受保护字段仅显示字段名称。",
-    inputLabel: "授权检索条件",
-    inputValue: "街道=07 ∧ 年龄≥60 ∧ 职业=退休",
-    callLabel: "检索授权记录",
+    name: "居民受保护字段检索",
+    tagline: "受保护字段可以参与筛选，但响应只返回命中记录的公开字段。",
+    inputLabel: "检索条件",
+    inputValue: "街道=07 ∧ 收入区间=低 ∧ 补贴状态=有效",
+    callLabel: "检索公开记录",
     outputLabel: "检索结果",
-    outputValue: "3 条授权记录",
-    outputDetail: "返回记录编号、街道、年龄和职业；收入、补贴和保障类型保持受保护。",
+    outputValue: "公开记录",
+    outputDetail: "收入区间、补贴状态和保障类型只用于筛选，不会出现在返回字段中。",
   });
+  if (productsById["content-library"]) {
+    productsById["content-library"].attacks = [{
+      id: "protected-attribute-inference",
+      name: "受保护属性推断",
+      brief: "固定目标居民的公开特征，枚举受保护字段条件，并观察该居民编号是否出现在公开响应中。",
+      result: "运行攻击代码后，根据真实检索响应恢复居民的收入区间、补贴状态和保障类型。",
+      metric: "完整属性恢复",
+      value: "运行后计算",
+      displayScore: 0,
+      evidence: "代码实测",
+      attackFamily: "属性推断",
+      attackObject: "属性隐私",
+      source: "当前页面居民演示数据",
+      protocol: "已知公开居民特征；枚举受保护条件；调用产品同一检索逻辑；只观察公开记录是否返回",
+      limitation: "依赖公开字段能够唯一定位目标居民，以及接口允许受保护字段参与筛选。",
+    }];
+    candidatesByProduct["content-library"] = [{
+      id: "protected-attribute-inference",
+      name: "受保护属性推断",
+      applicable: true,
+      executed: true,
+      reason: "适用：受保护字段可以作为条件，公开记录是否返回会泄露条件是否成立。",
+    }];
+  }
   if (productsById["finance-aggregate"]) Object.assign(productsById["finance-aggregate"], {
     name: "居民群体统计查询",
     tagline: "按居民条件返回群体统计，不返回任何个人记录。",
@@ -135,11 +161,13 @@
       ],
     },
     "content-library": {
-      schema: residentStore.schema.filter((field) => ["street", "age", "occupation", "householdSize", "housing"].includes(field.key)),
+      schema: residentStore.schema.map((field) => protectedResidentFieldKeys.has(field.key)
+        ? { ...field, label: `${field.label}（受保护）` }
+        : field),
       defaults: [
         { field: "street", operator: "eq", value: "07" },
-        { field: "age", operator: "gte", value: "60" },
-        { field: "occupation", operator: "eq", value: "退休" },
+        { field: "incomeBand", operator: "eq", value: "低" },
+        { field: "subsidyStatus", operator: "eq", value: "有效" },
       ],
     },
     "finance-aggregate": {
@@ -289,8 +317,10 @@
   });
   const accountInstitutions = ["东海银行", "华城银行", "联合支付", "城市商业银行", "公共服务结算中心"];
   const residentAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: residentFeatureSummary(record) }));
+  const protectedAttributeFieldOrder = ["incomeBand", "subsidyStatus", "insurance"];
+  const protectedAttributeAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: protectedAttributeSummary(record) }));
   const recoveryAttackConfigs = new Map([
-    ["content-library", { queriesPerTarget: 6, groundTruthLabel: "系统真实授权记录集", recoveredLabel: "攻击恢复授权记录集", truthMetricLabel: "系统授权记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "授权记录遗漏", falseMetricLabel: "非授权记录误判", targets: residentAttackTargets }],
+    ["content-library", { queriesPerTarget: 9, groundTruthLabel: "系统真实受保护属性", recoveredLabel: "根据公开响应推断的受保护属性", truthMetricLabel: "系统真实属性记录", recoveredMetricLabel: "完整推断记录", missedMetricLabel: "未完整推断记录", falseMetricLabel: "错误属性推断", targets: protectedAttributeAttackTargets }],
     ["finance-graph", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台企业关系图谱", recoveredLabel: "从 Chatbot 回答恢复的关系图谱", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复关系", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误推断关系", targets: graphRagBackendRelations }],
     ["finance-aggregate", { queriesPerTarget: 8, groundTruthLabel: "系统真实统计源数据集", recoveredLabel: "攻击恢复居民数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
@@ -506,6 +536,60 @@
   function simulateProductRecoveryBudget(productId, queryBudget) {
     const config = recoveryAttackConfigs.get(productId);
     if (!config) return null;
+    if (productId === "content-library") {
+      let queryCount = 0;
+      let budgetExhausted = false;
+      const candidateResults = config.targets.map((candidate) => {
+        const record = residentStore.records.find((row) => row.residentId === candidate.id);
+        if (!record || budgetExhausted) return { candidate, actualMember: true, predictedMember: false, determined: false, inferred: {} };
+        const publicConditions = publicResidentFieldKeys.map((field) => ({ field, operator: "eq", value: String(record[field]) }));
+        const inferred = {};
+        for (const fieldKey of protectedAttributeFieldOrder) {
+          const field = residentFields.get(fieldKey);
+          for (const value of field?.values ?? []) {
+            if (queryCount >= queryBudget) {
+              budgetExhausted = true;
+              break;
+            }
+            queryCount += 1;
+            const conditions = [...publicConditions, { field: fieldKey, operator: "eq", value: String(value) }];
+            const returnedPublicIds = residentStore.records
+              .filter((row) => conditions.every((condition) => recordMatchesCondition(row, condition)))
+              .slice(0, 5)
+              .map((row) => row.residentId);
+            if (returnedPublicIds.includes(record.residentId)) {
+              inferred[fieldKey] = value;
+              break;
+            }
+          }
+          if (budgetExhausted) break;
+        }
+        const determined = protectedAttributeFieldOrder.every((fieldKey) => Object.hasOwn(inferred, fieldKey));
+        const correct = determined && protectedAttributeFieldOrder.every((fieldKey) => inferred[fieldKey] === record[fieldKey]);
+        return {
+          candidate,
+          actualMember: true,
+          predictedMember: correct,
+          determined,
+          inferred,
+          recoveredSummary: determined ? protectedAttributeSummary(inferred) : "",
+        };
+      });
+      const truePositives = candidateResults.filter((result) => result.predictedMember).length;
+      const falsePositives = candidateResults.filter((result) => result.determined && !result.predictedMember).length;
+      return {
+        productId,
+        queryBudget,
+        queryCount,
+        candidateResults,
+        recoveredRows: candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate),
+        truePositives,
+        falseNegatives: config.targets.length - truePositives,
+        falsePositives,
+        recall: config.targets.length ? truePositives / config.targets.length : 0,
+        quotaBlocked: budgetExhausted ? 1 : 0,
+      };
+    }
     if (productId === "finance-graph") {
       const queryCount = Math.min(Math.max(0, queryBudget), graphRagAttackConversations.length);
       const allCandidates = [...config.targets, ...graphRagFalseRelations];
@@ -612,6 +696,15 @@
         value: `${run.truePositives} / ${config.targets.length}`,
         displayScore: Math.round(run.recall * 100),
         protocol: `可用调用次数 ${queryBudget}；实际 Chatbot 调用 ${run.queryCount}；关系恢复 ${run.truePositives}；错误推断 ${run.falsePositives}`,
+      });
+    }
+    if (product.id === "content-library" && product.attacks[0]) {
+      const config = recoveryAttackConfigs.get(product.id);
+      Object.assign(product.attacks[0], {
+        result: `代码执行 ${run.queryCount} 次受保护字段检索，根据公开记录是否返回，完整推断 ${run.truePositives}/${config.targets.length} 条居民属性。`,
+        value: `${run.truePositives} / ${config.targets.length}`,
+        displayScore: Math.round(run.recall * 100),
+        protocol: `可用查询次数 ${queryBudget}；实际查询 ${run.queryCount}；完整推断 ${run.truePositives}；错误推断 ${run.falsePositives}`,
       });
     }
     refreshProductUsageCounter(product);
@@ -754,6 +847,10 @@
     return `街道 ${record.street} · ${record.age}岁 · ${record.occupation} · ${record.householdSize}人家庭`;
   }
 
+  function protectedAttributeSummary(record) {
+    return `收入区间 ${record.incomeBand} · 补贴状态 ${record.subsidyStatus} · 保障类型 ${record.insurance}`;
+  }
+
   function membershipRecoveryAttackVisual(step) {
     const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
     const run = currentStep >= 2 ? (membershipRecoveryRun ??= runMembershipRecoveryAttack()) : null;
@@ -811,7 +908,7 @@
         </section>
         <section class="membership-dataset recovered-dataset">
           <header><div><span>${escapeHtml(config.recoveredLabel)}</span></div><strong>${visibleRecoveredResults.length} 条</strong></header>
-          <div class="membership-table"><div class="membership-row membership-head"><span>${product.id === "finance-graph" ? "关系编号" : "候选编号"}</span><span>恢复内容</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => `<div class="membership-row ${result.actualMember ? "recovered" : "false-positive"}"><b>${escapeHtml(result.candidate.id)}</b><span>${escapeHtml(result.candidate.summary)}</span><em>${result.actualMember ? "已恢复" : "误判"}</em></div>`).join("") : '<div class="membership-empty">尚未生成恢复结果</div>'}</div>
+          <div class="membership-table"><div class="membership-row membership-head"><span>${product.id === "finance-graph" ? "关系编号" : "候选编号"}</span><span>恢复内容</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => `<div class="membership-row ${result.actualMember ? "recovered" : "false-positive"}"><b>${escapeHtml(result.candidate.id)}</b><span>${escapeHtml(result.recoveredSummary || result.candidate.summary)}</span><em>${result.actualMember ? "已恢复" : "误判"}</em></div>`).join("") : '<div class="membership-empty">尚未生成恢复结果</div>'}</div>
         </section>
       </div>
       <div class="membership-legend"><span><i class="recovered"></i>成功恢复</span><span><i class="missed"></i>真实记录遗漏</span><span><i class="false-positive"></i>非真实记录误判</span></div>
@@ -837,11 +934,10 @@
     return `<div class="authorized-records-view">
       <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前条件</span><strong>${escapeHtml(product.inputValue)}</strong></div>
       ${ready ? `<div class="authorized-record-table" aria-label="授权居民记录检索结果">
-        <div class="authorized-record-row authorized-record-head"><span>记录编号</span><span>公开字段</span><span>受保护字段（＊）</span></div>
-        ${rows.map((record) => `<div class="authorized-record-row">
+        <div class="authorized-record-row public-only authorized-record-head"><span>记录编号</span><span>返回的公开字段</span></div>
+        ${rows.map((record) => `<div class="authorized-record-row public-only">
           <strong>${escapeHtml(record.residentId)}</strong>
           <div class="public-features"><span><b>街道</b>${escapeHtml(record.street)}</span><span><b>年龄</b>${escapeHtml(record.age)}</span><span><b>职业</b>${escapeHtml(record.occupation)}</span><span><b>家庭人数</b>${escapeHtml(record.householdSize)}</span><span><b>居住类型</b>${escapeHtml(record.housing)}</span></div>
-          <div class="protected-features"><span><b>＊ 收入区间</b><i>••••</i></span><span><b>＊ 补贴状态</b><i>••••</i></span><span><b>＊ 保障类型</b><i>••••</i></span></div>
         </div>`).join("")}
       </div>` : ""}
     </div>`;
@@ -1088,7 +1184,7 @@
       if (product.id === "content-library") return {
         language: "SQL / JSON",
         code: `SELECT resident_id, street, age, occupation, household_size, housing\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
-        output: `{ "records": ${queryResidents().length}, "public_fields": ["resident_id", "street", "age", "occupation", "household_size", "housing"], "protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
+        output: `{ "records": ${queryResidents().length}, "returned_fields": ["resident_id", "street", "age", "occupation", "household_size", "housing"], "queryable_protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
       };
       if (product.id === "finance-aggregate") {
         const statistics = residentStatistics();
