@@ -161,7 +161,7 @@ th { font-weight: 700; }
 .tree-nodes strong { display: block; }
 
 .series-switcher, .product-switcher { display: grid; border: 1px solid var(--ink); }
-.series-switcher { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.series-switcher { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .product-switcher { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-top: 12px; }
 .series-switcher button, .product-switcher button { min-width: 0; border: 0; background: var(--paper); text-align: left; cursor: pointer; }
 .series-switcher button { min-height: 56px; padding: 10px 11px; text-align: center; }

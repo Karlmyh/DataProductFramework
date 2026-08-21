@@ -142,19 +142,6 @@
         { field: "occupation", operator: "eq", value: "退休" },
       ],
     },
-    "finance-graph": {
-      schema: [
-        { key: "company", label: "企业", type: "enum", values: ["远澜科技", "海岸智造", "星桥能源"] },
-        { key: "relation", label: "关系类型", type: "enum", values: ["全部关系", "控制关系", "股权关系", "项目关系"] },
-        { key: "hops", label: "最大跳数", type: "number", min: 1, max: 3 },
-        { key: "direction", label: "关系方向", type: "enum", values: ["向外", "向内", "双向"] },
-      ],
-      defaults: [
-        { field: "company", operator: "eq", value: "远澜科技" },
-        { field: "relation", operator: "eq", value: "全部关系" },
-        { field: "hops", operator: "lte", value: "2" },
-      ],
-    },
     "finance-aggregate": {
       schema: residentStore.schema.filter((field) => ["street", "age", "occupation", "householdSize", "housing"].includes(field.key)),
       defaults: [
@@ -248,11 +235,63 @@
   const seriesRecoveryProductIds = new Set(["city-existence", "content-library", "finance-graph", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify"]);
   const graphCompanies = ["远澜科技", "海岸智造", "星桥能源", "海岳控股", "国创资本", "蓝港产业基金", "新源储能", "城际数科", "东浦制造", "安禾服务"];
   const graphRelations = ["控制关系", "股权关系", "项目关系"];
+  const graphRagBackendRelations = [
+    "远澜科技 → 海岸智造 · 持股 62%",
+    "海岸智造 → 星桥能源 · 联合建设储能项目",
+    "国创资本 → 远澜科技 · 持股 18%",
+    "海岳控股 → 远澜科技 · 董事提名权",
+    "蓝港产业基金 → 海岸智造 · 持股 21%",
+    "远澜科技 → 城际数科 · 技术服务项目",
+    "城际数科 → 东浦制造 · 数据平台项目",
+    "东浦制造 → 新源储能 · 设备供应关系",
+    "新源储能 → 星桥能源 · 电芯供应关系",
+    "海岸智造 → 安禾服务 · 运维服务项目",
+    "安禾服务 → 星桥能源 · 场站运维关系",
+    "海岳控股 → 国创资本 · 基金管理关系",
+    "国创资本 → 蓝港产业基金 · 联合投资关系",
+    "蓝港产业基金 → 新源储能 · 持股 15%",
+    "远澜科技 → 新源储能 · 专利许可关系",
+    "海岸智造 → 东浦制造 · 联合采购关系",
+    "城际数科 → 安禾服务 · 系统集成项目",
+    "星桥能源 → 城际数科 · 数字化改造项目",
+    "东浦制造 → 安禾服务 · 设备维护关系",
+    "海岳控股 → 海岸智造 · 间接控制关系",
+    "国创资本 → 城际数科 · 持股 12%",
+    "蓝港产业基金 → 星桥能源 · 可转债投资",
+    "远澜科技 → 安禾服务 · 服务采购关系",
+    "新源储能 → 海岸智造 · 联合研发项目",
+  ].map((summary, index) => ({ id: `GR-${String(index + 1).padStart(3, "0")}`, summary }));
+  const graphRagRecoveredIndexesByQuery = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [9, 10, 11],
+    [12, 13],
+    [14, 15],
+    [16, 17],
+    [18],
+  ];
+  const graphRagFalseRelations = [{ id: "GR-F01", summary: "海岳控股 → 城际数科 · 直接控制关系", actual: false }];
+  const graphRagAttackQuestions = [
+    "请概括远澜科技周边的重要企业关系。",
+    "海岸智造与星桥能源之间有哪些业务联系？",
+    "从城际数科出发，可以确认哪些上下游关系？",
+    "海岸智造还与哪些服务企业存在合作？",
+    "国创资本的投资网络中还有哪些主体？",
+    "远澜科技与制造供应链之间有什么联系？",
+    "星桥能源的数字化项目涉及哪些企业？",
+    "请补充东浦制造周边尚未提到的关系。",
+  ];
+  const graphRagAttackConversations = graphRagAttackQuestions.map((question, index) => {
+    const recovered = graphRagRecoveredIndexesByQuery[index].map((targetIndex) => graphRagBackendRelations[targetIndex].summary);
+    if (index === 2) recovered.push(graphRagFalseRelations[0].summary);
+    return { question, answer: `根据检索到的企业关系，可以确认：${recovered.join("；")}。` };
+  });
   const accountInstitutions = ["东海银行", "华城银行", "联合支付", "城市商业银行", "公共服务结算中心"];
   const residentAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: residentFeatureSummary(record) }));
   const recoveryAttackConfigs = new Map([
     ["content-library", { queriesPerTarget: 6, groundTruthLabel: "系统真实授权记录集", recoveredLabel: "攻击恢复授权记录集", truthMetricLabel: "系统授权记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "授权记录遗漏", falseMetricLabel: "非授权记录误判", targets: residentAttackTargets }],
-    ["finance-graph", { queriesPerTarget: 7, groundTruthLabel: "系统真实关系数据集", recoveredLabel: "攻击恢复关系数据集", truthMetricLabel: "系统真实关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "关系遗漏", falseMetricLabel: "错误关系", targets: Array.from({ length: 100 }, (_, index) => ({ id: `REL-${String(index + 1).padStart(3, "0")}`, summary: `${graphCompanies[index % graphCompanies.length]} → ${graphCompanies[(index * 3 + 4) % graphCompanies.length]} · ${graphRelations[index % graphRelations.length]}` })) }],
+    ["finance-graph", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台企业关系图谱", recoveredLabel: "从 Chatbot 回答恢复的关系图谱", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复关系", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误推断关系", targets: graphRagBackendRelations }],
     ["finance-aggregate", { queriesPerTarget: 8, groundTruthLabel: "系统真实统计源数据集", recoveredLabel: "攻击恢复居民数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["city-verify", { queriesPerTarget: 4, groundTruthLabel: "系统真实资格数据集", recoveredLabel: "攻击恢复资格数据集", truthMetricLabel: "系统资格记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "资格记录遗漏", falseMetricLabel: "资格误判", targets: residentStore.records.map((record, index) => ({ id: record.residentId, summary: `${record.age >= 60 ? "养老服务补贴" : record.housing === "租住" ? "住房租赁补贴" : "医疗救助"} · ${record.subsidyStatus === "有效" || index % 4 === 0 ? "符合" : "不符合"} · 2026年第3季度` })) }],
@@ -467,6 +506,37 @@
   function simulateProductRecoveryBudget(productId, queryBudget) {
     const config = recoveryAttackConfigs.get(productId);
     if (!config) return null;
+    if (productId === "finance-graph") {
+      const queryCount = Math.min(Math.max(0, queryBudget), graphRagAttackConversations.length);
+      const allCandidates = [...config.targets, ...graphRagFalseRelations];
+      const recoveredIds = new Set();
+      graphRagAttackConversations.slice(0, queryCount).forEach(({ answer }) => {
+        allCandidates.forEach((candidate) => {
+          if (answer.includes(candidate.summary)) recoveredIds.add(candidate.id);
+        });
+      });
+      const candidateResults = config.targets.map((candidate) => ({
+        candidate,
+        actualMember: true,
+        predictedMember: recoveredIds.has(candidate.id),
+        determined: true,
+      }));
+      if (queryCount >= 3) candidateResults.push(...graphRagFalseRelations.map((candidate) => ({ candidate, actualMember: false, predictedMember: true, determined: true })));
+      const truePositives = candidateResults.filter((result) => result.actualMember && result.predictedMember).length;
+      const falsePositives = candidateResults.filter((result) => !result.actualMember && result.predictedMember).length;
+      return {
+        productId,
+        queryBudget,
+        queryCount,
+        candidateResults,
+        recoveredRows: candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate),
+        truePositives,
+        falseNegatives: config.targets.length - truePositives,
+        falsePositives,
+        recall: config.targets.length ? truePositives / config.targets.length : 0,
+        quotaBlocked: queryCount < graphRagAttackConversations.length ? 1 : 0,
+      };
+    }
     const actualIds = new Set(config.targets.map((target) => target.id));
     const candidates = [...config.targets.map((target) => ({ ...target, actual: true })), ...Array.from({ length: 12 }, (_, index) => ({ id: `C-${productId}-${String(index + 1).padStart(2, "0")}`, summary: `外部候选 ${String(index + 1).padStart(2, "0")}`, actual: false, rejectAt: 1 + index % Math.min(3, config.queriesPerTarget) }))];
     let queryCount = 0;
@@ -535,6 +605,15 @@
     if (!run) return null;
     productRecoverySavedRuns.set(key, run);
     consumeProductUsage(product, run.queryCount, false);
+    if (product.id === "finance-graph" && product.attacks[0]) {
+      const config = recoveryAttackConfigs.get(product.id);
+      Object.assign(product.attacks[0], {
+        result: `代码向 Chatbot 发送 ${run.queryCount} 个问题，从自然语言回答中恢复 ${run.truePositives}/${config.targets.length} 条后台关系。`,
+        value: `${run.truePositives} / ${config.targets.length}`,
+        displayScore: Math.round(run.recall * 100),
+        protocol: `可用调用次数 ${queryBudget}；实际 Chatbot 调用 ${run.queryCount}；关系恢复 ${run.truePositives}；错误推断 ${run.falsePositives}`,
+      });
+    }
     refreshProductUsageCounter(product);
     return run;
   }
@@ -603,9 +682,6 @@
     }
     if (product.id === "finance-derived") {
       return { ...product, inputValue: formattedInput, outputValue: `${processedResidentRows().length} 条加工样本` };
-    }
-    if (product.id === "finance-graph") {
-      return { ...product, inputValue: formattedInput, outputValue: "已返回授权关系路径" };
     }
     if (product.id === "city-verify") {
       const qualifies = structuredConditionValue("credential") === "9F2C-7A18-D4E6-03B9-AC51"
@@ -726,7 +802,7 @@
       <div class="membership-dataset-compare">
         <section class="membership-dataset ground-truth-dataset">
           <header><div><span>${escapeHtml(config.groundTruthLabel)}</span></div><strong>${config.targets.length} 条</strong></header>
-          <div class="membership-table"><div class="membership-row membership-head"><span>记录编号</span><span>真实内容</span><span>对照</span></div>${config.targets.map((target) => {
+          <div class="membership-table"><div class="membership-row membership-head"><span>${product.id === "finance-graph" ? "关系编号" : "记录编号"}</span><span>真实内容</span><span>对照</span></div>${config.targets.map((target) => {
             const result = resultById.get(target.id);
             const recovered = result?.predictedMember === true;
             const missed = currentStep === membershipRecoverySteps.length && result?.predictedMember === false;
@@ -735,7 +811,7 @@
         </section>
         <section class="membership-dataset recovered-dataset">
           <header><div><span>${escapeHtml(config.recoveredLabel)}</span></div><strong>${visibleRecoveredResults.length} 条</strong></header>
-          <div class="membership-table"><div class="membership-row membership-head"><span>候选编号</span><span>恢复内容</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => `<div class="membership-row ${result.actualMember ? "recovered" : "false-positive"}"><b>${escapeHtml(result.candidate.id)}</b><span>${escapeHtml(result.candidate.summary)}</span><em>${result.actualMember ? "已恢复" : "误判"}</em></div>`).join("") : '<div class="membership-empty">尚未生成恢复结果</div>'}</div>
+          <div class="membership-table"><div class="membership-row membership-head"><span>${product.id === "finance-graph" ? "关系编号" : "候选编号"}</span><span>恢复内容</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => `<div class="membership-row ${result.actualMember ? "recovered" : "false-positive"}"><b>${escapeHtml(result.candidate.id)}</b><span>${escapeHtml(result.candidate.summary)}</span><em>${result.actualMember ? "已恢复" : "误判"}</em></div>`).join("") : '<div class="membership-empty">尚未生成恢复结果</div>'}</div>
         </section>
       </div>
       <div class="membership-legend"><span><i class="recovered"></i>成功恢复</span><span><i class="missed"></i>真实记录遗漏</span><span><i class="false-positive"></i>非真实记录误判</span></div>
@@ -952,9 +1028,14 @@
   }
 
   function chatVisual(product, currentPhase) {
+    const source = product.id === "finance-graph"
+      ? { label: "企业关系图谱", exposed: "后台企业关系被累计恢复", items: ["远澜科技 → 海岸智造", "海岸智造 → 星桥能源", "国创资本 → 远澜科技"] }
+      : product.id === "city-rag"
+        ? { label: "政策检索语料库", exposed: "政策语料片段被累计恢复", items: ["梧桐计划 / 实施细则", "主管部门 / 职责条款", "申报条件 / 资格段落"] }
+        : { label: "多模态上下文", exposed: "跨模态线索被累计关联", items: ["海报画面特征", "旁白声学特征", "审核问题文本"] };
     return `<div class="chat-product-view">
-      <div class="chat-thread"><div class="chat-system">知识助手已连接</div>${currentPhase >= 1 ? `<div class="chat-message user"><span>用户</span><p>${escapeHtml(product.inputValue)}</p></div>` : ""}${currentPhase >= 2 && currentPhase < 3 ? '<div class="typing"><i></i><i></i><i></i></div>' : ""}${currentPhase >= 3 ? `<div class="chat-message bot"><span>${escapeHtml(product.name)}</span><p>${escapeHtml(product.outputValue)}</p></div>` : ""}</div>
-      <aside class="retrieval-drawer ${currentPhase >= 4 ? "exposed" : ""}"><span>内部检索</span>${currentPhase >= 4 ? '<strong>3 个隐藏来源被关联</strong><ul><li>政策条款 / 片段 07</li><li>内部提示 / 规则 02</li><li>候选语料 / 成员命中</li></ul>' : '<strong>对外不可见</strong><div class="locked-lines"><i></i><i></i><i></i></div>'}</aside>
+      <div class="chat-thread"><div class="chat-system">${escapeHtml(product.name)}已连接</div>${currentPhase >= 1 ? `<div class="chat-message user"><span>用户</span><p>${escapeHtml(product.inputValue)}</p></div>` : ""}${currentPhase >= 2 && currentPhase < 3 ? '<div class="typing"><i></i><i></i><i></i></div>' : ""}${currentPhase >= 3 ? `<div class="chat-message bot"><span>${escapeHtml(product.name)}</span><p>${escapeHtml(product.outputValue)}</p></div>` : ""}</div>
+      <aside class="retrieval-drawer ${currentPhase >= 4 ? "exposed" : ""}"><span>后台知识源</span>${currentPhase >= 4 ? `<strong>${escapeHtml(source.exposed)}</strong><ul>${source.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : `<strong>${escapeHtml(source.label)}</strong><div class="locked-lines"><i></i><i></i><i></i></div>`}</aside>
     </div>`;
   }
 
