@@ -29,15 +29,15 @@
       id: "membership-recovery",
       name: "居民数据库成员恢复",
       brief: "利用候选居民的可查询特征反复提交存在性条件，判断哪些候选居民属于隐藏数据库。",
-      result: "从 112 条候选记录中恢复出 95 条成员判断，其中 92 条与真实成员一致。",
+      result: "运行攻击代码后，根据实际存在性响应生成恢复数据集。",
       metric: "真实成员召回",
-      value: "92 / 100",
-      displayScore: 92,
-      evidence: "可操作演示",
+      value: "运行后计算",
+      displayScore: 0,
+      evidence: "代码实测",
       attackFamily: "成员重建",
       attackObject: "成员隐私",
       source: "当前页面居民演示数据",
-      protocol: "真实成员 100；候选居民 112；组合条件存在性查询",
+      protocol: "有限候选池；逐字段组合条件；调用产品同一存在性查询逻辑；查询结果缓存",
       limitation: "恢复的是候选居民的数据库成员关系，不是凭空生成未知居民记录。",
     }];
     candidatesByProduct["city-existence"] = [{
@@ -227,10 +227,9 @@
   let timers = [];
   const membershipRecoverySteps = [
     { name: "准备候选居民", title: "建立候选居民集合", evidence: "候选池包含 112 条已知特征记录，其中真实数据库成员对攻击者不可见。" },
-    { name: "执行存在性查询", title: "用组合条件逐步缩小候选范围", evidence: "每次存在或不存在响应都会排除一部分候选成员关系。" },
-    { name: "生成恢复数据集", title: "形成攻击判断的成员数据集", evidence: "恢复集包含 95 条判断为在库的记录：92 条正确，3 条误判。" },
+    { name: "执行存在性查询", title: "代码正在调用存在性查询", evidence: "实际查询次数、缓存命中和新执行次数将在运行后生成。" },
+    { name: "生成恢复数据集", title: "根据真实响应形成成员数据集", evidence: "恢复数量、遗漏和误判均由代码与真实成员集对照计算。" },
   ];
-  const membershipRecoveryMissedIds = new Set(["R-1003", "R-1014", "R-1027", "R-1042", "R-1058", "R-1071", "R-1086", "R-1099"]);
   const membershipRecoveryDecoys = Array.from({ length: 12 }, (_, index) => {
     const base = residentStore.records[(index * 7 + 3) % residentStore.records.length] ?? {};
     return {
@@ -239,6 +238,10 @@
       age: Math.min(90, Number(base.age ?? 30) + (index % 3) + 1),
     };
   });
+  const membershipRecoveryCandidates = [...residentStore.records, ...membershipRecoveryDecoys];
+  const membershipRecoveryFieldOrder = ["street", "age", "occupation", "householdSize", "housing", "incomeBand", "subsidyStatus", "insurance"];
+  const membershipExistenceQueryCache = loadMembershipExistenceQueryCache();
+  let membershipRecoveryRun = null;
 
   const escapeHtml = (value) => String(value)
     .replaceAll("&", "&amp;")
@@ -308,6 +311,104 @@
 
   function queryResidents() {
     return residentStore.records.filter((record) => structuredConditions.every((condition) => recordMatchesCondition(record, condition)));
+  }
+
+  function loadMembershipExistenceQueryCache() {
+    try {
+      const stored = window.localStorage.getItem(`${residentStore.id}:membership-existence-cache:v1`);
+      const entries = stored ? JSON.parse(stored) : [];
+      return new Map(Array.isArray(entries) ? entries.filter((entry) => Array.isArray(entry) && entry.length === 2) : []);
+    } catch {
+      return new Map();
+    }
+  }
+
+  function persistMembershipExistenceQueryCache() {
+    try {
+      window.localStorage.setItem(`${residentStore.id}:membership-existence-cache:v1`, JSON.stringify([...membershipExistenceQueryCache.entries()]));
+    } catch {
+      // The attack remains executable when browser storage is unavailable.
+    }
+  }
+
+  function membershipQueryKey(conditions) {
+    return JSON.stringify(conditions
+      .map((condition) => [condition.field, condition.operator, String(condition.value)])
+      .sort((left, right) => left[0].localeCompare(right[0])));
+  }
+
+  function executeMembershipExistenceQuery(conditions, runStats) {
+    const key = membershipQueryKey(conditions);
+    runStats.queryCount += 1;
+    if (membershipExistenceQueryCache.has(key)) {
+      runStats.cacheHits += 1;
+      return { exists: membershipExistenceQueryCache.get(key) === true, cacheHit: true };
+    }
+    const exists = residentStore.records.some((record) => conditions.every((condition) => recordMatchesCondition(record, condition)));
+    membershipExistenceQueryCache.set(key, exists);
+    runStats.cacheMisses += 1;
+    return { exists, cacheHit: false };
+  }
+
+  function formatMembershipAttackConditions(conditions) {
+    return conditions.map((condition) => `${residentFields.get(condition.field)?.label ?? condition.field} = ${condition.value}`).join(" ∧ ");
+  }
+
+  function runMembershipRecoveryAttack() {
+    const runStats = { queryCount: 0, cacheHits: 0, cacheMisses: 0 };
+    const actualMemberIds = new Set(residentStore.records.map((record) => record.residentId));
+    const candidateResults = membershipRecoveryCandidates.map((candidate) => {
+      const conditions = [];
+      const trace = [];
+      let predictedMember = true;
+      for (const field of membershipRecoveryFieldOrder) {
+        conditions.push({ field, operator: "eq", value: String(candidate[field]) });
+        const response = executeMembershipExistenceQuery(conditions, runStats);
+        const candidateMatches = membershipRecoveryCandidates.filter((record) => conditions.every((condition) => recordMatchesCondition(record, condition))).length;
+        trace.push({
+          conditions: conditions.map((condition) => ({ ...condition })),
+          query: formatMembershipAttackConditions(conditions),
+          exists: response.exists,
+          cacheHit: response.cacheHit,
+          candidateMatches,
+        });
+        if (!response.exists) {
+          predictedMember = false;
+          break;
+        }
+      }
+      return {
+        candidate,
+        actualMember: actualMemberIds.has(candidate.residentId),
+        predictedMember: predictedMember && trace.length === membershipRecoveryFieldOrder.length,
+        trace,
+      };
+    });
+    const truePositives = candidateResults.filter((result) => result.actualMember && result.predictedMember).length;
+    const falseNegatives = candidateResults.filter((result) => result.actualMember && !result.predictedMember).length;
+    const falsePositives = candidateResults.filter((result) => !result.actualMember && result.predictedMember).length;
+    const trueNegatives = candidateResults.filter((result) => !result.actualMember && !result.predictedMember).length;
+    const recoveredRows = candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate);
+    const recall = residentStore.records.length ? truePositives / residentStore.records.length : 0;
+    const attack = productsById["city-existence"].attacks[0];
+    Object.assign(attack, {
+      result: `代码执行 ${runStats.queryCount} 次存在性查询，恢复 ${recoveredRows.length} 条成员判断。`,
+      value: `${truePositives} / ${residentStore.records.length}`,
+      displayScore: Math.round(recall * 100),
+      protocol: `候选 ${membershipRecoveryCandidates.length}；实际查询 ${runStats.queryCount}；缓存命中 ${runStats.cacheHits}；新执行 ${runStats.cacheMisses}`,
+    });
+    persistMembershipExistenceQueryCache();
+    return {
+      ...runStats,
+      candidateResults,
+      recoveredRows,
+      truePositives,
+      falseNegatives,
+      falsePositives,
+      trueNegatives,
+      recall,
+      cacheSize: membershipExistenceQueryCache.size,
+    };
   }
 
   function nextStructuredCondition(product = current().product) {
@@ -449,46 +550,41 @@
     return `街道 ${record.street} · ${record.age}岁 · ${record.occupation} · ${record.householdSize}人家庭`;
   }
 
-  function membershipRecoveryRows() {
-    const recoveredMembers = residentStore.records.filter((record) => !membershipRecoveryMissedIds.has(record.residentId));
-    const rows = [...recoveredMembers];
-    rows.splice(4, 0, membershipRecoveryDecoys[0]);
-    rows.splice(36, 0, membershipRecoveryDecoys[1]);
-    rows.splice(72, 0, membershipRecoveryDecoys[2]);
-    return rows;
-  }
-
   function membershipRecoveryAttackVisual(step) {
     const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
-    const allRecoveredRows = membershipRecoveryRows();
-    const visibleRecoveredCount = currentStep < 2 ? 0 : currentStep === 2 ? 54 : allRecoveredRows.length;
-    const visibleRecoveredRows = allRecoveredRows.slice(0, visibleRecoveredCount);
-    const visibleRecoveredIds = new Set(visibleRecoveredRows.filter((record) => record.residentId.startsWith("R-")).map((record) => record.residentId));
-    const queryExamples = [
-      ["街道 = 07", "存在", "112 → 23"],
-      ["街道 = 07 ∧ 年龄 ≥ 60", "存在", "23 → 10"],
-      ["街道 = 07 ∧ 年龄 = 67 ∧ 职业 = 退休 ∧ 家庭人数 = 1", "存在", "10 → 1"],
-      ["候选 C-9004 的完整可查询特征组合", "不存在", "1 → 0"],
-    ];
+    const run = currentStep >= 2 ? (membershipRecoveryRun ??= runMembershipRecoveryAttack()) : null;
+    const processedCount = currentStep < 2 ? 0 : currentStep === 2 ? Math.ceil(membershipRecoveryCandidates.length / 2) : membershipRecoveryCandidates.length;
+    const processedResults = run?.candidateResults.slice(0, processedCount) ?? [];
+    const resultById = new Map(processedResults.map((result) => [result.candidate.residentId, result]));
+    const visibleRecoveredResults = processedResults.filter((result) => result.predictedMember);
+    const memberResult = run?.candidateResults.find((result) => result.candidate.residentId === "R-1007");
+    const decoyResult = run?.candidateResults.find((result) => result.candidate.residentId === "C-9004");
+    const queryExamples = run && memberResult && decoyResult ? [
+      { candidateId: memberResult.candidate.residentId, ...memberResult.trace[0] },
+      { candidateId: memberResult.candidate.residentId, ...memberResult.trace[1] },
+      { candidateId: memberResult.candidate.residentId, ...memberResult.trace[memberResult.trace.length - 1] },
+      { candidateId: decoyResult.candidate.residentId, ...(decoyResult.trace.find((trace) => !trace.exists) ?? decoyResult.trace[decoyResult.trace.length - 1]) },
+    ] : [];
     return `<div class="membership-recovery-view">
       <div class="membership-query-track">
-        <header><span>候选探测</span><strong>R-1007 / C-9004</strong><small>候选居民特征来自攻击者已有数据</small></header>
-        <div class="membership-query-list">${currentStep >= 2 ? queryExamples.map(([query, result, narrowed], index) => `<div style="--delay:${index * 90}ms"><span>${escapeHtml(query)}</span><b class="${result === "存在" ? "is-true" : "is-false"}">${escapeHtml(result)}</b><small>候选范围 ${escapeHtml(narrowed)}</small></div>`).join("") : '<p>准备对候选居民的公开特征组合提交存在性查询。</p>'}</div>
+        <header><span>代码运行</span><strong>${run ? `${run.queryCount} 次查询` : "等待执行"}</strong><small>${run ? `缓存命中 ${run.cacheHits} · 新执行 ${run.cacheMisses}` : "候选居民特征来自攻击者已有数据"}</small></header>
+        <div class="membership-query-list">${queryExamples.length ? queryExamples.map((trace, index) => `<div style="--delay:${index * 90}ms"><span>${escapeHtml(`${trace.candidateId} · ${trace.query}`)}</span><b class="${trace.exists ? "is-true" : "is-false"}">${trace.exists ? "存在" : "不存在"}</b><small>候选池匹配 ${trace.candidateMatches} 条 · ${trace.cacheHit ? "缓存命中" : "代码执行"}</small></div>`).join("") : '<p>准备对候选居民的有限特征组合调用产品的存在性查询。</p>'}</div>
       </div>
       <div class="membership-dataset-compare">
         <section class="membership-dataset ground-truth-dataset">
-          <header><div><span>系统真实成员数据集</span><small>演示对照 · 攻击者不可见</small></div><strong>100 条</strong></header>
+          <header><div><span>系统真实成员数据集</span><small>演示对照 · 攻击者不可见</small></div><strong>${residentStore.records.length} 条</strong></header>
           <div class="membership-table"><div class="membership-row membership-head"><span>居民编号</span><span>可查询特征</span><span>对照</span></div>${residentStore.records.map((record) => {
-            const recovered = visibleRecoveredIds.has(record.residentId);
-            const missed = currentStep === membershipRecoverySteps.length && membershipRecoveryMissedIds.has(record.residentId);
+            const result = resultById.get(record.residentId);
+            const recovered = result?.predictedMember === true;
+            const missed = currentStep === membershipRecoverySteps.length && result?.predictedMember === false;
             return `<div class="membership-row ${recovered ? "recovered" : missed ? "missed" : "pending"}"><b>${escapeHtml(record.residentId)}</b><span>${escapeHtml(residentFeatureSummary(record))}</span><em>${recovered ? "已恢复" : missed ? "遗漏" : "待判定"}</em></div>`;
           }).join("")}</div>
         </section>
         <section class="membership-dataset recovered-dataset">
-          <header><div><span>攻击恢复成员数据集</span><small>攻击判断为“存在于数据库”</small></div><strong>${visibleRecoveredRows.length} 条</strong></header>
-          <div class="membership-table"><div class="membership-row membership-head"><span>候选编号</span><span>已知特征</span><span>判断</span></div>${visibleRecoveredRows.length ? visibleRecoveredRows.map((record) => {
-            const falsePositive = record.residentId.startsWith("C-");
-            return `<div class="membership-row ${falsePositive ? "false-positive" : "recovered"}"><b>${escapeHtml(record.residentId)}</b><span>${escapeHtml(residentFeatureSummary(record))}</span><em>${falsePositive ? "误判" : "存在"}</em></div>`;
+          <header><div><span>攻击恢复成员数据集</span><small>由存在性查询代码实际生成</small></div><strong>${visibleRecoveredResults.length} 条</strong></header>
+          <div class="membership-table"><div class="membership-row membership-head"><span>候选编号</span><span>已知特征</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => {
+            const falsePositive = !result.actualMember;
+            return `<div class="membership-row ${falsePositive ? "false-positive" : "recovered"}"><b>${escapeHtml(result.candidate.residentId)}</b><span>${escapeHtml(residentFeatureSummary(result.candidate))}</span><em>${falsePositive ? "误判" : "存在"}</em></div>`;
           }).join("") : '<div class="membership-empty">尚未生成成员判断</div>'}</div>
         </section>
       </div>
@@ -1046,7 +1142,11 @@
     const evidence = root.querySelector("[data-evidence-list]");
     if (product.id === "city-existence") {
       if (title) title.textContent = attackStep === 0 ? "准备居民数据库成员恢复" : progressItems[Math.min(attackStep, progressItems.length) - 1].title;
-      if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item) => `<li>${escapeHtml(item.evidence)}</li>`).join("");
+      if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item, index) => {
+        if (membershipRecoveryRun && index === 1) return `<li>代码实际调用 ${membershipRecoveryRun.queryCount} 次：缓存命中 ${membershipRecoveryRun.cacheHits} 次，新执行 ${membershipRecoveryRun.cacheMisses} 次。</li>`;
+        if (membershipRecoveryRun && index === 2) return `<li>恢复 ${membershipRecoveryRun.truePositives}/${residentStore.records.length} 条真实成员；遗漏 ${membershipRecoveryRun.falseNegatives} 条，误判 ${membershipRecoveryRun.falsePositives} 条。</li>`;
+        return `<li>${escapeHtml(item.evidence)}</li>`;
+      }).join("");
     } else {
       if (title) title.textContent = attackStep === 0 ? "准备执行适用攻击" : attackStep === progressItems.length ? "全部适用攻击已经完成" : `正在执行：${product.attacks[attackStep - 1].name}`;
       if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待攻击序列开始</li>" : product.attacks.slice(0, attackStep).map((attack) => `<li>${escapeHtml(attack.name)}：${escapeHtml(attack.result)}</li>`).join("");
@@ -1063,6 +1163,7 @@
     const results = root.querySelector("[data-results]");
     if (stage) stage.hidden = false;
     if (results) results.hidden = true;
+    if (current().product.id === "city-existence") membershipRecoveryRun = null;
     updateAttackStep(0);
     stage?.scrollIntoView({ behavior: "smooth", block: "start" });
     const progressItems = attackProgressItems(current().product);
@@ -1082,10 +1183,11 @@
     if (!results) return;
     results.hidden = false;
     if (product.id === "city-existence") {
+      const run = membershipRecoveryRun ??= runMembershipRecoveryAttack();
       results.innerHTML = `
-        <header><div><span>攻击恢复结果</span><h3>居民数据库成员恢复完成</h3></div><strong>92 / 100</strong></header>
-        <div class="membership-result-stats"><article><span>系统真实成员</span><strong>100</strong></article><article><span>成功恢复</span><strong>92</strong></article><article><span>真实成员遗漏</span><strong>8</strong></article><article><span>非成员误判</span><strong>3</strong></article></div>
-        <p class="membership-result-note">攻击恢复的是候选居民是否属于数据库。右侧恢复集共 95 条记录，其中 92 条为真实成员、3 条为误判；居民特征来自攻击者已有的候选数据，遗漏和误判来自查询预算限制与可查询特征重合。</p>`;
+        <header><div><span>代码运行结果</span><h3>居民数据库成员恢复完成</h3></div><strong>${run.truePositives} / ${residentStore.records.length}</strong></header>
+        <div class="membership-result-stats"><article><span>系统真实成员</span><strong>${residentStore.records.length}</strong></article><article><span>成功恢复</span><strong>${run.truePositives}</strong></article><article><span>真实成员遗漏</span><strong>${run.falseNegatives}</strong></article><article><span>非成员误判</span><strong>${run.falsePositives}</strong></article></div>
+        <p class="membership-result-note">本次代码实际处理 ${membershipRecoveryCandidates.length} 条候选记录，调用 ${run.queryCount} 次存在性查询：缓存命中 ${run.cacheHits} 次，新执行 ${run.cacheMisses} 次。右侧恢复集的 ${run.recoveredRows.length} 条记录和以上指标均由查询响应实时计算；有限条件结果已缓存在当前浏览器中，重复运行会直接复用。</p>`;
       return;
     }
     results.innerHTML = `
