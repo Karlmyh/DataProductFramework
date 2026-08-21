@@ -203,7 +203,7 @@
       id: "face-boundary-hill-climb",
       name: "离线人脸相似度爬山",
       brief: "在本地仿真环境中反复调整 16 维候选人脸表征，保留相似度更高的方向并逐步逼近登记模板。",
-      result: "运行离线攻击代码后，展示系统登记模板、爬山恢复模板及二者的最终相似度。",
+      result: "运行离线攻击代码后，直接展示当前核验次数下最终恢复出来的合成人脸。",
       metric: "模板余弦相似度",
       value: "运行后计算",
       displayScore: 0,
@@ -1228,30 +1228,19 @@
     </div>`;
   }
 
-  function faceTemplateCells(vector) {
-    return vector.map((value, index) => `<span><b>D${String(index + 1).padStart(2, "0")}</b><i><em style="width:${Math.max(2, Math.abs(value) * 100)}%"></em></i><small>${value.toFixed(3)}</small></span>`).join("");
+  function faceRecoveryImageForRun(run) {
+    if (!run || run.queryCount <= 100) return "assets/face-recovery-100.jpg";
+    if (run.queryCount <= 500) return "assets/face-recovery-500.jpg";
+    return "assets/face-recovery-1000.jpg";
   }
 
   function faceHillClimbAttackVisual(product, step) {
     const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
     const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
-    const recoveredTemplate = run?.recoveredTemplate ?? initialFaceProbe;
-    const similarity = run?.similarity ?? faceTemplateSimilarity(initialFaceProbe, registeredFaceTemplate);
     const completed = currentStep === membershipRecoverySteps.length;
     return `<div class="face-hill-climb-view">
       <div class="membership-query-track"><header><span>离线代码运行</span><strong>${run ? `${run.queryCount} 次本地相似度评估` : "等待执行"}</strong></header></div>
-      <div class="face-offline-note">本演示只操作页面内的 16 维合成模板，不连接任何真实人脸或身份系统。</div>
-      <div class="membership-dataset-compare face-template-compare">
-        <section class="membership-dataset face-template-panel">
-          <header><div><span>系统登记人脸模板</span></div><strong>16 维</strong></header>
-          <div class="face-template-grid">${faceTemplateCells(registeredFaceTemplate)}</div>
-        </section>
-        <section class="membership-dataset face-template-panel ${run ? "recovered-dataset" : ""}">
-          <header><div><span>爬山恢复人脸模板</span></div><strong>${run ? `${(similarity * 100).toFixed(2)}%` : "等待"}</strong></header>
-          <div class="face-template-grid">${faceTemplateCells(recoveredTemplate)}</div>
-        </section>
-      </div>
-      <div class="face-hill-summary"><article><span>初始相似度</span><strong>${run ? `${(run.initialSimilarity * 100).toFixed(1)}%` : "—"}</strong></article><article><span>恢复相似度</span><strong>${run ? `${(similarity * 100).toFixed(2)}%` : "—"}</strong></article><article><span>离线认证阈值</span><strong>${(faceVerificationThreshold * 100).toFixed(1)}%</strong></article><article><span>仿真结果</span><strong class="${completed && run?.authenticated ? "is-authenticated" : ""}">${completed ? run?.authenticated ? "达到认证边界" : "未达到认证边界" : "运行中"}</strong></article></div>
+      ${run ? `<div class="face-recovery-result"><span>最终恢复人脸</span><img src="${faceRecoveryImageForRun(run)}" alt="${run.queryCount} 次离线爬山后最终恢复的人脸" /><strong>${run.queryCount} 次 · ${(run.similarity * 100).toFixed(2)}%</strong><small>${completed ? run.authenticated ? "达到离线认证边界" : "未达到离线认证边界" : "正在生成最终结果"}</small></div>` : '<div class="face-recovery-waiting">攻击运行后显示最终恢复人脸</div>'}
     </div>`;
   }
 
@@ -1902,6 +1891,7 @@
       if (!run) return;
       results.innerHTML = `
         <header><div><h3>攻击结果</h3></div><strong>${(run.similarity * 100).toFixed(2)}%</strong></header>
+        <div class="face-final-result"><img src="${faceRecoveryImageForRun(run)}" alt="最终恢复的人脸" /></div>
         <div class="membership-result-stats"><article><span>合成模板维度</span><strong>${faceTemplateDimension}</strong></article><article><span>本地相似度评估</span><strong>${run.queryCount}</strong></article><article><span>初始相似度</span><strong>${(run.initialSimilarity * 100).toFixed(1)}%</strong></article><article><span>离线仿真结果</span><strong>${run.authenticated ? "达到认证边界" : "未达到认证边界"}</strong></article></div>`;
       return;
     }
