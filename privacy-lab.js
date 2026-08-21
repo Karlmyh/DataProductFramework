@@ -1254,7 +1254,8 @@
   function faceSpriteStyle(face) {
     if (!face) return "";
     const positionStep = syntheticFaceLibrary.gridSize > 1 ? 100 / (syntheticFaceLibrary.gridSize - 1) : 0;
-    return `--face-sheet:url('${syntheticFaceLibrary.sheets[face.sheet]}');--face-x:${face.column * positionStep}%;--face-y:${face.row * positionStep}%`;
+    const sheetUrl = new URL(syntheticFaceLibrary.sheets[face.sheet], window.location.href).href;
+    return `--face-sheet:url('${sheetUrl}');--face-x:${face.column * positionStep}%;--face-y:${face.row * positionStep}%`;
   }
 
   function faceLibraryGrid(run) {
