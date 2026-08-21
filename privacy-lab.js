@@ -611,19 +611,9 @@
     const processedResults = run?.candidateResults.slice(0, processedCount) ?? [];
     const resultById = new Map(processedResults.map((result) => [result.candidate.residentId, result]));
     const visibleRecoveredResults = processedResults.filter((result) => result.predictedMember);
-    const tracedResults = run?.candidateResults.filter((result) => result.trace.length) ?? [];
-    const memberResult = tracedResults.find((result) => result.candidate.residentId === "R-1007") ?? tracedResults[0];
-    const boundaryResult = [...tracedResults].reverse().find((result) => result.trace.length) ?? memberResult;
-    const queryExamples = memberResult ? [
-      { candidateId: memberResult.candidate.residentId, ...memberResult.trace[0] },
-      { candidateId: memberResult.candidate.residentId, ...memberResult.trace[Math.min(1, memberResult.trace.length - 1)] },
-      { candidateId: memberResult.candidate.residentId, ...memberResult.trace[memberResult.trace.length - 1] },
-      { candidateId: boundaryResult.candidate.residentId, ...boundaryResult.trace[boundaryResult.trace.length - 1] },
-    ].filter((trace) => trace.query) : [];
     return `<div class="membership-recovery-view">
       <div class="membership-query-track">
-        <header><span>代码运行</span><strong>${run ? `${run.queryCount} 次查询` : "等待执行"}</strong><small>${run ? `预算 ${run.queryBudget} · 缓存命中 ${run.cacheHits} · 数据库执行 ${run.cacheMisses}` : `当前可用预算 ${productUsageCount(productsById["city-existence"])} 次`}</small></header>
-        <div class="membership-query-list">${queryExamples.length ? queryExamples.map((trace, index) => `<div style="--delay:${index * 90}ms"><span>${escapeHtml(`${trace.candidateId} · ${trace.query}`)}</span><b class="${trace.exists ? "is-true" : "is-false"}">${trace.exists ? "存在" : "不存在"}</b><small>候选池匹配 ${trace.candidateMatches} 条 · ${trace.cacheHit ? "缓存命中" : "代码执行"}</small></div>`).join("") : '<p>准备对候选居民的有限特征组合调用产品的存在性查询。</p>'}</div>
+        <header><span>代码运行</span><strong>${run ? `${run.queryCount} 次查询` : "等待执行"}</strong></header>
       </div>
       <div class="membership-dataset-compare">
         <section class="membership-dataset ground-truth-dataset">
