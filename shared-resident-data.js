@@ -2,7 +2,7 @@
   const schema = [
     { key: "street", label: "街道", type: "enum", values: ["01", "03", "05", "07", "09"] },
     { key: "age", label: "年龄", type: "number", min: 18, max: 90 },
-    { key: "incomeBand", label: "收入区间", type: "enum", values: ["低", "中", "高"] },
+    { key: "monthlyIncome", label: "月收入（元）", type: "number", min: 2000, max: 8300 },
     { key: "occupation", label: "职业", type: "enum", values: ["退休", "制造业", "服务业", "自由职业", "学生", "无业"] },
     { key: "householdSize", label: "家庭人数", type: "number", min: 1, max: 6 },
     { key: "subsidyStatus", label: "补贴状态", type: "enum", values: ["有效", "暂停", "无"] },
@@ -68,19 +68,25 @@
     ];
   });
 
-  const records = [...seedRecords, ...generatedRecords].map(([residentId, street, age, incomeBand, occupation, householdSize, subsidyStatus, insurance, housing, householdId, employerId]) => ({
-    residentId,
-    street,
-    age,
-    incomeBand,
-    occupation,
-    householdSize,
-    subsidyStatus,
-    insurance,
-    housing,
-    householdId,
-    employerId,
-  }));
+  const incomeRanges = { "低": [2000, 20], "中": [4000, 20], "高": [6000, 24] };
+  const records = [...seedRecords, ...generatedRecords].map(([residentId, street, age, incomeBand, occupation, householdSize, subsidyStatus, insurance, housing, householdId, employerId]) => {
+    const serial = Number(residentId.slice(2));
+    const [incomeBase, incomeSteps] = incomeRanges[incomeBand];
+    const monthlyIncome = incomeBase + ((serial * 17 + age * 7 + householdSize * 11) % incomeSteps) * 100;
+    return {
+      residentId,
+      street,
+      age,
+      monthlyIncome,
+      occupation,
+      householdSize,
+      subsidyStatus,
+      insurance,
+      housing,
+      householdId,
+      employerId,
+    };
+  });
 
   window.__RESIDENT_DATA__ = {
     id: "resident-public-service-v1",

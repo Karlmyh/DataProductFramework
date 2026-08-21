@@ -6,7 +6,7 @@
   const { series, productsById, candidatesByProduct } = payload;
   const residentStore = window.__RESIDENT_DATA__ ?? { name: "居民公共服务数据库", schema: [], records: [] };
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
-  const protectedResidentFieldKeys = new Set(["incomeBand", "subsidyStatus", "insurance"]);
+  const protectedResidentFieldKeys = new Set(["monthlyIncome", "subsidyStatus", "insurance"]);
   const residentOperators = {
     enum: [
       { id: "eq", label: "等于", symbol: "=" },
@@ -53,7 +53,7 @@
     name: "居民受保护记录检索",
     tagline: "对受保护记录集提交范围条件，返回范围内全部样本的公开特征。",
     inputLabel: "记录范围",
-    inputValue: "街道=07 ∧ 年龄≥60 ∧ 收入区间=低",
+    inputValue: "街道=07 ∧ 年龄≥60 ∧ 月收入≤4500元",
     callLabel: "检索范围内样本",
     outputLabel: "检索结果",
     outputValue: "范围内公开样本",
@@ -63,8 +63,8 @@
     productsById["content-library"].attacks = [{
       id: "protected-attribute-inference",
       name: "受保护属性推断",
-      brief: "按街道和年龄段提交分组范围，再轮换受保护字段条件，根据各批公开样本反推隐藏属性。",
-      result: "运行攻击代码后，合并多个范围查询返回的公开样本，恢复居民的收入区间、补贴状态和保障类型。",
+      brief: "反复调整月收入的大小边界，并轮换补贴与保障条件，再把返回的公开样本与恢复值拼接。",
+      result: "运行攻击代码后，从范围响应恢复精确月收入、补贴状态和保障类型，并与公开字段拼接成完整记录。",
       metric: "完整属性恢复",
       value: "运行后计算",
       displayScore: 0,
@@ -72,7 +72,7 @@
       attackFamily: "属性推断",
       attackObject: "属性隐私",
       source: "当前页面居民演示数据",
-      protocol: "街道与七岁年龄段范围；轮换三类受保护字段条件；调用产品同一批量检索逻辑；合并公开样本响应",
+      protocol: "街道与七岁年龄段范围；月收入二分边界查询；补贴与保障枚举；合并公开样本并拼接完整记录",
       limitation: "依赖响应包含稳定的公开居民编号，以及接口允许受保护字段参与范围筛选。",
     }];
     candidatesByProduct["content-library"] = [{
@@ -166,7 +166,7 @@
       defaults: [
         { field: "street", operator: "eq", value: "07" },
         { field: "age", operator: "gte", value: "60" },
-        { field: "incomeBand", operator: "eq", value: "低" },
+        { field: "monthlyIncome", operator: "lte", value: "4500" },
       ],
     },
     "finance-aggregate": {
@@ -257,7 +257,7 @@
     };
   });
   const membershipRecoveryCandidates = [...residentStore.records, ...membershipRecoveryDecoys];
-  const membershipRecoveryFieldOrder = ["street", "age", "occupation", "householdSize", "housing", "incomeBand", "subsidyStatus", "insurance"];
+  const membershipRecoveryFieldOrder = ["street", "age", "occupation", "householdSize", "housing", "monthlyIncome", "subsidyStatus", "insurance"];
   const membershipRecoverySavedRuns = new Map();
   const seriesRecoveryProductIds = new Set(["city-existence", "content-library", "finance-graph", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify"]);
   const graphCompanies = ["远澜科技", "海岸智造", "星桥能源", "海岳控股", "国创资本", "蓝港产业基金", "新源储能", "城际数科", "东浦制造", "安禾服务"];
@@ -316,10 +316,10 @@
   });
   const accountInstitutions = ["东海银行", "华城银行", "联合支付", "城市商业银行", "公共服务结算中心"];
   const residentAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: residentFeatureSummary(record) }));
-  const protectedAttributeFieldOrder = ["incomeBand", "subsidyStatus", "insurance"];
-  const protectedAttributeAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: protectedAttributeSummary(record) }));
+  const protectedAttributeFieldOrder = ["monthlyIncome", "subsidyStatus", "insurance"];
+  const protectedAttributeAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: completeResidentSummary(record) }));
   const recoveryAttackConfigs = new Map([
-    ["content-library", { queriesPerTarget: 9, groundTruthLabel: "系统真实受保护属性", recoveredLabel: "根据公开响应推断的受保护属性", truthMetricLabel: "系统真实属性记录", recoveredMetricLabel: "完整推断记录", missedMetricLabel: "未完整推断记录", falseMetricLabel: "错误属性推断", targets: protectedAttributeAttackTargets }],
+    ["content-library", { queriesPerTarget: 10, groundTruthLabel: "系统完整居民记录", recoveredLabel: "攻击拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-graph", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台企业关系图谱", recoveredLabel: "从 Chatbot 回答恢复的关系图谱", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复关系", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误推断关系", targets: graphRagBackendRelations }],
     ["finance-aggregate", { queriesPerTarget: 8, groundTruthLabel: "系统真实统计源数据集", recoveredLabel: "攻击恢复居民数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
@@ -538,50 +538,62 @@
     if (productId === "content-library") {
       let queryCount = 0;
       let budgetExhausted = false;
-      const inferredByResidentId = new Map(residentStore.records.map((record) => [record.residentId, {}]));
-      const ageRanges = Array.from({ length: 11 }, (_, index) => {
-        const minimum = 18 + index * 7;
-        return { minimum, maximum: Math.min(90, minimum + 6) };
-      });
-      for (const street of residentFields.get("street")?.values ?? []) {
-        for (const ageRange of ageRanges) {
-          const publicRange = [
-            { field: "street", operator: "eq", value: String(street) },
-            { field: "age", operator: "gte", value: String(ageRange.minimum) },
-            { field: "age", operator: "lte", value: String(ageRange.maximum) },
-          ];
-          for (const fieldKey of protectedAttributeFieldOrder) {
-            const field = residentFields.get(fieldKey);
-            for (const value of field?.values ?? []) {
-              if (queryCount >= queryBudget) {
-                budgetExhausted = true;
-                break;
-              }
-              queryCount += 1;
-              const conditions = [...publicRange, { field: fieldKey, operator: "eq", value: String(value) }];
-              const returnedPublicRows = residentStore.records
-                .filter((row) => conditions.every((condition) => recordMatchesCondition(row, condition)))
-                .map((row) => ({
-                  residentId: row.residentId,
-                  street: row.street,
-                  age: row.age,
-                  occupation: row.occupation,
-                  householdSize: row.householdSize,
-                  housing: row.housing,
-                }));
-              returnedPublicRows.forEach((row) => {
-                inferredByResidentId.get(row.residentId)[fieldKey] = value;
-              });
-            }
-            if (budgetExhausted) break;
-          }
-          if (budgetExhausted) break;
+      const incomeCandidates = Array.from({ length: 64 }, (_, index) => 2000 + index * 100);
+      const runRangeQuery = (conditions) => {
+        if (queryCount >= queryBudget) {
+          budgetExhausted = true;
+          return null;
         }
-        if (budgetExhausted) break;
-      }
+        queryCount += 1;
+        return residentStore.records
+          .filter((row) => conditions.every((condition) => recordMatchesCondition(row, condition)))
+          .map((row) => ({
+            residentId: row.residentId,
+            street: row.street,
+            age: row.age,
+            occupation: row.occupation,
+            householdSize: row.householdSize,
+            housing: row.housing,
+          }));
+      };
       const candidateResults = config.targets.map((candidate) => {
         const record = residentStore.records.find((row) => row.residentId === candidate.id);
-        const inferred = inferredByResidentId.get(candidate.id) ?? {};
+        if (!record || budgetExhausted) return { candidate, actualMember: true, predictedMember: false, determined: false, inferred: {} };
+        const ageMinimum = 18 + Math.floor((record.age - 18) / 7) * 7;
+        const publicRange = [
+          { field: "street", operator: "eq", value: String(record.street) },
+          { field: "age", operator: "gte", value: String(ageMinimum) },
+          { field: "age", operator: "lte", value: String(Math.min(90, ageMinimum + 6)) },
+        ];
+        const inferred = {};
+        let lowerIndex = 0;
+        let upperIndex = incomeCandidates.length - 1;
+        while (lowerIndex < upperIndex && !budgetExhausted) {
+          const middleIndex = Math.floor((lowerIndex + upperIndex) / 2);
+          const returnedRows = runRangeQuery([
+            ...publicRange,
+            { field: "monthlyIncome", operator: "lte", value: String(incomeCandidates[middleIndex]) },
+          ]);
+          if (!returnedRows) break;
+          if (returnedRows.some((row) => row.residentId === record.residentId)) upperIndex = middleIndex;
+          else lowerIndex = middleIndex + 1;
+        }
+        if (!budgetExhausted) inferred.monthlyIncome = incomeCandidates[lowerIndex];
+        for (const fieldKey of ["subsidyStatus", "insurance"]) {
+          const values = residentFields.get(fieldKey)?.values ?? [];
+          let matched = false;
+          for (const value of values.slice(0, -1)) {
+            const returnedRows = runRangeQuery([...publicRange, { field: fieldKey, operator: "eq", value: String(value) }]);
+            if (!returnedRows) break;
+            if (returnedRows.some((row) => row.residentId === record.residentId)) {
+              inferred[fieldKey] = value;
+              matched = true;
+              break;
+            }
+          }
+          if (budgetExhausted) break;
+          if (!matched && values.length) inferred[fieldKey] = values.at(-1);
+        }
         const determined = protectedAttributeFieldOrder.every((fieldKey) => Object.hasOwn(inferred, fieldKey));
         const correct = Boolean(record) && determined && protectedAttributeFieldOrder.every((fieldKey) => inferred[fieldKey] === record[fieldKey]);
         return {
@@ -590,7 +602,7 @@
           predictedMember: correct,
           determined,
           inferred,
-          recoveredSummary: determined ? protectedAttributeSummary(inferred) : "",
+          recoveredSummary: determined ? completeResidentSummary({ ...record, ...inferred }) : "",
         };
       });
       const truePositives = candidateResults.filter((result) => result.predictedMember).length;
@@ -719,7 +731,7 @@
     if (product.id === "content-library" && product.attacks[0]) {
       const config = recoveryAttackConfigs.get(product.id);
       Object.assign(product.attacks[0], {
-        result: `代码执行 ${run.queryCount} 次分组范围检索，合并每批返回的公开样本，完整推断 ${run.truePositives}/${config.targets.length} 条居民属性。`,
+        result: `代码执行 ${run.queryCount} 次精细范围检索，从公开样本集合恢复受保护值，并完整拼接 ${run.truePositives}/${config.targets.length} 条居民记录。`,
         value: `${run.truePositives} / ${config.targets.length}`,
         displayScore: Math.round(run.recall * 100),
         protocol: `可用查询次数 ${queryBudget}；实际范围查询 ${run.queryCount}；完整推断 ${run.truePositives}；错误推断 ${run.falsePositives}`,
@@ -866,7 +878,11 @@
   }
 
   function protectedAttributeSummary(record) {
-    return `收入区间 ${record.incomeBand} · 补贴状态 ${record.subsidyStatus} · 保障类型 ${record.insurance}`;
+    return `月收入 ${Number(record.monthlyIncome).toLocaleString("zh-CN")} 元 · 补贴状态 ${record.subsidyStatus} · 保障类型 ${record.insurance}`;
+  }
+
+  function completeResidentSummary(record) {
+    return `${residentFeatureSummary(record)} · ${record.housing} · ${protectedAttributeSummary(record)}`;
   }
 
   function membershipRecoveryAttackVisual(step) {
@@ -1189,7 +1205,7 @@
       const sqlFields = {
         street: "street",
         age: "age",
-        incomeBand: "income_band",
+        monthlyIncome: "monthly_income",
         occupation: "occupation",
         householdSize: "household_size",
         subsidyStatus: "subsidy_status",
@@ -1202,7 +1218,7 @@
       if (product.id === "content-library") return {
         language: "SQL / JSON",
         code: `SELECT resident_id, street, age, occupation, household_size, housing\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
-        output: `{ "records": ${queryResidents().length}, "returned_fields": ["resident_id", "street", "age", "occupation", "household_size", "housing"], "queryable_protected_fields": ["income_band", "subsidy_status", "insurance"] }`,
+        output: `{ "records": ${queryResidents().length}, "returned_fields": ["resident_id", "street", "age", "occupation", "household_size", "housing"], "queryable_protected_fields": ["monthly_income", "subsidy_status", "insurance"] }`,
       };
       if (product.id === "finance-aggregate") {
         const statistics = residentStatistics();
