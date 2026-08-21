@@ -245,7 +245,23 @@
   const membershipRecoveryCandidates = [...residentStore.records, ...membershipRecoveryDecoys];
   const membershipRecoveryFieldOrder = ["street", "age", "occupation", "householdSize", "housing", "incomeBand", "subsidyStatus", "insurance"];
   const membershipRecoverySavedRuns = new Map();
+  const seriesRecoveryProductIds = new Set(["city-existence", "content-library", "finance-graph", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify"]);
+  const graphCompanies = ["远澜科技", "海岸智造", "星桥能源", "海岳控股", "国创资本", "蓝港产业基金", "新源储能", "城际数科", "东浦制造", "安禾服务"];
+  const graphRelations = ["控制关系", "股权关系", "项目关系"];
+  const accountInstitutions = ["东海银行", "华城银行", "联合支付", "城市商业银行", "公共服务结算中心"];
+  const residentAttackTargets = residentStore.records.map((record) => ({ id: record.residentId, summary: residentFeatureSummary(record) }));
+  const recoveryAttackConfigs = new Map([
+    ["content-library", { queriesPerTarget: 6, groundTruthLabel: "系统真实授权记录集", recoveredLabel: "攻击恢复授权记录集", truthMetricLabel: "系统授权记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "授权记录遗漏", falseMetricLabel: "非授权记录误判", targets: residentAttackTargets }],
+    ["finance-graph", { queriesPerTarget: 7, groundTruthLabel: "系统真实关系数据集", recoveredLabel: "攻击恢复关系数据集", truthMetricLabel: "系统真实关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "关系遗漏", falseMetricLabel: "错误关系", targets: Array.from({ length: 100 }, (_, index) => ({ id: `REL-${String(index + 1).padStart(3, "0")}`, summary: `${graphCompanies[index % graphCompanies.length]} → ${graphCompanies[(index * 3 + 4) % graphCompanies.length]} · ${graphRelations[index % graphRelations.length]}` })) }],
+    ["finance-aggregate", { queriesPerTarget: 8, groundTruthLabel: "系统真实统计源数据集", recoveredLabel: "攻击恢复居民数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
+    ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
+    ["city-verify", { queriesPerTarget: 4, groundTruthLabel: "系统真实资格数据集", recoveredLabel: "攻击恢复资格数据集", truthMetricLabel: "系统资格记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "资格记录遗漏", falseMetricLabel: "资格误判", targets: residentStore.records.map((record, index) => ({ id: record.residentId, summary: `${record.age >= 60 ? "养老服务补贴" : record.housing === "租住" ? "住房租赁补贴" : "医疗救助"} · ${record.subsidyStatus === "有效" || index % 4 === 0 ? "符合" : "不符合"} · 2026年第3季度` })) }],
+    ["content-voice", { queriesPerTarget: 10, groundTruthLabel: "系统真实身份绑定集", recoveredLabel: "攻击恢复身份绑定集", truthMetricLabel: "系统身份绑定", recoveredMetricLabel: "成功恢复", missedMetricLabel: "身份绑定遗漏", falseMetricLabel: "身份误判", targets: residentStore.records.map((record, index) => ({ id: record.residentId, summary: `${String(index + 17).padStart(3, "0")}F-${String(record.age * 97).padStart(4, "0")}-${record.street}A · 登记人脸绑定` })) }],
+    ["finance-verify", { queriesPerTarget: 5, groundTruthLabel: "系统真实账户关系集", recoveredLabel: "攻击恢复账户关系集", truthMetricLabel: "系统账户关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "账户关系遗漏", falseMetricLabel: "关系误判", targets: Array.from({ length: 100 }, (_, index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, summary: `${graphCompanies[index % graphCompanies.length]} → ${accountInstitutions[index % accountInstitutions.length]} · 尾号 ${String(1000 + (index * 791) % 9000).padStart(4, "0")}` })) }],
+  ]);
+  const productRecoverySavedRuns = new Map();
   let membershipRecoveryRun = null;
+  let productRecoveryRun = null;
 
   const escapeHtml = (value) => String(value)
     .replaceAll("&", "&amp;")
@@ -448,6 +464,53 @@
 
   productUsageLimitOptions.forEach((budget) => membershipRecoverySavedRuns.set(budget, simulateMembershipRecoveryBudget(budget)));
 
+  function simulateProductRecoveryBudget(productId, queryBudget) {
+    const config = recoveryAttackConfigs.get(productId);
+    if (!config) return null;
+    const actualIds = new Set(config.targets.map((target) => target.id));
+    const candidates = [...config.targets.map((target) => ({ ...target, actual: true })), ...Array.from({ length: 12 }, (_, index) => ({ id: `C-${productId}-${String(index + 1).padStart(2, "0")}`, summary: `外部候选 ${String(index + 1).padStart(2, "0")}`, actual: false, rejectAt: 1 + index % Math.min(3, config.queriesPerTarget) }))];
+    let queryCount = 0;
+    let budgetExhausted = false;
+    const candidateResults = candidates.map((candidate) => {
+      if (budgetExhausted) return { candidate, actualMember: candidate.actual, predictedMember: false, determined: false };
+      let predictedMember = true;
+      let determined = false;
+      for (let probe = 0; probe < config.queriesPerTarget; probe += 1) {
+        if (queryCount >= queryBudget) {
+          budgetExhausted = true;
+          predictedMember = false;
+          break;
+        }
+        queryCount += 1;
+        const exists = actualIds.has(candidate.id) || probe < candidate.rejectAt;
+        if (!exists) {
+          predictedMember = false;
+          determined = true;
+          break;
+        }
+        if (probe === config.queriesPerTarget - 1) determined = true;
+      }
+      return { candidate, actualMember: candidate.actual, predictedMember: predictedMember && determined, determined };
+    });
+    const truePositives = candidateResults.filter((result) => result.actualMember && result.predictedMember).length;
+    const falseNegatives = config.targets.length - truePositives;
+    const falsePositives = candidateResults.filter((result) => !result.actualMember && result.predictedMember).length;
+    return {
+      productId,
+      queryBudget,
+      queryCount,
+      candidateResults,
+      recoveredRows: candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate),
+      truePositives,
+      falseNegatives,
+      falsePositives,
+      recall: config.targets.length ? truePositives / config.targets.length : 0,
+      quotaBlocked: budgetExhausted ? 1 : 0,
+    };
+  }
+
+  recoveryAttackConfigs.forEach((_, productId) => productUsageLimitOptions.forEach((budget) => productRecoverySavedRuns.set(`${productId}:${budget}`, simulateProductRecoveryBudget(productId, budget))));
+
   function runMembershipRecoveryAttack() {
     const product = productsById["city-existence"];
     const queryBudget = productUsageCount(product);
@@ -461,6 +524,17 @@
       displayScore: Math.round(run.recall * 100),
       protocol: `查询预算 ${queryBudget}；实际查询 ${run.queryCount}；缓存命中 ${run.cacheHits}；数据库执行 ${run.cacheMisses}；预算耗尽 ${run.quotaBlocked}`,
     });
+    refreshProductUsageCounter(product);
+    return run;
+  }
+
+  function runProductRecoveryAttack(product) {
+    const queryBudget = productUsageCount(product);
+    const key = `${product.id}:${queryBudget}`;
+    const run = productRecoverySavedRuns.get(key) ?? simulateProductRecoveryBudget(product.id, queryBudget);
+    if (!run) return null;
+    productRecoverySavedRuns.set(key, run);
+    consumeProductUsage(product, run.queryCount, false);
     refreshProductUsageCounter(product);
     return run;
   }
@@ -634,6 +708,37 @@
         </section>
       </div>
       <div class="membership-legend"><span><i class="recovered"></i>成功恢复</span><span><i class="missed"></i>真实成员遗漏</span><span><i class="false-positive"></i>非成员误判</span></div>
+    </div>`;
+  }
+
+  function productRecoveryAttackVisual(product, step) {
+    if (product.id === "city-existence") return membershipRecoveryAttackVisual(step);
+    const config = recoveryAttackConfigs.get(product.id);
+    if (!config) return renderVisual(current().activeSeries, product, 3);
+    const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
+    const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
+    const processedCount = currentStep < 2 ? 0 : currentStep === 2 ? Math.ceil(config.targets.length / 2) : config.targets.length + 12;
+    const processedResults = run?.candidateResults.slice(0, processedCount) ?? [];
+    const resultById = new Map(processedResults.map((result) => [result.candidate.id, result]));
+    const visibleRecoveredResults = processedResults.filter((result) => result.predictedMember);
+    return `<div class="membership-recovery-view">
+      <div class="membership-query-track"><header><span>代码运行</span><strong>${run ? `${run.queryCount} 次${productUsageLabel(product).replace("次数", "")}` : "等待执行"}</strong></header></div>
+      <div class="membership-dataset-compare">
+        <section class="membership-dataset ground-truth-dataset">
+          <header><div><span>${escapeHtml(config.groundTruthLabel)}</span></div><strong>${config.targets.length} 条</strong></header>
+          <div class="membership-table"><div class="membership-row membership-head"><span>记录编号</span><span>真实内容</span><span>对照</span></div>${config.targets.map((target) => {
+            const result = resultById.get(target.id);
+            const recovered = result?.predictedMember === true;
+            const missed = currentStep === membershipRecoverySteps.length && result?.predictedMember === false;
+            return `<div class="membership-row ${recovered ? "recovered" : missed ? "missed" : "pending"}"><b>${escapeHtml(target.id)}</b><span>${escapeHtml(target.summary)}</span><em>${recovered ? "已恢复" : missed ? "遗漏" : "待判定"}</em></div>`;
+          }).join("")}</div>
+        </section>
+        <section class="membership-dataset recovered-dataset">
+          <header><div><span>${escapeHtml(config.recoveredLabel)}</span></div><strong>${visibleRecoveredResults.length} 条</strong></header>
+          <div class="membership-table"><div class="membership-row membership-head"><span>候选编号</span><span>恢复内容</span><span>判断</span></div>${visibleRecoveredResults.length ? visibleRecoveredResults.map((result) => `<div class="membership-row ${result.actualMember ? "recovered" : "false-positive"}"><b>${escapeHtml(result.candidate.id)}</b><span>${escapeHtml(result.candidate.summary)}</span><em>${result.actualMember ? "已恢复" : "误判"}</em></div>`).join("") : '<div class="membership-empty">尚未生成恢复结果</div>'}</div>
+        </section>
+      </div>
+      <div class="membership-legend"><span><i class="recovered"></i>成功恢复</span><span><i class="missed"></i>真实记录遗漏</span><span><i class="false-positive"></i>非真实记录误判</span></div>
     </div>`;
   }
 
@@ -1074,7 +1179,7 @@
   }
 
   function attackProgressItems(product) {
-    return product.id === "city-existence" ? membershipRecoverySteps : product.attacks;
+    return seriesRecoveryProductIds.has(product.id) ? membershipRecoverySteps : product.attacks;
   }
 
   function resetAfterControlEdit() {
@@ -1113,9 +1218,9 @@
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
-          <div class="attack-stage ${product.id === "city-existence" ? "membership-recovery-stage" : ""}">
-            <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header>${product.id === "city-existence" ? "" : `<ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol>`}<div class="attack-canvas" data-attack-canvas>${product.id === "city-existence" ? membershipRecoveryAttackVisual(0) : renderVisual(activeSeries, product, 3)}</div></article>
-            ${product.id === "city-existence" ? "" : `<aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>已连接</i></div><h3 data-audit-title>准备执行适用攻击</h3><div class="audit-counter"><span>已完成攻击</span><strong data-risk-value>0 / ${progressItems.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>等待攻击序列开始</li></ul></aside>`}
+          <div class="attack-stage ${seriesRecoveryProductIds.has(product.id) ? "membership-recovery-stage" : ""}">
+            <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header>${seriesRecoveryProductIds.has(product.id) ? "" : `<ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol>`}<div class="attack-canvas" data-attack-canvas>${seriesRecoveryProductIds.has(product.id) ? productRecoveryAttackVisual(product, 0) : renderVisual(activeSeries, product, 3)}</div></article>
+            ${seriesRecoveryProductIds.has(product.id) ? "" : `<aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>已连接</i></div><h3 data-audit-title>准备执行适用攻击</h3><div class="audit-counter"><span>已完成攻击</span><strong data-risk-value>0 / ${progressItems.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>等待攻击序列开始</li></ul></aside>`}
           </div>
           <div class="tour-results" data-results hidden></div>
         </section>
@@ -1176,7 +1281,7 @@
     const progressItems = attackProgressItems(product);
     attackStep = nextStep;
     const attackCanvas = root.querySelector("[data-attack-canvas]");
-    if (attackCanvas) attackCanvas.innerHTML = product.id === "city-existence" ? membershipRecoveryAttackVisual(attackStep) : renderVisual(activeSeries, displayProduct, attackStep > 0 ? 4 : 3);
+    if (attackCanvas) attackCanvas.innerHTML = seriesRecoveryProductIds.has(product.id) ? productRecoveryAttackVisual(product, attackStep) : renderVisual(activeSeries, displayProduct, attackStep > 0 ? 4 : 3);
     root.querySelectorAll("[data-attack-index]").forEach((item) => {
       const index = Number(item.getAttribute("data-attack-index"));
       item.classList.toggle("active", index === attackStep - 1);
@@ -1186,7 +1291,7 @@
     const value = root.querySelector("[data-risk-value]");
     const bar = root.querySelector("[data-risk-bar]");
     const evidence = root.querySelector("[data-evidence-list]");
-    if (product.id === "city-existence") {
+    if (seriesRecoveryProductIds.has(product.id)) {
       if (title) title.textContent = attackStep === 0 ? "准备居民数据库成员恢复" : progressItems[Math.min(attackStep, progressItems.length) - 1].title;
       if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item, index) => {
         if (membershipRecoveryRun && index === 1) return `<li>代码实际调用 ${membershipRecoveryRun.queryCount} 次：缓存命中 ${membershipRecoveryRun.cacheHits} 次，新执行 ${membershipRecoveryRun.cacheMisses} 次。</li>`;
@@ -1209,7 +1314,10 @@
     const results = root.querySelector("[data-results]");
     if (stage) stage.hidden = false;
     if (results) results.hidden = true;
-    if (current().product.id === "city-existence") membershipRecoveryRun = null;
+    if (seriesRecoveryProductIds.has(current().product.id)) {
+      membershipRecoveryRun = null;
+      productRecoveryRun = null;
+    }
     updateAttackStep(0);
     stage?.scrollIntoView({ behavior: "smooth", block: "start" });
     const progressItems = attackProgressItems(current().product);
@@ -1233,6 +1341,15 @@
       results.innerHTML = `
         <header><div><h3>攻击结果</h3></div><strong>${run.truePositives} / ${residentStore.records.length}</strong></header>
         <div class="membership-result-stats"><article><span>系统真实成员</span><strong>${residentStore.records.length}</strong></article><article><span>成功恢复</span><strong>${run.truePositives}</strong></article><article><span>真实成员遗漏</span><strong>${run.falseNegatives}</strong></article><article><span>非成员误判</span><strong>${run.falsePositives}</strong></article></div>`;
+      return;
+    }
+    if (seriesRecoveryProductIds.has(product.id)) {
+      const config = recoveryAttackConfigs.get(product.id);
+      const run = productRecoveryRun ??= runProductRecoveryAttack(product);
+      if (!config || !run) return;
+      results.innerHTML = `
+        <header><div><h3>攻击结果</h3></div><strong>${run.truePositives} / ${config.targets.length}</strong></header>
+        <div class="membership-result-stats"><article><span>${escapeHtml(config.truthMetricLabel)}</span><strong>${config.targets.length}</strong></article><article><span>${escapeHtml(config.recoveredMetricLabel)}</span><strong>${run.truePositives}</strong></article><article><span>${escapeHtml(config.missedMetricLabel)}</span><strong>${run.falseNegatives}</strong></article><article><span>${escapeHtml(config.falseMetricLabel)}</span><strong>${run.falsePositives}</strong></article></div>`;
       return;
     }
     results.innerHTML = `
@@ -1336,6 +1453,7 @@
         productUsageLimits.set(product.id, limit);
         productUsageRemaining.set(product.id, limit);
         membershipRecoveryRun = null;
+        productRecoveryRun = null;
         timers.forEach(window.clearTimeout);
         timers = [];
         renderLab();
