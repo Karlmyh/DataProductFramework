@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="覆盖行业基础数据库、核验、指标、模型与梯度产品的互动式隐私攻击演示和统一风险衡量。" />
     <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/" />
-    <link rel="stylesheet" href="security_attacks/styles.css?v=verification-series-12" />
+    <link rel="stylesheet" href="security_attacks/styles.css?v=category-demo-pages-13" />
     <title>数据产品安全衡量框架</title>
     <meta property="og:title" content="数据产品安全衡量框架" />
     <meta property="og:description" content="五类数据产品 · 互动调用演示 · 多攻击结果聚合" />
@@ -59,23 +59,23 @@
               <div class="tree-branches">
             <div class="tree-branch">
               <p class="tree-branch-title"><span>0301</span>行业基础数据库类数据产品</p>
-              <ul class="tree-nodes"><li><a href="security_attacks/030101.html"><strong>030101 存在性查询</strong></a></li><li><a href="security_attacks/030102.html"><strong>030102 记录与子集查询</strong></a></li><li><a href="security_attacks/030103.html"><strong>030103 关系发现与路径查询</strong></a></li><li><a href="security_attacks/030104.html"><strong>030104 聚合统计查询</strong></a></li><li><a href="security_attacks/030105.html"><strong>030105 派生与处理查询</strong></a></li></ul>
+              <ul class="tree-nodes"><li><a href="?demo=030101"><strong>030101 存在性查询</strong></a></li><li><a href="?demo=030102"><strong>030102 记录与子集查询</strong></a></li><li><a href="?demo=030103"><strong>030103 关系发现与路径查询</strong></a></li><li><a href="?demo=030104"><strong>030104 聚合统计查询</strong></a></li><li><a href="?demo=030105"><strong>030105 派生与处理查询</strong></a></li></ul>
             </div>
             <div class="tree-branch">
               <p class="tree-branch-title"><span>0304</span>核验类数据产品</p>
-              <ul class="tree-nodes"><li><a href="security_attacks/030401.html"><strong>030401 单体断言核验</strong></a></li><li><a href="security_attacks/030402.html"><strong>030402 对象同一性核验</strong></a></li><li><a href="security_attacks/030403.html"><strong>030403 多体关系核验</strong></a></li></ul>
+              <ul class="tree-nodes"><li><a href="?demo=030401"><strong>030401 单体断言核验</strong></a></li><li><a href="?demo=030402"><strong>030402 对象同一性核验</strong></a></li><li><a href="?demo=030403"><strong>030403 多体关系核验</strong></a></li></ul>
             </div>
             <div class="tree-branch">
               <p class="tree-branch-title"><span>0305</span>指标型数据产品</p>
-              <ul class="tree-nodes"><li><a href="security_attacks/030501.html"><strong>030501 数值型指标</strong></a></li><li><a href="security_attacks/030502.html"><strong>030502 标准参照等级与分段</strong></a></li><li><a href="security_attacks/030503.html"><strong>030503 集合参照排名与相对位置</strong></a></li></ul>
+              <ul class="tree-nodes"><li><a href="?demo=030501"><strong>030501 数值型指标</strong></a></li><li><a href="?demo=030502"><strong>030502 标准参照等级与分段</strong></a></li><li><a href="?demo=030503"><strong>030503 集合参照排名与相对位置</strong></a></li></ul>
             </div>
             <div class="tree-branch">
               <p class="tree-branch-title"><span>0307</span>模型类数据产品</p>
-              <ul class="tree-nodes"><li><a href="security_attacks/030701.html"><strong>030701 文本生成与语言处理服务</strong></a></li><li><a href="security_attacks/030702.html"><strong>030702 图像视频理解与生成服务</strong></a></li><li><a href="security_attacks/030703.html"><strong>030703 语音识别与合成服务</strong></a></li><li><a href="security_attacks/030704.html"><strong>030704 预测、分类与推荐服务</strong></a></li><li><a href="security_attacks/030705.html"><strong>030705 多模态综合模型服务</strong></a></li><li><a href="security_attacks/030706.html"><strong>030706 模型蒸馏服务</strong></a></li></ul>
+              <ul class="tree-nodes"><li><a href="?demo=030701"><strong>030701 文本生成与语言处理服务</strong></a></li><li><a href="?demo=030702"><strong>030702 图像视频理解与生成服务</strong></a></li><li><a href="?demo=030703"><strong>030703 语音识别与合成服务</strong></a></li><li><a href="?demo=030704"><strong>030704 预测、分类与推荐服务</strong></a></li><li><a href="?demo=030705"><strong>030705 多模态综合模型服务</strong></a></li><li><a href="?demo=030706"><strong>030706 模型蒸馏服务</strong></a></li></ul>
             </div>
             <div class="tree-branch">
               <p class="tree-branch-title"><span>0309</span>其他数据产品</p>
-              <ul class="tree-nodes"><li><a href="security_attacks/030901.html"><strong>030901 梯度类数据产品</strong></a></li></ul>
+              <ul class="tree-nodes"><li><a href="?demo=030901"><strong>030901 梯度类数据产品</strong></a></li></ul>
             </div></div>
             </figure>
           </section>
@@ -196,7 +196,25 @@
         }));
       })();
     </script>
-    <script src="shared-resident-data.js?v=verification-series-12"></script>
-    <script src="face-library-data.js?v=verification-series-12"></script>
-    <script src="privacy-lab.js?v=verification-series-12" defer></script></body>
+    <script>
+      (() => {
+        const demoCategory = new URLSearchParams(window.location.search).get("demo");
+        if (!demoCategory) return;
+        const data = window.__PRIVACY_LAB_DATA__;
+        const matchedSeries = data.series.map((item) => ({
+          ...item,
+          productIds: item.productIds.filter((productId) => data.productsById[productId]?.category === demoCategory)
+        })).filter((item) => item.productIds.length > 0);
+        data.series = matchedSeries;
+        data.demoCategory = demoCategory;
+        document.body.classList.add("demo-only");
+        if (matchedSeries.reduce((count, item) => count + item.productIds.length, 0) <= 1) {
+          document.body.classList.add("single-demo-product");
+        }
+        document.title = `${demoCategory} 互动演示`;
+      })();
+    </script>
+    <script src="shared-resident-data.js?v=category-demo-pages-13"></script>
+    <script src="face-library-data.js?v=category-demo-pages-13"></script>
+    <script src="privacy-lab.js?v=category-demo-pages-13" defer></script></body>
 </html>

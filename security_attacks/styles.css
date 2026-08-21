@@ -22,6 +22,41 @@ a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; 
 a:focus-visible, button:focus-visible { outline: 3px solid #000; outline-offset: 3px; }
 p, h1, h2, h3, h4, ol, ul, figure, table { margin-top: 0; }
 
+body.demo-only main {
+  width: min(1200px, calc(100% - 32px));
+  padding: 24px 0 60px;
+}
+body.demo-only .site-header,
+body.demo-only .page-nav,
+body.demo-only #framework,
+body.demo-only #taxonomy,
+body.demo-only #interactive-demo > h2,
+body.demo-only .site-footer,
+body.demo-only .series-switcher {
+  display: none;
+}
+body.demo-only .document-layout {
+  display: block;
+  margin: 0;
+}
+body.demo-only .document-content > #interactive-demo {
+  padding: 0;
+  border: 0;
+}
+body.demo-only.single-demo-product .product-switcher {
+  display: none;
+}
+body.demo-only .guided-tour {
+  margin-top: 0;
+}
+.demo-unavailable {
+  display: grid;
+  min-height: 70vh;
+  place-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 main {
   width: min(1376px, calc(100% - 48px));
   margin: 0 auto;

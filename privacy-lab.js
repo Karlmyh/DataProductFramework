@@ -4,6 +4,10 @@
   if (!payload || !root) return;
 
   const { series, productsById, candidatesByProduct } = payload;
+  if (!series.length) {
+    root.innerHTML = '<div class="demo-unavailable">该子类的互动演示尚未加入</div>';
+    return;
+  }
   const residentStore = window.__RESIDENT_DATA__ ?? { name: "居民公共服务数据库", schema: [], records: [] };
   const syntheticFaceLibrary = window.__SYNTHETIC_FACE_LIBRARY__ ?? { gridSize: 5, sheets: [], targetDescriptor: [], faces: [] };
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
