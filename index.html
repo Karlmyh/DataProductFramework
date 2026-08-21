@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="覆盖行业基础数据库、核验、指标、模型与梯度产品的互动式隐私攻击演示和统一风险衡量。" />
     <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/" />
-    <link rel="stylesheet" href="security_attacks/styles.css?v=concise-graph-demo-15" />
+    <link rel="stylesheet" href="security_attacks/styles.css?v=concise-later-demos-16" />
     <title>数据产品安全衡量框架</title>
     <meta property="og:title" content="数据产品安全衡量框架" />
     <meta property="og:description" content="五类数据产品 · 互动调用演示 · 多攻击结果聚合" />
@@ -198,6 +198,77 @@
           executed: true,
           reason: `适用：${attack.brief}`
         }));
+
+        const addHiddenModelProduct = (product) => {
+          data.productsById[product.id] = product;
+          data.candidatesByProduct[product.id] = product.attacks.map((attack) => ({
+            id: attack.id,
+            name: attack.name,
+            applicable: true,
+            executed: true,
+            reason: `适用：${attack.brief}`
+          }));
+        };
+        addHiddenModelProduct({
+          id: "content-speech",
+          category: "030703",
+          family: "模型",
+          name: "语音识别与合成 API",
+          tagline: "提交语音片段，返回转写文本、说话人标签与置信度。",
+          template: "model",
+          inputLabel: "语音片段",
+          inputValue: "speaker_021.wav · 8 秒",
+          callLabel: "运行语音模型",
+          flow: ["提取声学特征", "执行语音识别", "返回转写结果"],
+          outputLabel: "模型响应",
+          outputValue: "转写完成 · 说话人 A · 置信度 0.93",
+          outputDetail: "产品开放语音模型调用，不直接返回训练语音或说话人模板。",
+          attacks: [{
+            id: "speech-recovery",
+            name: "语音训练样本恢复",
+            brief: "重复提交有限语音探针，根据转写与置信度响应恢复训练语音成员及说话人特征。",
+            result: "按剩余调用次数运行代码并生成恢复语音集。",
+            metric: "语音样本恢复",
+            value: "运行后计算",
+            displayScore: 0,
+            evidence: "代码实测",
+            attackFamily: "成员推断与原型恢复",
+            attackObject: "训练语音",
+            source: "当前页面合成语音样本库",
+            protocol: "有限语音探针；黑盒转写与置信度响应；固定查询预算",
+            limitation: "仅用于离线合成数据演示。"
+          }]
+        });
+        addHiddenModelProduct({
+          id: "model-distillation",
+          category: "030706",
+          family: "模型",
+          name: "任务学生模型蒸馏服务",
+          tagline: "用教师模型响应训练轻量学生模型，并交付任务模型。",
+          template: "model",
+          inputLabel: "蒸馏任务",
+          inputValue: "教师模型 T-17 · 客户分类任务 · 学生模型 80M",
+          callLabel: "运行模型蒸馏",
+          flow: ["生成教师响应", "训练学生模型", "评估任务一致率"],
+          outputLabel: "交付结果",
+          outputValue: "学生模型 D-08 · 任务一致率 91.4%",
+          outputDetail: "产品交付学生模型，不开放教师模型参数与训练样本。",
+          attacks: [{
+            id: "distillation-recovery",
+            name: "教师行为恢复",
+            brief: "使用有限探针比较学生模型输出，逐步恢复教师模型的决策行为与训练成员信号。",
+            result: "按剩余调用次数运行代码并生成恢复行为集。",
+            metric: "教师行为恢复",
+            value: "运行后计算",
+            displayScore: 0,
+            evidence: "代码实测",
+            attackFamily: "模型抽取",
+            attackObject: "教师模型行为",
+            source: "当前页面合成教师响应集",
+            protocol: "有限输入探针；学生模型黑盒响应；固定查询预算",
+            limitation: "仅用于离线合成任务演示。"
+          }]
+        });
       })();
     </script>
     <script>
@@ -231,7 +302,7 @@
         document.title = `${demoCategory} 互动演示`;
       })();
     </script>
-    <script src="shared-resident-data.js?v=concise-graph-demo-15"></script>
-    <script src="face-library-data.js?v=concise-graph-demo-15"></script>
-    <script src="privacy-lab.js?v=concise-graph-demo-15" defer></script></body>
+    <script src="shared-resident-data.js?v=concise-later-demos-16"></script>
+    <script src="face-library-data.js?v=concise-later-demos-16"></script>
+    <script src="privacy-lab.js?v=concise-later-demos-16" defer></script></body>
 </html>

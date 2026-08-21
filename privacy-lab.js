@@ -364,7 +364,10 @@
   const membershipRecoveryCandidates = [...residentStore.records, ...membershipRecoveryDecoys];
   const membershipRecoveryFieldOrder = ["street", "age", "occupation", "householdSize", "housing", "monthlyIncome", "subsidyStatus", "insurance"];
   const membershipRecoverySavedRuns = new Map();
-  const seriesRecoveryProductIds = new Set(["city-existence", "content-library", "finance-graph", "finance-graph-query", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify"]);
+  const seriesRecoveryProductIds = new Set([
+    "city-existence", "content-library", "finance-graph", "finance-graph-query", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify",
+    "finance-index", "city-grade", "content-rank", "city-rag", "content-vision", "content-speech", "finance-model", "content-multimodal", "model-distillation", "finance-gradient", "city-gradient",
+  ]);
   const graphCompanies = ["远澜科技", "海岸智造", "星桥能源", "海岳控股", "国创资本", "蓝港产业基金", "新源储能", "城际数科", "东浦制造", "安禾服务"];
   const graphRelations = ["控制关系", "股权关系", "项目关系"];
   const graphRagBackendRelations = [
@@ -432,6 +435,10 @@
     summary: `${profile.credential} · ${policy} · ${period} · ${region}`,
   })))));
   const qualificationAttackTargets = qualificationProbeCandidates.filter((candidate) => candidate.qualifies).map((candidate) => ({ id: candidate.id, summary: `${candidate.summary} · 符合` }));
+  const syntheticTargetSet = (prefix, summaries) => Array.from({ length: 100 }, (_, index) => ({
+    id: `${prefix}-${String(index + 1).padStart(3, "0")}`,
+    summary: `${summaries[index % summaries.length]} · 样本 ${String(index + 1).padStart(3, "0")}`,
+  }));
   const recoveryAttackConfigs = new Map([
     ["content-library", { queriesPerTarget: 10, groundTruthLabel: "系统完整居民记录", recoveredLabel: "攻击拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-graph", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台企业关系图谱", recoveredLabel: "从 Chatbot 回答恢复的关系图谱", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复关系", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误推断关系", targets: graphRagBackendRelations }],
@@ -441,6 +448,17 @@
     ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
     ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "100 张合成人脸候选库", recoveredLabel: "爬山搜索结果", truthMetricLabel: "候选人脸", recoveredMetricLabel: "最佳相似度", missedMetricLabel: "未评估人脸", falseMetricLabel: "随机重启", targets: syntheticFaceLibrary.faces.map((face) => ({ id: face.id, summary: `合成人脸候选 ${face.id}` })) }],
     ["finance-verify", { queriesPerTarget: 1, groundTruthLabel: "系统真实账户关系集", recoveredLabel: "攻击恢复账户关系集", truthMetricLabel: "系统账户关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "账户关系遗漏", falseMetricLabel: "关系误判", targets: Array.from(verifiedAccountRelationships.entries()).map(([enterprise, account], index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, enterprise, account, summary: `${enterprise} → ${account}` })) }],
+    ["finance-index", { queriesPerTarget: 4, groundTruthLabel: "指数计算真实样本集", recoveredLabel: "攻击恢复的指数样本集", truthMetricLabel: "真实指数样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误恢复", targets: syntheticTargetSet("IDX", ["远澜科技 · 风险指数 72.4", "海岸智造 · 风险指数 61.8", "星桥能源 · 风险指数 48.6", "东浦制造 · 风险指数 83.1"]) }],
+    ["city-grade", { queriesPerTarget: 3, groundTruthLabel: "街区等级真实规则样本", recoveredLabel: "攻击恢复的等级边界样本", truthMetricLabel: "真实规则样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复边界", falseMetricLabel: "错误边界", targets: syntheticTargetSet("GRD", ["梧桐街道 · 拥堵等级 B", "滨江街道 · 拥堵等级 A", "新城街道 · 拥堵等级 C", "湖畔街道 · 拥堵等级 B"]) }],
+    ["content-rank", { queriesPerTarget: 3, groundTruthLabel: "平台真实排序集合", recoveredLabel: "攻击恢复的排序集合", truthMetricLabel: "真实排序样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复名次", falseMetricLabel: "错误名次", targets: syntheticTargetSet("RNK", ["城市漫游 · 第 3 名", "夏日食谱 · 第 7 名", "科学一分钟 · 第 12 名", "周末露营 · 第 18 名"]) }],
+    ["city-rag", { queriesPerTarget: 4, groundTruthLabel: "Chatbot 后台政策语料", recoveredLabel: "从回答恢复的政策语料", truthMetricLabel: "后台真实片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: syntheticTargetSet("POL", ["梧桐计划 · 申报资格条款", "养老补贴 · 收入门槛条款", "住房保障 · 家庭人数条款", "就业扶持 · 职业状态条款"]) }],
+    ["content-vision", { queriesPerTarget: 5, groundTruthLabel: "视觉模型真实训练片段", recoveredLabel: "攻击恢复的训练片段特征", truthMetricLabel: "真实训练片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: syntheticTargetSet("VIS", ["户外运动 · 跑步场景", "道路交通 · 骑行场景", "室内活动 · 健身场景", "公共空间 · 人群场景"]) }],
+    ["content-speech", { queriesPerTarget: 5, groundTruthLabel: "语音模型真实训练语音", recoveredLabel: "攻击恢复的语音与说话人特征", truthMetricLabel: "真实训练语音", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复语音", falseMetricLabel: "错误语音", targets: syntheticTargetSet("SPK", ["说话人 A · 公共服务咨询", "说话人 B · 交通信息播报", "说话人 C · 政策问答语音", "说话人 D · 日常对话语音"]) }],
+    ["finance-model", { queriesPerTarget: 4, groundTruthLabel: "预测模型真实行为样本", recoveredLabel: "攻击恢复的模型行为样本", truthMetricLabel: "真实行为样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复行为", falseMetricLabel: "错误行为", targets: syntheticTargetSet("MOD", ["现金流下降 · 高风险 0.81", "负债率稳定 · 中风险 0.54", "盈利增长 · 低风险 0.19", "逾期增加 · 高风险 0.88"]) }],
+    ["content-multimodal", { queriesPerTarget: 5, groundTruthLabel: "多模态模型真实上下文集", recoveredLabel: "攻击恢复的跨模态上下文", truthMetricLabel: "真实上下文", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复上下文", falseMetricLabel: "错误关联", targets: syntheticTargetSet("MM", ["海报画面 · 活动旁白 · 审核问题", "商品图片 · 宣传音频 · 合规问题", "街景视频 · 环境声音 · 场景问题", "人物照片 · 访谈语音 · 身份问题"]) }],
+    ["model-distillation", { queriesPerTarget: 4, groundTruthLabel: "教师模型真实响应集", recoveredLabel: "从学生模型恢复的教师行为", truthMetricLabel: "教师真实行为", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复行为", falseMetricLabel: "错误行为", targets: syntheticTargetSet("DST", ["客户分类 · 教师标签 A", "客户分类 · 教师标签 B", "风险识别 · 教师置信度高", "风险识别 · 教师置信度低"]) }],
+    ["finance-gradient", { queriesPerTarget: 6, groundTruthLabel: "梯度批次真实训练样本", recoveredLabel: "梯度反演恢复的训练样本", truthMetricLabel: "真实训练样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误样本", targets: syntheticTargetSet("FG", ["企业现金流序列 · 违约标签 1", "企业负债序列 · 违约标签 0", "企业授信序列 · 风险标签高", "企业还款序列 · 风险标签低"]) }],
+    ["city-gradient", { queriesPerTarget: 6, groundTruthLabel: "客流梯度真实训练样本", recoveredLabel: "梯度反演恢复的客流样本", truthMetricLabel: "真实客流样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误样本", targets: syntheticTargetSet("CG", ["中心站 · 早高峰客流", "滨江站 · 晚高峰客流", "会展站 · 活动时段客流", "机场站 · 节假日客流"]) }],
   ]);
   const productRecoverySavedRuns = new Map();
   let membershipRecoveryRun = null;
@@ -978,7 +996,7 @@
       };
     }
     const actualIds = new Set(config.targets.map((target) => target.id));
-    const candidates = [...config.targets.map((target) => ({ ...target, actual: true })), ...Array.from({ length: 12 }, (_, index) => ({ id: `C-${productId}-${String(index + 1).padStart(2, "0")}`, summary: `外部候选 ${String(index + 1).padStart(2, "0")}`, actual: false, rejectAt: 1 + index % Math.min(3, config.queriesPerTarget) }))];
+    const candidates = [...config.targets.map((target) => ({ ...target, actual: true })), ...Array.from({ length: 12 }, (_, index) => ({ id: `C-${productId}-${String(index + 1).padStart(2, "0")}`, summary: `外部候选 ${String(index + 1).padStart(2, "0")}`, actual: false, rejectAt: index % Math.min(3, config.queriesPerTarget) }))];
     let queryCount = 0;
     let budgetExhausted = false;
     const candidateResults = candidates.map((candidate) => {
@@ -1609,8 +1627,26 @@
     return `<div class="gradient-product-view"><div class="gradient-header"><span>${escapeHtml(product.inputLabel)}</span><strong>${escapeHtml(product.inputValue)}</strong></div><div class="embedded-product-flow" aria-label="训练更新流程">${product.flow.map((step, index) => `<span class="${currentPhase > index ? "active" : ""}">${escapeHtml(step)}</span>`).join('<i aria-hidden="true">→</i>')}</div><div class="gradient-matrix">${cells}</div><div class="gradient-output"><span>${escapeHtml(product.outputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待聚合…"}</strong></div>${currentPhase >= 4 ? '<div class="gradient-leak"><div class="reconstructed-record">重建样本轮廓</div><strong>标签与群体属性已暴露</strong></div>' : ""}</div>`;
   }
 
+  function speechModelVisual(product, currentPhase) {
+    return `<div class="attribute-product-view">
+      <div class="subject-card"><span>输入语音</span><strong>${escapeHtml(product.inputValue)}</strong><small>合成语音演示文件</small></div>
+      <div class="attribute-board"><div><span>模型处理</span><b>语音转写</b><b>说话人识别</b></div><div class="hidden-attributes ${currentPhase >= 4 ? "exposed" : ""}"><span>训练语音</span><b>${currentPhase >= 4 ? "说话人特征：已恢复" : "说话人特征：•••"}</b><b>${currentPhase >= 4 ? "成员关系：已判断" : "成员关系：•••"}</b></div></div>
+      <div class="score-dial ${currentPhase >= 3 ? "ready" : ""}"><span>${escapeHtml(product.outputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "—"}</strong><i></i></div>
+    </div>`;
+  }
+
+  function distillationModelVisual(product, currentPhase) {
+    return `<div class="attribute-product-view">
+      <div class="subject-card"><span>蒸馏任务</span><strong>${escapeHtml(product.inputValue)}</strong><small>离线合成模型任务</small></div>
+      <div class="attribute-board"><div><span>教师模型</span><b>生成软标签</b><b>传递任务行为</b></div><div class="hidden-attributes ${currentPhase >= 4 ? "exposed" : ""}"><span>学生模型</span><b>${currentPhase >= 3 ? "D-08 · 80M 参数" : "等待训练"}</b><b>${currentPhase >= 4 ? "教师行为：已恢复" : "教师行为：•••"}</b></div></div>
+      <div class="score-dial ${currentPhase >= 3 ? "ready" : ""}"><span>${escapeHtml(product.outputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "—"}</strong><i></i></div>
+    </div>`;
+  }
+
   function renderVisual(activeSeries, product, currentPhase) {
     if (product.id === "content-voice") return residentFaceVerificationVisual(product, currentPhase);
+    if (product.id === "content-speech") return speechModelVisual(product, currentPhase);
+    if (product.id === "model-distillation") return distillationModelVisual(product, currentPhase);
     if (activeSeries.visual === "vision") return visionVisual(product, currentPhase);
     if (activeSeries.visual === "chat") return chatVisual(product, currentPhase);
     if (activeSeries.visual === "graph") return graphVisual(product, currentPhase);
