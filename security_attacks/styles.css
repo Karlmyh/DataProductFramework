@@ -198,7 +198,9 @@ th { font-weight: 700; }
 .product-window > header a { flex: 0 0 auto; font-size: 11px; }
 .product-header-tools { justify-content: flex-end; }
 .product-usage-counter { display: flex; align-items: baseline; gap: 8px; padding: 9px 16px; border-bottom: 1px solid var(--ink); background: var(--soft); }
+.product-usage-counter label { display: flex; align-items: center; gap: 6px; }
 .product-usage-counter span { font-size: 10px; font-weight: 700; }
+.product-usage-counter select { min-width: 64px; padding: 3px 20px 3px 6px; border: 1px solid var(--ink); border-radius: 0; background: var(--paper); font: 700 10px Arial, sans-serif; }
 .product-usage-counter strong { font: 700 18px Arial, sans-serif; }
 .product-usage-counter small { color: var(--muted); font-size: 9px; }
 .product-usage-counter.is-exhausted strong, .product-usage-counter.is-exhausted small { color: #b43b2d; }

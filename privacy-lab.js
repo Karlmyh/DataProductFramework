@@ -225,7 +225,9 @@
   let faceImageUrl = defaultFaceImageUrl;
   let faceImageMatchesResident = true;
   let timers = [];
-  const productUsageInitialLimit = 100;
+  const productUsageLimitOptions = [100, 500, 1000];
+  const productUsageInitialLimit = productUsageLimitOptions[0];
+  const productUsageLimits = new Map(Object.keys(productsById).map((productId) => [productId, productUsageInitialLimit]));
   const productUsageRemaining = new Map(Object.keys(productsById).map((productId) => [productId, productUsageInitialLimit]));
   const membershipRecoverySteps = [
     { name: "准备候选居民", title: "建立候选居民集合", evidence: "候选池包含 112 条已知特征记录，其中真实数据库成员对攻击者不可见。" },
@@ -242,7 +244,7 @@
   });
   const membershipRecoveryCandidates = [...residentStore.records, ...membershipRecoveryDecoys];
   const membershipRecoveryFieldOrder = ["street", "age", "occupation", "householdSize", "housing", "incomeBand", "subsidyStatus", "insurance"];
-  const membershipExistenceQueryCache = loadMembershipExistenceQueryCache();
+  const membershipRecoverySavedRuns = new Map();
   let membershipRecoveryRun = null;
 
   const escapeHtml = (value) => String(value)
@@ -268,9 +270,14 @@
     return productUsageRemaining.get(product.id) ?? productUsageInitialLimit;
   }
 
+  function productUsageLimit(product) {
+    return productUsageLimits.get(product.id) ?? productUsageInitialLimit;
+  }
+
   function renderProductUsageCounter(product) {
     const remaining = productUsageCount(product);
-    return `<div class="product-usage-counter ${remaining === 0 ? "is-exhausted" : ""}" data-product-usage-counter><span>${productUsageLabel(product)}</span><strong data-product-usage-value>${remaining}</strong><small>剩余</small></div>`;
+    const limit = productUsageLimit(product);
+    return `<div class="product-usage-counter ${remaining === 0 ? "is-exhausted" : ""}" data-product-usage-counter><label><span>${productUsageLabel(product)}</span><select data-product-usage-limit aria-label="选择${productUsageLabel(product)}上限">${productUsageLimitOptions.map((option) => `<option value="${option}" ${option === limit ? "selected" : ""}>${option}</option>`).join("")}</select></label><strong data-product-usage-value>${remaining}</strong><small>剩余</small></div>`;
   }
 
   function refreshProductUsageCounter(product = current().product) {
@@ -281,8 +288,10 @@
     if (value && current().product.id === product.id) value.textContent = String(remaining);
     const runButton = root.querySelector("[data-run-product]");
     const rerunButton = root.querySelector("[data-rerun]");
+    const attackButton = root.querySelector("[data-start-attack]");
     if (runButton instanceof HTMLButtonElement && current().product.id === product.id) runButton.disabled = remaining === 0 || (phase > 0 && phase < 3);
     if (rerunButton instanceof HTMLButtonElement && current().product.id === product.id) rerunButton.disabled = remaining === 0;
+    if (attackButton instanceof HTMLButtonElement && current().product.id === product.id) attackButton.disabled = remaining === 0 || phase < 3;
   }
 
   function consumeProductUsage(product, amount = 1, refresh = true) {
@@ -353,78 +362,68 @@
     return residentStore.records.filter((record) => structuredConditions.every((condition) => recordMatchesCondition(record, condition)));
   }
 
-  function loadMembershipExistenceQueryCache() {
-    try {
-      const stored = window.localStorage.getItem(`${residentStore.id}:membership-existence-cache:v1`);
-      const entries = stored ? JSON.parse(stored) : [];
-      return new Map(Array.isArray(entries) ? entries.filter((entry) => Array.isArray(entry) && entry.length === 2) : []);
-    } catch {
-      return new Map();
-    }
-  }
-
-  function persistMembershipExistenceQueryCache() {
-    try {
-      window.localStorage.setItem(`${residentStore.id}:membership-existence-cache:v1`, JSON.stringify([...membershipExistenceQueryCache.entries()]));
-    } catch {
-      // The attack remains executable when browser storage is unavailable.
-    }
-  }
-
   function membershipQueryKey(conditions) {
     return JSON.stringify(conditions
       .map((condition) => [condition.field, condition.operator, String(condition.value)])
       .sort((left, right) => left[0].localeCompare(right[0])));
   }
 
-  function executeMembershipExistenceQuery(conditions, runStats) {
-    const key = membershipQueryKey(conditions);
-    runStats.queryCount += 1;
-    if (membershipExistenceQueryCache.has(key)) {
-      runStats.cacheHits += 1;
-      return { exists: membershipExistenceQueryCache.get(key) === true, cacheHit: true };
-    }
-    if (!consumeProductUsage(productsById["city-existence"], 1, false)) {
-      runStats.quotaBlocked += 1;
-      return { exists: false, cacheHit: false, quotaBlocked: true };
-    }
-    const exists = residentStore.records.some((record) => conditions.every((condition) => recordMatchesCondition(record, condition)));
-    membershipExistenceQueryCache.set(key, exists);
-    runStats.cacheMisses += 1;
-    return { exists, cacheHit: false };
-  }
-
   function formatMembershipAttackConditions(conditions) {
     return conditions.map((condition) => `${residentFields.get(condition.field)?.label ?? condition.field} = ${condition.value}`).join(" ∧ ");
   }
 
-  function runMembershipRecoveryAttack() {
-    const runStats = { queryCount: 0, cacheHits: 0, cacheMisses: 0, quotaBlocked: 0 };
+  function simulateMembershipRecoveryBudget(queryBudget) {
+    const cache = new Map();
+    const runStats = { queryBudget, queryCount: 0, cacheHits: 0, cacheMisses: 0, quotaBlocked: 0 };
     const actualMemberIds = new Set(residentStore.records.map((record) => record.residentId));
+    let budgetExhausted = false;
     const candidateResults = membershipRecoveryCandidates.map((candidate) => {
       const conditions = [];
       const trace = [];
       let predictedMember = true;
+      let determined = false;
+      if (budgetExhausted) return { candidate, actualMember: actualMemberIds.has(candidate.residentId), predictedMember: false, determined, trace };
       for (const field of membershipRecoveryFieldOrder) {
+        if (runStats.queryCount >= queryBudget) {
+          budgetExhausted = true;
+          runStats.quotaBlocked = 1;
+          predictedMember = false;
+          break;
+        }
         conditions.push({ field, operator: "eq", value: String(candidate[field]) });
-        const response = executeMembershipExistenceQuery(conditions, runStats);
+        const key = membershipQueryKey(conditions);
+        runStats.queryCount += 1;
+        let exists;
+        let cacheHit = false;
+        if (cache.has(key)) {
+          runStats.cacheHits += 1;
+          cacheHit = true;
+          exists = cache.get(key) === true;
+        } else {
+          runStats.cacheMisses += 1;
+          exists = residentStore.records.some((record) => conditions.every((condition) => recordMatchesCondition(record, condition)));
+          cache.set(key, exists);
+        }
         const candidateMatches = membershipRecoveryCandidates.filter((record) => conditions.every((condition) => recordMatchesCondition(record, condition))).length;
         trace.push({
           conditions: conditions.map((condition) => ({ ...condition })),
           query: formatMembershipAttackConditions(conditions),
-          exists: response.exists,
-          cacheHit: response.cacheHit,
+          exists,
+          cacheHit,
           candidateMatches,
         });
-        if (!response.exists) {
+        if (!exists) {
           predictedMember = false;
+          determined = true;
           break;
         }
+        if (trace.length === membershipRecoveryFieldOrder.length) determined = true;
       }
       return {
         candidate,
         actualMember: actualMemberIds.has(candidate.residentId),
-        predictedMember: predictedMember && trace.length === membershipRecoveryFieldOrder.length,
+        predictedMember: predictedMember && determined && trace.length === membershipRecoveryFieldOrder.length,
+        determined,
         trace,
       };
     });
@@ -434,15 +433,6 @@
     const trueNegatives = candidateResults.filter((result) => !result.actualMember && !result.predictedMember).length;
     const recoveredRows = candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate);
     const recall = residentStore.records.length ? truePositives / residentStore.records.length : 0;
-    const attack = productsById["city-existence"].attacks[0];
-    Object.assign(attack, {
-      result: `代码执行 ${runStats.queryCount} 次存在性查询，恢复 ${recoveredRows.length} 条成员判断。`,
-      value: `${truePositives} / ${residentStore.records.length}`,
-      displayScore: Math.round(recall * 100),
-      protocol: `候选 ${membershipRecoveryCandidates.length}；实际查询 ${runStats.queryCount}；缓存命中 ${runStats.cacheHits}；新执行 ${runStats.cacheMisses}；次数不足 ${runStats.quotaBlocked}`,
-    });
-    persistMembershipExistenceQueryCache();
-    refreshProductUsageCounter(productsById["city-existence"]);
     return {
       ...runStats,
       candidateResults,
@@ -452,8 +442,27 @@
       falsePositives,
       trueNegatives,
       recall,
-      cacheSize: membershipExistenceQueryCache.size,
+      cacheSize: cache.size,
     };
+  }
+
+  productUsageLimitOptions.forEach((budget) => membershipRecoverySavedRuns.set(budget, simulateMembershipRecoveryBudget(budget)));
+
+  function runMembershipRecoveryAttack() {
+    const product = productsById["city-existence"];
+    const queryBudget = productUsageCount(product);
+    const run = membershipRecoverySavedRuns.get(queryBudget) ?? simulateMembershipRecoveryBudget(queryBudget);
+    membershipRecoverySavedRuns.set(queryBudget, run);
+    consumeProductUsage(product, run.queryCount, false);
+    const attack = product.attacks[0];
+    Object.assign(attack, {
+      result: `${queryBudget} 次查询预算下，代码执行 ${run.queryCount} 次存在性查询并恢复 ${run.recoveredRows.length} 条成员判断。`,
+      value: `${run.truePositives} / ${residentStore.records.length}`,
+      displayScore: Math.round(run.recall * 100),
+      protocol: `查询预算 ${queryBudget}；实际查询 ${run.queryCount}；缓存命中 ${run.cacheHits}；数据库执行 ${run.cacheMisses}；预算耗尽 ${run.quotaBlocked}`,
+    });
+    refreshProductUsageCounter(product);
+    return run;
   }
 
   function nextStructuredCondition(product = current().product) {
@@ -602,17 +611,18 @@
     const processedResults = run?.candidateResults.slice(0, processedCount) ?? [];
     const resultById = new Map(processedResults.map((result) => [result.candidate.residentId, result]));
     const visibleRecoveredResults = processedResults.filter((result) => result.predictedMember);
-    const memberResult = run?.candidateResults.find((result) => result.candidate.residentId === "R-1007");
-    const decoyResult = run?.candidateResults.find((result) => result.candidate.residentId === "C-9004");
-    const queryExamples = run && memberResult && decoyResult ? [
+    const tracedResults = run?.candidateResults.filter((result) => result.trace.length) ?? [];
+    const memberResult = tracedResults.find((result) => result.candidate.residentId === "R-1007") ?? tracedResults[0];
+    const boundaryResult = [...tracedResults].reverse().find((result) => result.trace.length) ?? memberResult;
+    const queryExamples = memberResult ? [
       { candidateId: memberResult.candidate.residentId, ...memberResult.trace[0] },
-      { candidateId: memberResult.candidate.residentId, ...memberResult.trace[1] },
+      { candidateId: memberResult.candidate.residentId, ...memberResult.trace[Math.min(1, memberResult.trace.length - 1)] },
       { candidateId: memberResult.candidate.residentId, ...memberResult.trace[memberResult.trace.length - 1] },
-      { candidateId: decoyResult.candidate.residentId, ...(decoyResult.trace.find((trace) => !trace.exists) ?? decoyResult.trace[decoyResult.trace.length - 1]) },
-    ] : [];
+      { candidateId: boundaryResult.candidate.residentId, ...boundaryResult.trace[boundaryResult.trace.length - 1] },
+    ].filter((trace) => trace.query) : [];
     return `<div class="membership-recovery-view">
       <div class="membership-query-track">
-        <header><span>代码运行</span><strong>${run ? `${run.queryCount} 次查询` : "等待执行"}</strong><small>${run ? `缓存命中 ${run.cacheHits} · 新执行 ${run.cacheMisses}` : "候选居民特征来自攻击者已有数据"}</small></header>
+        <header><span>代码运行</span><strong>${run ? `${run.queryCount} 次查询` : "等待执行"}</strong><small>${run ? `预算 ${run.queryBudget} · 缓存命中 ${run.cacheHits} · 数据库执行 ${run.cacheMisses}` : `当前可用预算 ${productUsageCount(productsById["city-existence"])} 次`}</small></header>
         <div class="membership-query-list">${queryExamples.length ? queryExamples.map((trace, index) => `<div style="--delay:${index * 90}ms"><span>${escapeHtml(`${trace.candidateId} · ${trace.query}`)}</span><b class="${trace.exists ? "is-true" : "is-false"}">${trace.exists ? "存在" : "不存在"}</b><small>候选池匹配 ${trace.candidateMatches} 条 · ${trace.cacheHit ? "缓存命中" : "代码执行"}</small></div>`).join("") : '<p>准备对候选居民的有限特征组合调用产品的存在性查询。</p>'}</div>
       </div>
       <div class="membership-dataset-compare">
@@ -1329,6 +1339,19 @@
       return;
     }
     if (!(target instanceof HTMLSelectElement)) return;
+    if (target.matches("[data-product-usage-limit]")) {
+      const product = current().product;
+      const limit = Number(target.value);
+      if (productUsageLimitOptions.includes(limit)) {
+        productUsageLimits.set(product.id, limit);
+        productUsageRemaining.set(product.id, limit);
+        membershipRecoveryRun = null;
+        timers.forEach(window.clearTimeout);
+        timers = [];
+        renderLab();
+      }
+      return;
+    }
     if (target.matches("[data-condition-field]")) {
       const index = Number(target.getAttribute("data-condition-field"));
       const field = structuredFields(current().product).get(target.value);
