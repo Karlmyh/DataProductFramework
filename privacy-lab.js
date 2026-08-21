@@ -85,13 +85,13 @@
   }
   if (productsById["finance-aggregate"]) Object.assign(productsById["finance-aggregate"], {
     name: "居民群体统计查询",
-    tagline: "按居民范围返回公开特征统计，以及受保护特征的均值或类别占比。",
+    tagline: "按居民范围只返回三个受保护特征的均值或类别分布。",
     inputLabel: "居民范围",
     inputValue: "街道=07 ∧ 年龄≥60",
     callLabel: "生成居民统计",
     outputLabel: "统计结果",
     outputValue: "范围聚合统计",
-    outputDetail: "不返回个人记录；月收入返回平均值，补贴状态和保障类型返回各类别占比。",
+    outputDetail: "最终响应只有平均月收入、补贴状态分布和保障类型分布。",
   });
   if (productsById["finance-aggregate"]) {
     productsById["finance-aggregate"].attacks = [{
@@ -107,14 +107,14 @@
       attackObject: "属性隐私",
       source: "当前页面居民演示数据",
       protocol: "相同公开范围；年龄上界相差一个目标居民；均值乘样本数还原总量；相邻统计做差",
-      limitation: "依赖可构造只相差一个居民的相邻范围，并且产品返回精确样本数和未加噪聚合值。",
+      limitation: "依赖可构造只相差一个居民的相邻范围、攻击者已知公开特征范围人数，并且聚合值未加噪。",
     }];
     candidatesByProduct["finance-aggregate"] = [{
       id: "aggregate-differencing",
       name: "相邻范围差分恢复",
       applicable: true,
       executed: true,
-      reason: "适用：精确样本数和聚合均值允许通过相邻范围差分恢复单条记录。",
+      reason: "适用：攻击者可由公开特征计算范围人数，再对未加噪聚合值执行相邻范围差分。",
     }];
   }
   if (productsById["finance-derived"]) Object.assign(productsById["finance-derived"], {
@@ -656,8 +656,14 @@
         }
         queryCount += 1;
         const rows = residentStore.records.filter((row) => conditions.every((condition) => recordMatchesCondition(row, condition)));
-        return statisticsForResidentRows(rows);
+        const statistics = statisticsForResidentRows(rows);
+        return {
+          averageMonthlyIncome: statistics.averageMonthlyIncome,
+          subsidyShares: statistics.subsidyShares,
+          insuranceShares: statistics.insuranceShares,
+        };
       };
+      const knownPublicRangeCount = (conditions) => residentStore.records.filter((row) => conditions.every((condition) => recordMatchesCondition(row, condition))).length;
       const candidateResults = config.targets.map((candidate) => {
         const record = residentStore.records.find((row) => row.residentId === candidate.id);
         if (!record || budgetExhausted) return { candidate, actualMember: true, predictedMember: false, determined: false };
@@ -667,13 +673,17 @@
           { field: "householdSize", operator: "eq", value: String(record.householdSize) },
           { field: "housing", operator: "eq", value: String(record.housing) },
         ];
-        const includingTarget = runAggregateQuery([...commonRange, { field: "age", operator: "lte", value: String(record.age) }]);
-        const beforeTarget = runAggregateQuery([...commonRange, { field: "age", operator: "lt", value: String(record.age) }]);
+        const includingConditions = [...commonRange, { field: "age", operator: "lte", value: String(record.age) }];
+        const beforeConditions = [...commonRange, { field: "age", operator: "lt", value: String(record.age) }];
+        const includingCount = knownPublicRangeCount(includingConditions);
+        const beforeCount = knownPublicRangeCount(beforeConditions);
+        const includingTarget = runAggregateQuery(includingConditions);
+        const beforeTarget = runAggregateQuery(beforeConditions);
         if (!includingTarget || !beforeTarget) return { candidate, actualMember: true, predictedMember: false, determined: false };
-        const recoveredCount = includingTarget.count - beforeTarget.count;
-        const recoveredIncome = Math.round((includingTarget.averageMonthlyIncome * includingTarget.count - beforeTarget.averageMonthlyIncome * beforeTarget.count) / 100) * 100;
+        const recoveredCount = includingCount - beforeCount;
+        const recoveredIncome = Math.round((includingTarget.averageMonthlyIncome * includingCount - beforeTarget.averageMonthlyIncome * beforeCount) / 100) * 100;
         const recoverCategory = (shareKey, values) => values.find((value) => {
-          const difference = includingTarget[shareKey][value] * includingTarget.count - beforeTarget[shareKey][value] * beforeTarget.count;
+          const difference = includingTarget[shareKey][value] * includingCount - beforeTarget[shareKey][value] * beforeCount;
           return difference > 0.5;
         });
         const inferred = {
@@ -896,8 +906,7 @@
       return { ...product, inputValue: formattedInput, outputValue: `${matches.length} 条授权记录` };
     }
     if (product.id === "finance-aggregate") {
-      const matches = queryResidents();
-      return { ...product, inputValue: formattedInput, outputValue: `${matches.length} 条样本` };
+      return { ...product, inputValue: formattedInput, outputValue: "三项受保护特征统计" };
     }
     if (product.id === "finance-derived") {
       return { ...product, inputValue: formattedInput, outputValue: `${processedResidentRows().length} 条加工样本` };
@@ -1097,9 +1106,6 @@
     return `<div class="resident-statistics-view">
       <div class="resident-query-summary ${currentPhase >= 1 ? "active" : ""}"><span>当前条件</span><strong>${escapeHtml(product.inputValue)}</strong></div>
       ${ready ? `<div class="resident-stat-grid" aria-label="居民群体统计结果">
-        <div class="resident-stat-card"><span>样本数</span><strong>${statistics.count}</strong><small>人</small></div>
-        <div class="resident-stat-card"><span>平均年龄</span><strong>${statistics.averageAge.toFixed(1)}</strong><small>岁</small></div>
-        <div class="resident-stat-card"><span>平均家庭人数</span><strong>${statistics.averageHouseholdSize.toFixed(1)}</strong><small>人</small></div>
         <div class="resident-stat-card protected-stat"><span>平均月收入</span><strong>${Math.round(statistics.averageMonthlyIncome).toLocaleString("zh-CN")}</strong><small>元 · 受保护特征均值</small></div>
         <div class="resident-stat-card protected-stat distribution"><span>补贴状态占比</span><strong>有效 ${(statistics.subsidyShares["有效"] * 100).toFixed(1)}%<br>暂停 ${(statistics.subsidyShares["暂停"] * 100).toFixed(1)}%<br>无 ${(statistics.subsidyShares["无"] * 100).toFixed(1)}%</strong><small>类别指示变量均值</small></div>
         <div class="resident-stat-card protected-stat distribution"><span>保障类型占比</span><strong>职工 ${(statistics.insuranceShares["城镇职工"] * 100).toFixed(1)}%<br>居民 ${(statistics.insuranceShares["城乡居民"] * 100).toFixed(1)}%<br>未参保 ${(statistics.insuranceShares["未参保"] * 100).toFixed(1)}%</strong><small>类别指示变量均值</small></div>
@@ -1328,8 +1334,8 @@
         const statistics = residentStatistics();
         return {
           language: "SQL / JSON",
-          code: `SELECT COUNT(*) AS sample_count,\n       AVG(age) AS average_age,\n       AVG(household_size) AS average_household_size,\n       AVG(monthly_income) AS average_monthly_income,\n       AVG(CASE WHEN subsidy_status = '有效' THEN 1.0 ELSE 0.0 END) AS active_subsidy_share,\n       AVG(CASE WHEN insurance = '城镇职工' THEN 1.0 ELSE 0.0 END) AS employee_insurance_share\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
-          output: `{ "sample_count": ${statistics.count}, "average_age": ${statistics.averageAge.toFixed(1)}, "average_household_size": ${statistics.averageHouseholdSize.toFixed(1)}, "average_monthly_income": ${statistics.averageMonthlyIncome.toFixed(1)}, "active_subsidy_share": ${statistics.subsidyShares["有效"].toFixed(3)}, "employee_insurance_share": ${statistics.insuranceShares["城镇职工"].toFixed(3)} }`,
+          code: `SELECT AVG(monthly_income) AS average_monthly_income,\n       AVG(CASE WHEN subsidy_status = '有效' THEN 1.0 ELSE 0.0 END) AS active_subsidy_share,\n       AVG(CASE WHEN subsidy_status = '暂停' THEN 1.0 ELSE 0.0 END) AS paused_subsidy_share,\n       AVG(CASE WHEN insurance = '城镇职工' THEN 1.0 ELSE 0.0 END) AS employee_insurance_share,\n       AVG(CASE WHEN insurance = '城乡居民' THEN 1.0 ELSE 0.0 END) AS resident_insurance_share\nFROM residents\nWHERE ${where};\n\nparams = ${JSON.stringify(parameters)}`,
+          output: `{ "average_monthly_income": ${statistics.averageMonthlyIncome.toFixed(1)}, "subsidy_distribution": ${JSON.stringify(statistics.subsidyShares)}, "insurance_distribution": ${JSON.stringify(statistics.insuranceShares)} }`,
         };
       }
       return {
