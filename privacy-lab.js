@@ -225,7 +225,7 @@
   let faceImageUrl = defaultFaceImageUrl;
   let faceImageMatchesResident = true;
   let timers = [];
-  const productUsageInitialLimit = 1000;
+  const productUsageInitialLimit = 100;
   const productUsageRemaining = new Map(Object.keys(productsById).map((productId) => [productId, productUsageInitialLimit]));
   const membershipRecoverySteps = [
     { name: "准备候选居民", title: "建立候选居民集合", evidence: "候选池包含 112 条已知特征记录，其中真实数据库成员对攻击者不可见。" },
