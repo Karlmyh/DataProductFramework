@@ -15,21 +15,32 @@
   const qualificationPolicies = ["养老服务补贴", "住房租赁补贴", "医疗救助"];
   const qualificationPeriods = ["2026年第3季度", "2026年第2季度", "2026年第1季度"];
   const qualificationRegions = ["东城区", "西城区", "南城区"];
-  const accountEnterpriseOptions = [
+  const accountEnterpriseSeeds = [
     "远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q",
     "海岸智造｜统一社会信用代码 91320000MA5T8N4R2L",
     "星桥能源｜统一社会信用代码 91330000MA6C9P7W4K",
   ];
-  const accountEntityOptions = [
+  const accountEntitySeeds = [
     "东海银行｜账户尾号 8421",
     "华城银行｜账户尾号 1936",
     "联合支付｜账户尾号 5708",
   ];
-  const verifiedAccountRelationships = new Map([
-    [accountEnterpriseOptions[0], accountEntityOptions[0]],
-    [accountEnterpriseOptions[1], accountEntityOptions[1]],
-    [accountEnterpriseOptions[2], accountEntityOptions[2]],
-  ]);
+  const syntheticEnterprisePrefixes = ["远峰", "华清", "云港", "晨星", "嘉禾", "新川", "海岚", "东浦", "安澜", "启明"];
+  const syntheticEnterpriseIndustries = ["科技", "制造", "能源", "物流", "服务", "材料", "数科", "实业", "供应链", "工程"];
+  const syntheticBanks = ["东海银行", "华城银行", "联合支付", "浦江银行", "新港银行", "城际银行", "安泰银行", "海岳银行"];
+  const accountEnterpriseOptions = [...accountEnterpriseSeeds, ...Array.from({ length: 97 }, (_, offset) => {
+    const serial = offset + 4;
+    const name = `${syntheticEnterprisePrefixes[offset % syntheticEnterprisePrefixes.length]}${syntheticEnterpriseIndustries[Math.floor(offset / syntheticEnterprisePrefixes.length) % syntheticEnterpriseIndustries.length]}${String(serial).padStart(3, "0")}`;
+    const creditCode = `91${String(310000 + serial).padStart(6, "0")}MA${String(70000000 + serial * 7919).slice(-8)}`;
+    return `${name}｜统一社会信用代码 ${creditCode}`;
+  })];
+  const accountEntityOptions = [...accountEntitySeeds, ...Array.from({ length: 97 }, (_, offset) => {
+    const serial = offset + 4;
+    const bank = syntheticBanks[offset % syntheticBanks.length];
+    const tail = String((8421 + serial * 3571) % 10000).padStart(4, "0");
+    return `${bank}｜账户尾号 ${tail}`;
+  })];
+  const verifiedAccountRelationships = new Map(accountEnterpriseOptions.map((enterprise, index) => [enterprise, accountEntityOptions[index]]));
   const verifyAccountRelationship = (enterprise, account) => verifiedAccountRelationships.get(enterprise) === account;
   const qualificationProfiles = residentStore.records.slice(0, 30).map((record, index) => ({
     record,
@@ -243,16 +254,40 @@
       reason: "离线演示：代码真实评估候选图片，只保留更接近登记人脸的合成人脸。",
     }];
   }
-  if (productsById["finance-verify"]) Object.assign(productsById["finance-verify"], {
-    name: "账户归属核验",
-    tagline: "核验企业主体（实体一）与银行账户（实体二）之间是否存在账户归属关系。",
-    inputLabel: "两主体关系核验",
-    inputValue: "远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q · 东海银行｜账户尾号 8421",
-    callLabel: "核验账户归属",
-    outputLabel: "核验结果",
-    outputValue: "认证",
-    outputDetail: "对外只返回认证或非认证，不返回账户明细或底层关系记录。",
-  });
+  if (productsById["finance-verify"]) {
+    Object.assign(productsById["finance-verify"], {
+      name: "账户归属核验",
+      tagline: "核验企业主体（实体一）与银行账户（实体二）之间是否存在账户归属关系。",
+      inputLabel: "两主体关系核验",
+      inputValue: "远澜科技｜统一社会信用代码 91310000MA7K2X8P6Q · 东海银行｜账户尾号 8421",
+      callLabel: "核验账户归属",
+      outputLabel: "核验结果",
+      outputValue: "认证",
+      outputDetail: "对外只返回认证或非认证，不返回账户明细或底层关系记录。",
+    });
+    productsById["finance-verify"].attacks = [{
+      id: "relationship-enumeration",
+      name: "账户归属关系枚举",
+      brief: "在 100 个企业与 100 个账户形成的 10,000 个候选配对中反复调用二元核验接口。",
+      result: "按剩余核验次数运行代码，并形成已恢复的账户归属关系集。",
+      metric: "真实关系恢复率",
+      value: "运行后计算",
+      displayScore: 0,
+      evidence: "代码实测",
+      attackFamily: "关系枚举",
+      attackObject: "账户归属关系",
+      source: "当前页面 100 条合成企业—账户归属关系",
+      protocol: "100 个企业；100 个账户；10,000 个候选配对；固定核验预算",
+      limitation: "纯离线合成数据演示，不连接真实企业或银行系统。",
+    }];
+    candidatesByProduct["finance-verify"] = [{
+      id: "relationship-enumeration",
+      name: "账户归属关系枚举",
+      applicable: true,
+      executed: true,
+      reason: "适用：接口允许反复替换两个主体，并稳定返回认证或非认证。",
+    }];
+  }
   const structuredProductConfigs = {
     "city-existence": {
       schema: residentStore.schema,
@@ -447,7 +482,7 @@
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
     ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "100 张合成人脸候选库", recoveredLabel: "爬山搜索结果", truthMetricLabel: "候选人脸", recoveredMetricLabel: "最佳相似度", missedMetricLabel: "未评估人脸", falseMetricLabel: "随机重启", targets: syntheticFaceLibrary.faces.map((face) => ({ id: face.id, summary: `合成人脸候选 ${face.id}` })) }],
-    ["finance-verify", { queriesPerTarget: 1, groundTruthLabel: "系统真实账户关系集", recoveredLabel: "攻击恢复账户关系集", truthMetricLabel: "系统账户关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "账户关系遗漏", falseMetricLabel: "关系误判", targets: Array.from(verifiedAccountRelationships.entries()).map(([enterprise, account], index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, enterprise, account, summary: `${enterprise} → ${account}` })) }],
+    ["finance-verify", { queriesPerTarget: 1, groundTruthLabel: "后台合成账户归属关系集", recoveredLabel: "攻击恢复账户归属关系集", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误关系", targets: Array.from(verifiedAccountRelationships.entries()).map(([enterprise, account], index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, enterprise, account, summary: `${enterprise} → ${account}` })) }],
     ["finance-index", { queriesPerTarget: 4, groundTruthLabel: "指数计算真实样本集", recoveredLabel: "攻击恢复的指数样本集", truthMetricLabel: "真实指数样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误恢复", targets: syntheticTargetSet("IDX", ["远澜科技 · 风险指数 72.4", "海岸智造 · 风险指数 61.8", "星桥能源 · 风险指数 48.6", "东浦制造 · 风险指数 83.1"]) }],
     ["city-grade", { queriesPerTarget: 3, groundTruthLabel: "街区等级真实规则样本", recoveredLabel: "攻击恢复的等级边界样本", truthMetricLabel: "真实规则样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复边界", falseMetricLabel: "错误边界", targets: syntheticTargetSet("GRD", ["梧桐街道 · 拥堵等级 B", "滨江街道 · 拥堵等级 A", "新城街道 · 拥堵等级 C", "湖畔街道 · 拥堵等级 B"]) }],
     ["content-rank", { queriesPerTarget: 3, groundTruthLabel: "平台真实排序集合", recoveredLabel: "攻击恢复的排序集合", truthMetricLabel: "真实排序样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复名次", falseMetricLabel: "错误名次", targets: syntheticTargetSet("RNK", ["城市漫游 · 第 3 名", "夏日食谱 · 第 7 名", "科学一分钟 · 第 12 名", "周末露营 · 第 18 名"]) }],
