@@ -225,6 +225,8 @@
   let faceImageUrl = defaultFaceImageUrl;
   let faceImageMatchesResident = true;
   let timers = [];
+  const productUsageInitialLimit = 1000;
+  const productUsageRemaining = new Map(Object.keys(productsById).map((productId) => [productId, productUsageInitialLimit]));
   const membershipRecoverySteps = [
     { name: "准备候选居民", title: "建立候选居民集合", evidence: "候选池包含 112 条已知特征记录，其中真实数据库成员对攻击者不可见。" },
     { name: "执行存在性查询", title: "代码正在调用存在性查询", evidence: "实际查询次数、缓存命中和新执行次数将在运行后生成。" },
@@ -255,6 +257,44 @@
     const products = activeSeries.productIds.map((id) => productsById[id]).filter(Boolean);
     return { activeSeries, products, product: products[productIndex] };
   };
+
+  function productUsageLabel(product) {
+    if (product.category.startsWith("0304")) return "核验次数";
+    if (product.category.startsWith("0301")) return "查询次数";
+    return "调用次数";
+  }
+
+  function productUsageCount(product) {
+    return productUsageRemaining.get(product.id) ?? productUsageInitialLimit;
+  }
+
+  function renderProductUsageCounter(product) {
+    const remaining = productUsageCount(product);
+    return `<div class="product-usage-counter ${remaining === 0 ? "is-exhausted" : ""}" data-product-usage-counter><span>${productUsageLabel(product)}</span><strong data-product-usage-value>${remaining}</strong><small>剩余</small></div>`;
+  }
+
+  function refreshProductUsageCounter(product = current().product) {
+    const remaining = productUsageCount(product);
+    const counter = root.querySelector("[data-product-usage-counter]");
+    const value = root.querySelector("[data-product-usage-value]");
+    if (counter && current().product.id === product.id) counter.classList.toggle("is-exhausted", remaining === 0);
+    if (value && current().product.id === product.id) value.textContent = String(remaining);
+    const runButton = root.querySelector("[data-run-product]");
+    const rerunButton = root.querySelector("[data-rerun]");
+    if (runButton instanceof HTMLButtonElement && current().product.id === product.id) runButton.disabled = remaining === 0 || (phase > 0 && phase < 3);
+    if (rerunButton instanceof HTMLButtonElement && current().product.id === product.id) rerunButton.disabled = remaining === 0;
+  }
+
+  function consumeProductUsage(product, amount = 1, refresh = true) {
+    const remaining = productUsageCount(product);
+    if (remaining < amount) {
+      if (refresh) refreshProductUsageCounter(product);
+      return false;
+    }
+    productUsageRemaining.set(product.id, remaining - amount);
+    if (refresh) refreshProductUsageCounter(product);
+    return true;
+  }
 
   function operatorsFor(field) {
     return residentOperators[field?.type] ?? residentOperators.enum;
@@ -344,6 +384,10 @@
       runStats.cacheHits += 1;
       return { exists: membershipExistenceQueryCache.get(key) === true, cacheHit: true };
     }
+    if (!consumeProductUsage(productsById["city-existence"], 1, false)) {
+      runStats.quotaBlocked += 1;
+      return { exists: false, cacheHit: false, quotaBlocked: true };
+    }
     const exists = residentStore.records.some((record) => conditions.every((condition) => recordMatchesCondition(record, condition)));
     membershipExistenceQueryCache.set(key, exists);
     runStats.cacheMisses += 1;
@@ -355,7 +399,7 @@
   }
 
   function runMembershipRecoveryAttack() {
-    const runStats = { queryCount: 0, cacheHits: 0, cacheMisses: 0 };
+    const runStats = { queryCount: 0, cacheHits: 0, cacheMisses: 0, quotaBlocked: 0 };
     const actualMemberIds = new Set(residentStore.records.map((record) => record.residentId));
     const candidateResults = membershipRecoveryCandidates.map((candidate) => {
       const conditions = [];
@@ -395,9 +439,10 @@
       result: `代码执行 ${runStats.queryCount} 次存在性查询，恢复 ${recoveredRows.length} 条成员判断。`,
       value: `${truePositives} / ${residentStore.records.length}`,
       displayScore: Math.round(recall * 100),
-      protocol: `候选 ${membershipRecoveryCandidates.length}；实际查询 ${runStats.queryCount}；缓存命中 ${runStats.cacheHits}；新执行 ${runStats.cacheMisses}`,
+      protocol: `候选 ${membershipRecoveryCandidates.length}；实际查询 ${runStats.queryCount}；缓存命中 ${runStats.cacheHits}；新执行 ${runStats.cacheMisses}；次数不足 ${runStats.quotaBlocked}`,
     });
     persistMembershipExistenceQueryCache();
+    refreshProductUsageCounter(productsById["city-existence"]);
     return {
       ...runStats,
       candidateResults,
@@ -1064,7 +1109,7 @@
       <div class="guided-tour">
         <section class="demo-act product-demo-act">
           <header class="demo-act-heading"><strong>产品演示</strong></header>
-          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header><form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${minimalFooter ? "minimal-product-footer" : ""}">${minimalFooter ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
+          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header>${renderProductUsageCounter(product)}<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${minimalFooter ? "minimal-product-footer" : ""}">${minimalFooter ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
@@ -1103,6 +1148,7 @@
     if (status) status.textContent = statuses[phase];
     if (startButton instanceof HTMLButtonElement) startButton.disabled = phase < 3;
     if (runButton instanceof HTMLButtonElement) runButton.disabled = phase > 0 && phase < 3;
+    refreshProductUsageCounter(product);
   }
 
   function scheduleProductRun() {
@@ -1251,7 +1297,7 @@
     } else if (target?.closest("[data-start-attack]")) {
       startAttackRun();
     } else if (target?.closest("[data-rerun]")) {
-      scheduleProductRun();
+      if (consumeProductUsage(current().product)) scheduleProductRun();
     }
   });
 
@@ -1311,9 +1357,11 @@
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || !form.matches("[data-product-form]")) return;
     event.preventDefault();
+    const product = current().product;
+    if (!consumeProductUsage(product)) return;
     const input = form.querySelector("[data-product-input]");
     if (input instanceof HTMLInputElement) inputValue = input.value;
-    if (structuredConfig(current().product)) inputValue = formatStructuredConditions(current().product);
+    if (structuredConfig(product)) inputValue = formatStructuredConditions(product);
     scheduleProductRun();
   });
 
