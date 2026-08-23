@@ -579,11 +579,11 @@ th { font-weight: 700; }
 .inference-stamp { position: absolute; right: 28px; bottom: 22px; padding: 7px 10px; color: #9c2e22; border: 2px solid #9c2e22; background: #fff; font-size: 9px; font-weight: 700; transform: rotate(-2deg); }
 
 .credit-product-view { position: relative; display: grid; gap: 10px; padding: 14px 16px 16px; }
-.credit-enterprise-card > header, .credit-learning-card > header, .credit-inference-table > header, .credit-knowledge-boundary > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.credit-enterprise-card > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .credit-formula-strip { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 11px 16px; color: #fff; border-bottom: 1px solid var(--ink); background: #171717; }
 .credit-formula-strip code { color: #fff; font: 700 11px/1.5 "SFMono-Regular", Consolas, monospace; white-space: normal; }
 .credit-formula-strip strong { flex: 0 0 auto; color: #ddd; font-size: 10px; }
-.credit-enterprise-card header span, .credit-feature-grid span, .credit-output-card span, .credit-inference-table header span, .credit-inference-table header small { color: var(--muted); font-size: 9px; }
+.credit-enterprise-card header span, .credit-feature-grid span, .credit-output-card span { color: var(--muted); font-size: 9px; }
 .credit-enterprise-card header strong { display: block; font-size: 14px; }
 .credit-enterprise-card { border: 1px solid var(--ink); background: var(--paper); }
 .credit-enterprise-card > header { padding: 10px 12px; border-bottom: 1px solid var(--ink); }
@@ -600,22 +600,8 @@ th { font-weight: 700; }
 .credit-product-control .condition-builder { gap: 0; }
 
 .credit-inference-view { display: grid; gap: 12px; padding: 14px; }
-.credit-knowledge-boundary { border: 1px solid var(--ink); background: var(--paper); }
-.credit-knowledge-boundary > header { padding: 9px 11px; color: #fff; background: var(--ink); }
-.credit-knowledge-boundary > header span, .credit-knowledge-boundary > header strong { font-size: 9px; }
-.credit-knowledge-boundary > div { display: grid; grid-template-columns: repeat(3, 1fr); }
-.credit-knowledge-boundary article { padding: 11px; }
-.credit-knowledge-boundary article + article { border-left: 1px solid var(--ink); }
-.credit-knowledge-boundary article.is-blocked { color: #9c2e22; background: #fae9e6; }
-.credit-knowledge-boundary b { font-size: 11px; }
-.credit-knowledge-boundary p { margin: 5px 0 0; font-size: 9px; line-height: 1.55; }
-.credit-learning-card { padding: 12px; border: 1px dashed var(--ink); background: var(--soft); opacity: .55; }
-.credit-learning-card.is-ready { border-style: solid; opacity: 1; }
-.credit-learning-card header span, .credit-learning-card header strong { font-size: 9px; }
-.credit-learning-card p { margin: 9px 0 0; font: 10px/1.65 "SFMono-Regular", Consolas, monospace; }
+.credit-knowledge-line { margin: 0; padding: 0 2px; font-size: 11px; line-height: 1.65; }
 .credit-inference-table { border: 1px solid var(--ink); background: var(--paper); }
-.credit-inference-table > header { padding: 10px 11px; border-bottom: 1px solid var(--ink); }
-.credit-inference-table header strong { display: block; margin-top: 2px; font-size: 14px; }
 .credit-inference-row { display: grid; grid-template-columns: 1.25fr .75fr .8fr .8fr; align-items: center; min-width: 0; border-bottom: 1px solid var(--line-soft); }
 .credit-inference-row:last-child { border-bottom: 0; }
 .credit-inference-row > * { min-width: 0; padding: 8px 10px; font-size: 10px; }
@@ -764,14 +750,12 @@ th { font-weight: 700; }
   .score-dial { grid-column: auto; }
   .credit-formula-strip { align-items: flex-start; flex-direction: column; gap: 5px; }
   .credit-formula-strip strong { flex: 0 1 auto; }
-  .credit-enterprise-card > header, .credit-inference-table > header { align-items: flex-start; flex-direction: column; }
+  .credit-enterprise-card > header { align-items: flex-start; flex-direction: column; }
   .credit-feature-grid { grid-template-columns: 1fr 1fr; }
   .credit-feature-grid article { border-bottom: 1px solid var(--line-soft); }
   .credit-feature-grid article:nth-child(2n) { border-right: 0; }
   .credit-feature-grid article:nth-last-child(-n + 2) { border-bottom: 0; }
   .credit-output-card { grid-template-columns: 1fr; }
-  .credit-knowledge-boundary > div { grid-template-columns: 1fr; }
-  .credit-knowledge-boundary article + article { border-top: 1px solid var(--ink); border-left: 0; }
   .credit-inference-row { grid-template-columns: 1fr 1fr; }
   .credit-inference-row > * + * { border-left: 0; }
   .credit-inference-row > *:nth-child(even) { border-left: 1px solid var(--line-soft); }

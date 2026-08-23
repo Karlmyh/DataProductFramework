@@ -1000,8 +1000,35 @@
     });
   }
 
-  function gradeFromLearnedScore(score, thresholds) {
-    return score < thresholds[0] ? "A" : score < thresholds[1] ? "B" : score < thresholds[2] ? "C" : "D";
+  function inverseCreditGradeRange(weights, thresholds, target, grade) {
+    const gradeIndex = { A: 0, B: 1, C: 2, D: 3 }[grade] ?? 0;
+    const sensitiveIndex = creditFeatureKeys.indexOf(creditSensitiveFeatureKey);
+    const sensitiveWeight = weights[sensitiveIndex];
+    const sensitiveScale = creditFeatureScales[creditSensitiveFeatureKey];
+    const publicContribution = creditFeatureKeys.reduce((sum, key, index) => key === creditSensitiveFeatureKey
+      ? sum
+      : sum + weights[index] * Number(target[key]) / creditFeatureScales[key], 0);
+    const scoreMinimum = gradeIndex === 0 ? Number.NEGATIVE_INFINITY : thresholds[gradeIndex - 1];
+    const scoreMaximum = gradeIndex === 3 ? Number.POSITIVE_INFINITY : thresholds[gradeIndex];
+    if (Math.abs(sensitiveWeight) < 1e-8) {
+      return { estimate: sensitiveScale / 2, minimum: 0, maximum: sensitiveScale, publicContribution, scoreMinimum, scoreMaximum };
+    }
+    const inverseScore = (score) => (score - publicContribution) * sensitiveScale / sensitiveWeight;
+    const rawMinimum = sensitiveWeight > 0 ? inverseScore(scoreMinimum) : inverseScore(scoreMaximum);
+    const rawMaximum = sensitiveWeight > 0 ? inverseScore(scoreMaximum) : inverseScore(scoreMinimum);
+    const minimum = Math.max(0, Number.isFinite(rawMinimum) ? rawMinimum : 0);
+    const maximum = Math.min(sensitiveScale, Number.isFinite(rawMaximum) ? rawMaximum : sensitiveScale);
+    if (minimum <= maximum) {
+      return { estimate: (minimum + maximum) / 2, minimum, maximum, publicContribution, scoreMinimum, scoreMaximum };
+    }
+    const candidates = Array.from({ length: 121 }, (_, index) => index * 0.25);
+    const targetScore = gradeIndex === 0
+      ? thresholds[0]
+      : gradeIndex === 3
+        ? thresholds[2]
+        : (thresholds[gradeIndex - 1] + thresholds[gradeIndex]) / 2;
+    const estimate = candidates.sort((left, right) => Math.abs(predictCreditDirection(weights, target, left) - targetScore) - Math.abs(predictCreditDirection(weights, target, right) - targetScore))[0];
+    return { estimate, minimum: estimate, maximum: estimate, publicContribution, scoreMinimum, scoreMaximum };
   }
 
   function simulateCreditInferenceAttack(productId, queryBudget) {
@@ -1036,27 +1063,7 @@
       const weights = fitCreditPairwiseDirection(references, (record) => gradeOrder[record.grade]);
       const thresholds = learnedGradeThresholds(weights, references);
       learnedModel = { type: "ordinal-pairwise", weights, thresholds };
-      inferredRows = targets.map((target) => {
-        const compatible = [];
-        for (let candidate = 0; candidate <= 30; candidate += 0.25) {
-          const score = predictCreditDirection(weights, target, candidate);
-          if (gradeFromLearnedScore(score, thresholds) === target.observedOutput) compatible.push(candidate);
-        }
-        if (!compatible.length) {
-          const gradeIndex = gradeOrder[target.observedOutput];
-          const center = gradeIndex === 0
-            ? thresholds[0] - 0.2
-            : gradeIndex === 3
-              ? thresholds[2] + 0.2
-              : (thresholds[gradeIndex - 1] + thresholds[gradeIndex]) / 2;
-          const candidates = Array.from({ length: 121 }, (_, index) => index * 0.25);
-          const estimate = candidates.sort((left, right) => Math.abs(predictCreditDirection(weights, target, left) - center) - Math.abs(predictCreditDirection(weights, target, right) - center))[0];
-          return { target, estimate, minimum: estimate, maximum: estimate };
-        }
-        const minimum = compatible[0];
-        const maximum = compatible.at(-1);
-        return { target, estimate: (minimum + maximum) / 2, minimum, maximum };
-      });
+      inferredRows = targets.map((target) => ({ target, ...inverseCreditGradeRange(weights, thresholds, target, target.observedOutput) }));
     } else {
       const weights = fitCreditPairwiseDirection(references, (record) => 101 - record.riskRank);
       const referenceScores = references.map((record) => predictCreditDirection(weights, record)).sort((left, right) => left - right);
@@ -1070,7 +1077,9 @@
         });
         candidates.sort((left, right) => left.distance - right.distance || left.sensitiveValue - right.sensitiveValue);
         const estimate = candidates[0].sensitiveValue;
-        return { target, estimate, minimum: estimate, maximum: estimate };
+        const distanceLimit = Math.max(3, candidates[0].distance + 1.5);
+        const compatible = candidates.filter((candidate) => candidate.distance <= distanceLimit).map((candidate) => candidate.sensitiveValue).sort((left, right) => left - right);
+        return { target, estimate, minimum: compatible[0] ?? estimate, maximum: compatible.at(-1) ?? estimate };
       });
     }
     const tolerance = productId === "finance-index" ? 1 : productId === "content-rank" ? 4 : null;
@@ -1081,7 +1090,7 @@
         ? actual >= row.minimum - 1e-9 && actual <= row.maximum + 1e-9
         : error <= tolerance;
       const candidate = config.targets.find((item) => item.id === row.target.id) ?? { id: row.target.id, summary: row.target.name };
-      const recoveredSummary = productId === "city-grade"
+      const recoveredSummary = productId === "city-grade" || productId === "content-rank"
         ? `${row.target.name} · 推断区间 ${row.minimum.toFixed(1)}%—${row.maximum.toFixed(1)}% · 真实 ${actual.toFixed(1)}%`
         : `${row.target.name} · 推断 ${row.estimate.toFixed(1)}% · 真实 ${actual.toFixed(1)}%`;
       return {
@@ -1093,6 +1102,7 @@
         estimate: row.estimate,
         minimum: row.minimum,
         maximum: row.maximum,
+        publicContribution: row.publicContribution,
         actual,
         error,
         recoveredSummary,
@@ -1846,29 +1856,17 @@
     </div>`;
   }
 
-  function creditLearnedRuleSummary(product, run) {
-    if (!run) return "等待攻击代码学习";
-    const learned = run.learnedModel;
-    if (product.id === "finance-index") {
-      return enterpriseCreditStore.schema.map((field) => `${field.label} β≈${learned.rawCoefficients[field.key].toFixed(3)}`).join("；");
-    }
-    if (product.id === "city-grade") {
-      return `有序方向已学习；代理边界 ${learned.thresholds.map((value) => value.toFixed(3)).join(" / ")}`;
-    }
-    return `成对排序方向已学习；六维方向权重 ${learned.weights.map((value) => value.toFixed(3)).join(" / ")}`;
-  }
-
   function creditInferenceAttackVisual(product, step) {
     const currentStep = Math.max(0, Math.min(creditInferenceSteps.length, step));
     const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
     const visibleResults = run ? run.candidateResults.slice(0, currentStep >= 4 ? 12 : currentStep >= 3 ? 8 : 0) : [];
     const completed = currentStep === creditInferenceSteps.length;
+    const publicOutput = product.id === "finance-index" ? "风险指数" : product.id === "city-grade" ? "风险等级" : "风险名次";
     return `<div class="credit-inference-view">
-      <section class="credit-knowledge-boundary"><header><span>攻击者知识边界</span><strong>真实公式读取 ${run?.formulaAccessCount ?? 0} 次</strong></header><div><article><b>60家参考企业</b><p>六个信用维度全部已知，并可读取对应产品输出。</p></article><article><b>40家目标企业</b><p>只知道五个非敏感维度和产品输出，近90天逾期率被遮蔽。</p></article><article class="is-blocked"><b>页面真实公式</b><p>只供演示观察者核对，不传入攻击训练函数。</p></article></div></section>
-      <section class="credit-learning-card ${currentStep >= 2 ? "is-ready" : ""}"><header><span>${product.id === "finance-index" ? "线性回归代理规则" : product.id === "city-grade" ? "有序等级代理规则" : "成对排序代理规则"}</span><strong>${run ? `${run.referenceCount} 条训练样本` : "等待训练"}</strong></header><p>${escapeHtml(creditLearnedRuleSummary(product, run))}</p></section>
-      <section class="credit-inference-table"><header><div><span>目标企业敏感属性反演</span><strong>${run ? `${run.targetCount} 家` : "尚未开始"}</strong></div><small>${product.id === "city-grade" ? "等级只约束区间，无法稳定恢复精确值" : "固定五个公开维度，搜索与产品输出最一致的逾期率"}</small></header>
+      <p class="credit-knowledge-line">攻击者利用60家参考企业的六维特征和公开${publicOutput}学习代理公式，再将40家目标企业的五个公开特征代入，并结合各自的公开${publicOutput}反推近90天逾期率；攻击代码不读取页面公式。</p>
+      <section class="credit-inference-table">
         <div class="credit-inference-row credit-inference-head"><span>企业</span><span>产品输出</span><span>攻击推断</span><span>模拟真值</span></div>
-        ${visibleResults.length ? visibleResults.map((result) => `<div class="credit-inference-row ${completed ? result.predictedMember ? "is-correct" : "is-error" : ""}"><span><b>${escapeHtml(result.target.name)}</b><small>${escapeHtml(result.target.id)}</small></span><span>${escapeHtml(product.id === "finance-index" ? `${Number(result.target.observedOutput).toFixed(1)}分` : product.id === "city-grade" ? `${result.target.observedOutput}级` : `第${result.target.observedOutput}名`)}</span><strong>${product.id === "city-grade" ? `${result.minimum.toFixed(1)}%—${result.maximum.toFixed(1)}%` : `${result.estimate.toFixed(1)}%`}</strong><em>${completed ? `${result.actual.toFixed(1)}%` : "评估阶段揭示"}</em></div>`).join("") : '<div class="membership-empty">学习代理规则后显示目标企业反演结果</div>'}
+        ${visibleResults.length ? visibleResults.map((result) => `<div class="credit-inference-row ${completed ? result.predictedMember ? "is-correct" : "is-error" : ""}"><span><b>${escapeHtml(result.target.name)}</b><small>${escapeHtml(result.target.id)}</small></span><span>${escapeHtml(product.id === "finance-index" ? `${Number(result.target.observedOutput).toFixed(1)}分` : product.id === "city-grade" ? `${result.target.observedOutput}级` : `第${result.target.observedOutput}名`)}</span><strong>${product.id === "finance-index" ? `${result.estimate.toFixed(1)}%` : `${result.minimum.toFixed(1)}%—${result.maximum.toFixed(1)}%`}</strong><em>${completed ? `${result.actual.toFixed(1)}%` : "—"}</em></div>`).join("") : '<div class="membership-empty">等待执行</div>'}
       </section>
       ${completed && run ? `<div class="credit-inference-summary"><article><span>产品输出读取</span><strong>${run.queryCount}</strong></article><article><span>目标企业</span><strong>${run.targetCount}</strong></article><article><span>${product.id === "city-grade" ? "区间覆盖率" : "平均绝对误差"}</span><strong>${product.id === "city-grade" ? `${(run.recall * 100).toFixed(1)}%` : `${run.meanAbsoluteError.toFixed(2)} 个百分点`}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>` : ""}
     </div>`;
