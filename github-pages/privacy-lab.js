@@ -840,7 +840,9 @@
   function renderProductUsageCounter(product) {
     const remaining = productUsageCount(product);
     const limit = productUsageLimit(product);
-    return `<div class="product-usage-counter ${remaining === 0 ? "is-exhausted" : ""}" data-product-usage-counter><label><span>${productUsageLabel(product)}</span><select data-product-usage-limit aria-label="选择${productUsageLabel(product)}上限">${productUsageLimitOptionsFor(product).map((option) => `<option value="${option}" ${option === limit ? "selected" : ""}>${option}</option>`).join("")}</select></label><strong data-product-usage-value>${remaining}</strong><small>剩余</small></div>`;
+    const selector = `<label><span>${productUsageLabel(product)}</span><select data-product-usage-limit aria-label="选择${productUsageLabel(product)}上限">${productUsageLimitOptionsFor(product).map((option) => `<option value="${option}" ${option === limit ? "selected" : ""}>${option}</option>`).join("")}</select></label>`;
+    if (product.id === "finance-gradient") return `<div class="product-usage-counter gradient-usage-selector" data-product-usage-counter>${selector}</div>`;
+    return `<div class="product-usage-counter ${remaining === 0 ? "is-exhausted" : ""}" data-product-usage-counter>${selector}<strong data-product-usage-value>${remaining}</strong><small>剩余</small></div>`;
   }
 
   function refreshProductUsageCounter(product = current().product) {
@@ -854,7 +856,7 @@
     const attackButton = root.querySelector("[data-start-attack]");
     if (runButton instanceof HTMLButtonElement && current().product.id === product.id) runButton.disabled = remaining === 0 || (phase > 0 && phase < 3);
     if (rerunButton instanceof HTMLButtonElement && current().product.id === product.id) rerunButton.disabled = remaining === 0;
-    if (attackButton instanceof HTMLButtonElement && current().product.id === product.id) attackButton.disabled = remaining === 0 || phase < 3;
+    if (attackButton instanceof HTMLButtonElement && current().product.id === product.id) attackButton.disabled = remaining === 0 || (product.id !== "finance-gradient" && phase < 3);
   }
 
   function consumeProductUsage(product, amount = 1, refresh = true) {
@@ -2035,7 +2037,50 @@
     </div>`;
   }
 
+  function gradientFaceCrop(config, x, y, label) {
+    const cropWidth = config.width / config.size * 100;
+    const cropLeft = -x / config.size * 100;
+    const cropTop = -y / config.size * 100;
+    return `<span class="gradient-face-crop"><img src="${escapeHtml(config.src)}" alt="${escapeHtml(label)}" style="--crop-width:${cropWidth.toFixed(4)}%;--crop-left:${cropLeft.toFixed(4)}%;--crop-top:${cropTop.toFixed(4)}%" /></span>`;
+  }
+
+  function gradientFaceInversionVisual(product) {
+    const limit = productUsageLimit(product);
+    const configs = {
+      100: {
+        src: "demo-assets/model-attack/idlg-lfw-batch16.png",
+        width: 2160,
+        size: 178,
+        xs: [49, 557, 1064, 1570],
+        originalY: 95,
+        reconstructedY: 314,
+      },
+      500: {
+        src: "demo-assets/model-attack/idlg-lfw-batch8.png",
+        width: 2160,
+        size: 178,
+        xs: [49, 557, 1064, 1570],
+        originalY: 95,
+        reconstructedY: 314,
+      },
+      1000: {
+        src: "demo-assets/model-attack/idlg-lfw-batch4.png",
+        width: 1080,
+        size: 182,
+        xs: [52, 316, 581, 845],
+        originalY: 102,
+        reconstructedY: 335,
+      },
+    };
+    const config = configs[limit] ?? configs[100];
+    return `<div class="gradient-face-comparison">
+      <section><h3>真实人脸</h3><div class="gradient-face-grid">${config.xs.map((x, index) => gradientFaceCrop(config, x, config.originalY, `真实人脸 ${index + 1}`)).join("")}</div></section>
+      <section><h3>梯度反演结果</h3><div class="gradient-face-grid">${config.xs.map((x, index) => gradientFaceCrop(config, x, config.reconstructedY, `梯度反演人脸 ${index + 1}`)).join("")}</div></section>
+    </div>`;
+  }
+
   function productRecoveryAttackVisual(product, step) {
+    if (product.id === "finance-gradient") return gradientFaceInversionVisual(product);
     if (product.id === "city-existence") return membershipRecoveryAttackVisual(step);
     if (product.id === "content-voice") return faceHillClimbAttackVisual(product, step);
     if (creditProductIds.has(product.id)) return creditInferenceAttackVisual(product, step);
@@ -2276,7 +2321,7 @@
           <img src="${escapeHtml(product.previewImage.src)}" alt="${escapeHtml(product.previewImage.alt)}" />
           ${currentPhase >= 2 ? '<i class="scan-line"></i>' : ""}
         </div>
-        <div class="vision-readout"><span>${escapeHtml(product.inputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待模型预测"}</strong><div class="confidence-track"><i style="width:${currentPhase >= 3 ? "88%" : "0"}"></i></div><p>${escapeHtml(product.outputDetail)}</p></div>
+        <div class="vision-readout"><span>${escapeHtml(product.outputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待模型预测"}</strong><div class="confidence-track"><i style="width:${currentPhase >= 3 ? "88%" : "0"}"></i></div>${product.outputDetail ? `<p>${escapeHtml(product.outputDetail)}</p>` : ""}</div>
       </div>`;
     }
     return `<div class="vision-product-view">
@@ -2640,6 +2685,7 @@
   }
 
   function attackProgressItems(product) {
+    if (product.id === "finance-gradient") return [{ name: "梯度反演" }];
     if (product.id === "content-voice") return faceHillClimbSteps;
     if (creditProductIds.has(product.id)) return creditInferenceSteps;
     return seriesRecoveryProductIds.has(product.id) ? membershipRecoverySteps : product.attacks;
@@ -2671,18 +2717,19 @@
     const displayProduct = withCurrentInput(product);
     const minimalFooter = Boolean(structuredConfig(product) || ragProductIds.has(product.id));
     const progressItems = attackProgressItems(product);
+    const gradientOnly = product.id === "finance-gradient";
     root.innerHTML = `
       <div class="series-switcher" aria-label="选择产品演示系列">${series.map((item, index) => `<button type="button" data-series="${index}" aria-pressed="${seriesIndex === index}" class="${seriesIndex === index ? "active" : ""}"><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="product-switcher" aria-label="${escapeHtml(activeSeries.name)}产品切换">${products.map((item, index) => `<button type="button" data-product="${index}" aria-pressed="${productIndex === index}" class="${productIndex === index ? "active" : ""}"><span>${escapeHtml(item.category)}</span><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
       <div class="guided-tour">
         <section class="demo-act product-demo-act">
           <header class="demo-act-heading"><strong>产品演示</strong></header>
-          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header>${creditProductIds.has(product.id) ? creditFormulaStrip(product) : ""}${renderProductUsageCounter(product)}<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${minimalFooter ? "minimal-product-footer" : ""}">${minimalFooter ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
+          <article class="product-window ${gradientOnly ? "gradient-call-product" : ""}"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div>${gradientOnly ? "" : `<div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div>`}</header>${creditProductIds.has(product.id) ? creditFormulaStrip(product) : ""}${renderProductUsageCounter(product)}${gradientOnly ? '<footer class="gradient-call-footer"><button type="button" class="start-attack" data-start-attack>查看梯度反演结果 →</button></footer>' : `<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${minimalFooter ? "minimal-product-footer" : ""}">${minimalFooter ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer>`}</article>
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
           <div class="attack-stage ${seriesRecoveryProductIds.has(product.id) ? "membership-recovery-stage" : ""}">
-            <article class="attack-target"><header>${creditProductIds.has(product.id) ? "" : "<span>攻击对象</span>"}<strong>${escapeHtml(product.name)}</strong></header>${seriesRecoveryProductIds.has(product.id) ? "" : `<ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol>`}<div class="attack-canvas" data-attack-canvas>${seriesRecoveryProductIds.has(product.id) ? productRecoveryAttackVisual(product, 0) : renderVisual(activeSeries, product, 3)}</div></article>
+            <article class="attack-target ${gradientOnly ? "gradient-face-attack" : ""}">${gradientOnly ? "" : `<header>${creditProductIds.has(product.id) ? "" : "<span>攻击对象</span>"}<strong>${escapeHtml(product.name)}</strong></header>`}${seriesRecoveryProductIds.has(product.id) ? "" : `<ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol>`}<div class="attack-canvas" data-attack-canvas>${seriesRecoveryProductIds.has(product.id) ? productRecoveryAttackVisual(product, 0) : renderVisual(activeSeries, product, 3)}</div></article>
             ${seriesRecoveryProductIds.has(product.id) ? "" : `<aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>已连接</i></div><h3 data-audit-title>准备执行适用攻击</h3><div class="audit-counter"><span>已完成攻击</span><strong data-risk-value>0 / ${progressItems.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>等待攻击序列开始</li></ul></aside>`}
           </div>
           <div class="tour-results" data-results hidden></div>
@@ -2714,7 +2761,7 @@
     const runButton = root.querySelector("[data-run-product]");
     const statuses = ["请编辑输入并运行产品", "产品已收到用户请求", "产品正在完成内部处理", "产品正常输出已完成，可继续查看攻击"];
     if (status) status.textContent = statuses[phase];
-    if (startButton instanceof HTMLButtonElement) startButton.disabled = phase < 3;
+    if (startButton instanceof HTMLButtonElement) startButton.disabled = product.id !== "finance-gradient" && phase < 3;
     if (runButton instanceof HTMLButtonElement) runButton.disabled = phase > 0 && phase < 3;
     refreshProductUsageCounter(product);
   }
@@ -2782,7 +2829,7 @@
     }
     if (value) value.textContent = `${attackStep} / ${progressItems.length}`;
     if (bar) bar.style.width = `${attackStep / progressItems.length * 100}%`;
-    if (attackStep === progressItems.length) renderResults(product);
+    if (attackStep === progressItems.length && product.id !== "finance-gradient") renderResults(product);
   }
 
   function startAttackRun() {
@@ -2813,6 +2860,10 @@
     const result = aggregate(product);
     const results = root.querySelector("[data-results]");
     if (!results) return;
+    if (product.id === "finance-gradient") {
+      results.hidden = true;
+      return;
+    }
     results.hidden = false;
     if (product.id === "city-existence") {
       const run = membershipRecoveryRun ??= runMembershipRecoveryAttack();

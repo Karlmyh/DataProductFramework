@@ -103,10 +103,10 @@ test("source keeps the product-switch interaction and accessible state", async (
   assert.match(lab, /familyMaximums/);
   assert.match(data, /applicable: boolean/);
   assert.match(data, /attackFamily/);
-  assert.match(data, /人脸身份图片预测模型/);
+  assert.match(data, /人脸图片二分类模型/);
   assert.match(data, /联邦图像训练更新交付/);
   assert.match(data, /Top-5 68%/);
-  assert.match(data, /PSNR 20\.56 dB/);
+  assert.match(data, /PSNR 为 20\.56 dB/);
   assert.doesNotMatch(lab, /average \* 0\.4 \+ maximum \* 0\.6/);
   assert.equal((data.match(/id: "(finance|city|content)-/g) ?? []).length, 17);
 });
