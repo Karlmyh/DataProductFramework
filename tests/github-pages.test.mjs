@@ -193,6 +193,7 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   assert.match(labScript, /ragProductUsageLimitOptions = \[1, 10, 100\]/);
   assert.match(labScript, /productUsageLimitOptionsFor\(product\)\.map/);
   assert.match(labScript, /productUsageLimitOptionsFor\(product\)\.includes\(limit\)/);
+  assert.doesNotMatch(labScript, /rag-membership-note|受控合成候选集实测/);
   assert.doesNotMatch(labScript, /4 \/ 4|正文命中率|命中关键词|ragTextInferenceFor/);
   for (const hiddenCopy of ["Qwen2.5-7B + RAG", "默认链路", "政策知识库已连接", "基于检索结果", "生成耗时", "固定问题预生成结果", "RAG 检索记录"]) {
     assert.equal(labScript.includes(hiddenCopy), false);
