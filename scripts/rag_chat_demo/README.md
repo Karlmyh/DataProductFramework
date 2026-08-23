@@ -9,7 +9,7 @@ This directory contains the reproducible, offline build pipeline for the fixed-q
 
 The public page receives only the fixed questions, generated answer text, and the three demo images. Retrieval records, document identifiers, model metadata, timings, the SQLite database, and raw embeddings remain private build artifacts. The browser-side attack therefore works only from answer text and never reads retrieval traces.
 
-The two public RAG chatbot products expose the same low-budget call-limit choices: `1`, `10`, and `100`. Other product demos keep their existing limits.
+The two public RAG chatbot products expose the same low-budget call-limit choices: `2`, `5`, and `10`. Other product demos keep their existing limits.
 
 ## RAG corpus membership benchmark
 

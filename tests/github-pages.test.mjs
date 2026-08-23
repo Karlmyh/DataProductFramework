@@ -190,7 +190,7 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   assert.match(labScript, /rag-membership-summary/);
   assert.match(labScript, /ROC-AUC/);
   assert.match(labScript, /候选对象/);
-  assert.match(labScript, /ragProductUsageLimitOptions = \[1, 10, 100\]/);
+  assert.match(labScript, /ragProductUsageLimitOptions = \[2, 5, 10\]/);
   assert.match(labScript, /productUsageLimitOptionsFor\(product\)\.map/);
   assert.match(labScript, /productUsageLimitOptionsFor\(product\)\.includes\(limit\)/);
   assert.doesNotMatch(labScript, /rag-membership-note|受控合成候选集实测/);
