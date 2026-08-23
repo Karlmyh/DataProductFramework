@@ -601,7 +601,7 @@
   let timers = [];
   const productUsageLimitOptions = [100, 500, 1000];
   const ragProductUsageLimitOptions = [2, 5, 10];
-  const productUsageLimitOptionsFor = (product) => ragProductIds.has(product.id) ? ragProductUsageLimitOptions : productUsageLimitOptions;
+  const productUsageLimitOptionsFor = (product) => product && ragProductIds.has(product.id) ? ragProductUsageLimitOptions : productUsageLimitOptions;
   const productUsageInitialLimitFor = (product) => productUsageLimitOptionsFor(product)[0];
   const productUsageLimits = new Map(Object.values(productsById).map((product) => [product.id, productUsageInitialLimitFor(product)]));
   const productUsageRemaining = new Map(Object.values(productsById).map((product) => [product.id, productUsageInitialLimitFor(product)]));
@@ -704,10 +704,35 @@
     summary: `${profile.credential} · ${policy} · ${period} · ${region}`,
   })))));
   const qualificationAttackTargets = qualificationProbeCandidates.filter((candidate) => candidate.qualifies).map((candidate) => ({ id: candidate.id, summary: `${candidate.summary} · 符合` }));
-  const syntheticTargetSet = (prefix, summaries) => Array.from({ length: 100 }, (_, index) => ({
+  const syntheticTargetSet = (prefix, summaries, count = 100) => Array.from({ length: count }, (_, index) => ({
     id: `${prefix}-${String(index + 1).padStart(3, "0")}`,
     summary: `${summaries[index % summaries.length]} · 样本 ${String(index + 1).padStart(3, "0")}`,
   }));
+  const textMembershipMemberSerials = new Set([1, 4, 9, 10, 11, 13, 15, 18, 19, 20, 21, 22, 27, 28, 29, 30, 32, 33, 34, 36]);
+  const imageMembershipMemberSerials = new Set([3, 4, 5, 7, 11, 12, 13, 15, 16, 17, 18, 20]);
+  const textMembershipCandidate = (serial) => {
+    const districts = ["云港区", "星湖区", "松海区", "青川区", "朝岭区", "江湾区", "鹤洲区", "东浦区"];
+    const title = `星穹惠企 ${String(serial).padStart(2, "0")} 号方案`;
+    return {
+      id: `TEXT-CAND-${String(serial).padStart(2, "0")}`,
+      summary: `${title}的办理编码为 SQ-${3100 + serial * 37}，月度支持上限为 ${1280 + serial * 45}元，标准办理时限为${6 + serial % 11}个工作日，受理地点是${districts[(serial - 1) % districts.length]}综合服务窗口。`,
+      actual: textMembershipMemberSerials.has(serial),
+    };
+  };
+  const imageMembershipCandidate = (serial) => {
+    const controls = ["双人审批", "分级授权", "限频检索", "加密归档", "模板隔离", "删除审计"];
+    const title = `合成安全卡片 ${String(serial).padStart(2, "0")}`;
+    return {
+      id: `IMAGE-CAND-${String(serial).padStart(2, "0")}`,
+      summary: `${title}对应的风险代码是 MM-${720 + serial * 19}，要求留存${7 + serial * 3}天，核心控制是${controls[(serial - 1) % controls.length]}，并执行审计级别 L${1 + (serial - 1) % 5}。`,
+      actual: imageMembershipMemberSerials.has(serial),
+    };
+  };
+  const ragMembershipCandidatePools = new Map([
+    ["city-rag", Array.from({ length: 40 }, (_, index) => textMembershipCandidate(index + 1))],
+    ["content-multimodal", Array.from({ length: 24 }, (_, index) => imageMembershipCandidate(index + 1))],
+  ]);
+  const ragMembershipTargets = (productId) => ragMembershipCandidatePools.get(productId).filter((candidate) => candidate.actual);
   const creditAttackTargets = creditTargetRecords.map((record) => ({
     id: record.id,
     summary: `${record.name} · 近90天逾期率 ${record.overdueRate.toFixed(1)}%`,
@@ -724,11 +749,11 @@
     ["finance-index", { queriesPerTarget: 1, groundTruthLabel: "40家目标企业真实逾期率", recoveredLabel: "由连续指数反演的逾期率", truthMetricLabel: "目标企业", recoveredMetricLabel: "误差≤1个百分点", missedMetricLabel: "误差>1个百分点", falseMetricLabel: "错误推断", targets: creditAttackTargets }],
     ["city-grade", { queriesPerTarget: 1, groundTruthLabel: "40家目标企业真实逾期率", recoveredLabel: "由A—D等级反演的兼容区间", truthMetricLabel: "目标企业", recoveredMetricLabel: "真实值落入区间", missedMetricLabel: "真实值落在区间外", falseMetricLabel: "错误区间", targets: creditAttackTargets }],
     ["content-rank", { queriesPerTarget: 1, groundTruthLabel: "40家目标企业真实逾期率", recoveredLabel: "由风险名次反演的逾期率", truthMetricLabel: "目标企业", recoveredMetricLabel: "误差≤4个百分点", missedMetricLabel: "误差>4个百分点", falseMetricLabel: "错误推断", targets: creditAttackTargets }],
-    ["city-rag", { queriesPerTarget: 4, groundTruthLabel: "Chatbot 后台政策语料", recoveredLabel: "从回答恢复的政策语料", truthMetricLabel: "后台真实片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: syntheticTargetSet("POL", ["梧桐计划 · 申报资格条款", "养老补贴 · 收入门槛条款", "住房保障 · 家庭人数条款", "就业扶持 · 职业状态条款"]) }],
+    ["city-rag", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台政策语料", recoveredLabel: "从回答恢复的政策语料", truthMetricLabel: "后台真实片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: ragMembershipTargets("city-rag") }],
     ["content-vision", { queriesPerTarget: 5, groundTruthLabel: "视觉模型真实训练片段", recoveredLabel: "攻击恢复的训练片段特征", truthMetricLabel: "真实训练片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: syntheticTargetSet("VIS", ["户外运动 · 跑步场景", "道路交通 · 骑行场景", "室内活动 · 健身场景", "公共空间 · 人群场景"]) }],
     ["content-speech", { queriesPerTarget: 5, groundTruthLabel: "语音模型真实训练语音", recoveredLabel: "攻击恢复的语音与说话人特征", truthMetricLabel: "真实训练语音", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复语音", falseMetricLabel: "错误语音", targets: syntheticTargetSet("SPK", ["说话人 A · 公共服务咨询", "说话人 B · 交通信息播报", "说话人 C · 政策问答语音", "说话人 D · 日常对话语音"]) }],
     ["finance-model", { queriesPerTarget: 1, groundTruthLabel: "40家目标企业真实逾期率", recoveredLabel: "由违约概率反演的逾期率", truthMetricLabel: "目标企业", recoveredMetricLabel: "误差≤1个百分点", missedMetricLabel: "误差>1个百分点", falseMetricLabel: "错误推断", targets: creditAttackTargets }],
-    ["content-multimodal", { queriesPerTarget: 5, groundTruthLabel: "多模态模型真实上下文集", recoveredLabel: "攻击恢复的跨模态上下文", truthMetricLabel: "真实上下文", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复上下文", falseMetricLabel: "错误关联", targets: syntheticTargetSet("MM", ["海报画面 · 活动旁白 · 审核问题", "商品图片 · 宣传音频 · 合规问题", "街景视频 · 环境声音 · 场景问题", "人物照片 · 访谈语音 · 身份问题"]) }],
+    ["content-multimodal", { queriesPerTarget: 1, groundTruthLabel: "多模态模型真实上下文集", recoveredLabel: "攻击恢复的跨模态上下文", truthMetricLabel: "真实上下文", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复上下文", falseMetricLabel: "错误关联", targets: ragMembershipTargets("content-multimodal") }],
     ["model-distillation", { queriesPerTarget: 4, groundTruthLabel: "教师模型真实响应集", recoveredLabel: "从学生模型恢复的教师行为", truthMetricLabel: "教师真实行为", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复行为", falseMetricLabel: "错误行为", targets: syntheticTargetSet("DST", ["客户分类 · 教师标签 A", "客户分类 · 教师标签 B", "风险识别 · 教师置信度高", "风险识别 · 教师置信度低"]) }],
     ["finance-gradient", { queriesPerTarget: 6, groundTruthLabel: "梯度批次真实训练样本", recoveredLabel: "梯度反演恢复的训练样本", truthMetricLabel: "真实训练样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误样本", targets: syntheticTargetSet("FG", ["企业现金流序列 · 违约标签 1", "企业负债序列 · 违约标签 0", "企业授信序列 · 风险标签高", "企业还款序列 · 风险标签低"]) }],
     ["city-gradient", { queriesPerTarget: 6, groundTruthLabel: "客流梯度真实训练样本", recoveredLabel: "梯度反演恢复的客流样本", truthMetricLabel: "真实客流样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误样本", targets: syntheticTargetSet("CG", ["中心站 · 早高峰客流", "滨江站 · 晚高峰客流", "会展站 · 活动时段客流", "机场站 · 节假日客流"]) }],
@@ -1240,6 +1265,19 @@
     if (ragProductIds.has(productId)) {
       const availableQueries = Math.max(0, Math.floor(queryBudget));
       const benchmark = ragMembershipResultFor(productsById[productId], availableQueries);
+      const candidatePool = ragMembershipCandidatePools.get(productId) ?? [];
+      let recoveredMemberCount = 0;
+      const candidateResults = candidatePool.map((candidate) => {
+        const predictedMember = candidate.actual && recoveredMemberCount < benchmark.recoveredMemberCount;
+        if (predictedMember) recoveredMemberCount += 1;
+        return {
+          candidate,
+          actualMember: candidate.actual,
+          predictedMember,
+          determined: true,
+          recoveredSummary: predictedMember ? candidate.summary : "",
+        };
+      });
       return {
         productId,
         queryBudget: availableQueries,
@@ -1247,8 +1285,10 @@
         candidateCount: benchmark.candidateCount,
         memberCount: benchmark.memberCount,
         nonmemberCount: benchmark.nonmemberCount,
-        truePositives: benchmark.recoveredMemberCount,
-        falseNegatives: benchmark.memberCount - benchmark.recoveredMemberCount,
+        candidateResults,
+        recoveredRows: candidateResults.filter((result) => result.predictedMember).map((result) => result.candidate),
+        truePositives: recoveredMemberCount,
+        falseNegatives: benchmark.memberCount - recoveredMemberCount,
         falsePositives: 0,
         recall: benchmark.memberCount ? benchmark.recoveredMemberCount / benchmark.memberCount : 0,
         rocAuc: benchmark.rocAuc,

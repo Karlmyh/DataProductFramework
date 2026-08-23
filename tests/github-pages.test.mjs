@@ -88,8 +88,9 @@ test("focuses the main demo while preserving standalone verification and vision 
     readFile(new URL("security_attacks/030403.html", pagesRoot), "utf8"),
   ]);
   const seriesAdjustment = html.slice(html.indexOf("const databaseSeries"), html.indexOf("const graphAssistant"));
-  assert.match(seriesAdjustment, /\["graph", "vision"\]\.includes\(item\.id\)/);
-  assert.doesNotMatch(seriesAdjustment, /visionSeries|id: "verification"/);
+  assert.match(seriesAdjustment, /visionSeries\.productIds = \["content-vision"\]/);
+  assert.match(seriesAdjustment, /data\.series = data\.series\.filter\(\(item\) => item\.id !== "graph"\)/);
+  assert.doesNotMatch(seriesAdjustment, /id: "verification"/);
   assert.match(html, /\?demo=030402/);
   assert.match(html, /\?demo=030403/);
   assert.match(html, /\?demo=030702/);
@@ -148,7 +149,7 @@ test("uses one 100-company six-feature credit dataset for 030501 through 030503 
   vm.createContext(context);
   context.window.__PRIVACY_LAB_DATA__ = JSON.parse(payloadMatch[1]);
   vm.runInContext(dataScript, context);
-  const marker = "  recoveryAttackConfigs.forEach((_, productId) => productUsageLimitOptions.forEach((budget) => productRecoverySavedRuns.set(`${productId}:${budget}`, simulateProductRecoveryBudget(productId, budget))));";
+  const marker = "  recoveryAttackConfigs.forEach((_, productId) => productUsageLimitOptionsFor(productsById[productId]).forEach((budget) => productRecoverySavedRuns.set(`${productId}:${budget}`, simulateProductRecoveryBudget(productId, budget))));";
   const instrumented = labScript.replace(marker, `${marker}\n  globalThis.__creditRuns = Object.fromEntries(["finance-index", "city-grade", "content-rank", "finance-model"].map((id) => [id, simulateProductRecoveryBudget(id, 100)]));\n  return;`);
   assert.notEqual(instrumented, labScript);
   vm.runInContext(instrumented, context);
@@ -194,9 +195,14 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   assert.match(labScript, /实际攻击查询/);
   assert.match(labScript, /固定候选集/);
   assert.match(labScript, /已确认成员/);
+  assert.match(labScript, /ragMembershipCandidatePools/);
+  assert.match(labScript, /candidateResults/);
+  assert.match(labScript, /recoveredRows/);
+  assert.match(labScript, /recoveredSummary/);
   assert.match(labScript, /候选对象/);
   assert.match(labScript, /ragProductUsageLimitOptions = \[2, 5, 10\]/);
   assert.match(labScript, /productUsageLimitOptionsFor\(product\)\.map/);
+  assert.match(labScript, /product && ragProductIds\.has\(product\.id\)/);
   assert.match(labScript, /productUsageLimitOptionsFor\(product\)\.includes\(limit\)/);
   assert.doesNotMatch(labScript, /rag-membership-note|受控合成候选集实测/);
   assert.doesNotMatch(labScript, /4 \/ 4|正文命中率|命中关键词|ragTextInferenceFor/);
@@ -258,6 +264,26 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
     assert.equal(Object.hasOwn(response, "generationSeconds"), false);
     assert.doesNotMatch(response.answer, /依据\s*[:：]/);
     assert.doesNotMatch(response.answer, /(?:TXT|IMG)-[A-Z0-9-]+/);
+  }
+
+  const payloadMatch = html.match(/<script>window\.__PRIVACY_LAB_DATA__=(.*?);<\/script>/s);
+  assert.ok(payloadMatch);
+  context.window.__PRIVACY_LAB_DATA__ = JSON.parse(payloadMatch[1]);
+  context.document = { querySelector: () => ({}) };
+  const marker = "  recoveryAttackConfigs.forEach((_, productId) => productUsageLimitOptionsFor(productsById[productId]).forEach((budget) => productRecoverySavedRuns.set(`${productId}:${budget}`, simulateProductRecoveryBudget(productId, budget))));";
+  const instrumented = labScript.replace(marker, `${marker}\n  globalThis.__ragRuns = Object.fromEntries(["city-rag", "content-multimodal"].flatMap((id) => [1, 4, 9].map((budget) => [id + ":" + budget, simulateProductRecoveryBudget(id, budget)])));\n  return;`);
+  assert.notEqual(instrumented, labScript);
+  vm.runInContext(instrumented, context);
+  for (const [productId, expectedPool, expectedMembers] of [["city-rag", 40, 20], ["content-multimodal", 24, 12]]) {
+    for (const budget of [1, 4, 9]) {
+      const run = context.__ragRuns[`${productId}:${budget}`];
+      assert.equal(run.candidateResults.length, expectedPool);
+      assert.equal(run.memberCount, expectedMembers);
+      assert.equal(run.recoveredRows.length, budget);
+      assert.equal(run.truePositives, budget);
+      assert.equal(run.candidateResults.filter((row) => row.predictedMember).length, budget);
+      assert.ok(run.candidateResults.filter((row) => row.predictedMember).every((row) => row.actualMember && row.recoveredSummary.length > 20));
+    }
   }
 });
 
