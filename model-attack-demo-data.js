@@ -2,6 +2,12 @@
   const data = window.__PRIVACY_LAB_DATA__;
   if (!data) return;
 
+  data.series.forEach((series) => {
+    series.productIds = series.productIds.filter((productId) => productId !== "city-gradient");
+  });
+  delete data.productsById["city-gradient"];
+  delete data.candidatesByProduct["city-gradient"];
+
   const registerCandidates = (product, excluded) => {
     data.candidatesByProduct[product.id] = [
       ...product.attacks.map((attack) => ({
@@ -130,18 +136,18 @@
     attacks: [
       {
         id: "gradinv",
-        name: "单轮梯度图像重建",
-        brief: "优化虚拟图片，使其产生与共享梯度一致的更新信号。",
-        result: "ImageNet / ResNet-50 / B=1 下标签集合恢复 100%，特征余弦 0.901，PSNR 8.99 dB。",
-        metric: "特征余弦",
-        value: "0.901",
+        name: "GradViT 人脸梯度反演",
+        brief: "优化虚拟人脸，使其产生与共享梯度一致的更新信号。",
+        result: "从 Face-Transformer 梯度恢复 MS-Celeb-1M 的 112×112 人脸图像。",
+        metric: "原生分辨率",
+        value: "112×112",
         displayScore: 90,
         evidence: "已有实测",
         attackFamily: "梯度反演",
         attackObject: "数据重构",
-        source: "模型类攻击包 / GradInversion 实验对比",
-        protocol: "ImageNet；ResNet-50；batch=1；由单轮共享梯度重建输入与标签集合",
-        limitation: "图像主要达到类别级结构；PSNR 仅 8.99 dB。",
+        source: "GradViT 官方项目的 face_results.png",
+        protocol: "MS-Celeb-1M；Face-Transformer；112×112 人脸；从共享梯度重建输入",
+        limitation: "展示的分辨率和恢复质量仅对应 GradViT 官方人脸实验。",
       },
       {
         id: "idlg",
