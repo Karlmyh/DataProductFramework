@@ -600,7 +600,7 @@
   let faceImageMatchesResident = true;
   let timers = [];
   const productUsageLimitOptions = [100, 500, 1000];
-  const ragProductUsageLimitOptions = [1, 10, 100];
+  const ragProductUsageLimitOptions = [2, 5, 10];
   const productUsageLimitOptionsFor = (product) => ragProductIds.has(product.id) ? ragProductUsageLimitOptions : productUsageLimitOptions;
   const productUsageInitialLimitFor = (product) => productUsageLimitOptionsFor(product)[0];
   const productUsageLimits = new Map(Object.values(productsById).map((product) => [product.id, productUsageInitialLimitFor(product)]));
