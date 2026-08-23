@@ -11,13 +11,16 @@ The public page receives only the fixed questions, generated answer text, and th
 
 The two public RAG chatbot products expose the same low-budget call-limit choices: `2`, `5`, and `10`. Other product demos keep their existing limits.
 
-The public metric follows the selected model-call limit. A normal Chatbot answer consumes one call; the membership attack uses only the remaining calls. Budget metrics are recomputed from the first real Qwen answer for each deterministically interleaved member/nonmember candidate. ROC-AUC is reported only when the observed attack set contains both classes.
+The public metric follows the selected model-call limit. A normal Chatbot answer consumes one call; the membership attack uses only the remaining calls. The candidate pool never changes: 030701 always evaluates all 40 candidates (20 members), while 030705 always evaluates all 24 candidates (12 members). In this controlled upper-bound schedule, each attack query confirms one distinct member from its real Qwen answer; unconfirmed candidates receive score zero. ROC-AUC is always computed over the full fixed pool.
 
-| Model-call limit | Normal answer | Attack queries | Member / nonmember | ROC-AUC |
-| ---: | ---: | ---: | ---: | ---: |
-| 2 | 1 | 1 | 1 / 0 | not computable |
-| 5 | 1 | 4 | 2 / 2 | 1.000 |
-| 10 | 1 | 9 | 5 / 4 | 1.000 |
+| Product | Fixed candidates | Members | Model-call limit | Normal answer | Attack queries | Confirmed members | ROC-AUC |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 030701 | 40 | 20 | 2 | 1 | 1 | 1 | 0.5250 |
+| 030701 | 40 | 20 | 5 | 1 | 4 | 4 | 0.6000 |
+| 030701 | 40 | 20 | 10 | 1 | 9 | 9 | 0.7250 |
+| 030705 | 24 | 12 | 2 | 1 | 1 | 1 | 0.5417 |
+| 030705 | 24 | 12 | 5 | 1 | 4 | 4 | 0.6667 |
+| 030705 | 24 | 12 | 10 | 1 | 9 | 9 | 0.8750 |
 
 ## RAG corpus membership benchmark
 

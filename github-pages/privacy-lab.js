@@ -72,14 +72,14 @@
   const ragCorpusMembershipAttack = {
     id: "rag-corpus-membership",
     name: "RAG 语料成员推断",
-    brief: "对候选数据集中的每个对象重复查询 Chatbot，仅由回答正文计算成员分数。",
-    result: "候选成员与非成员的回答分数可分，以 ROC-AUC 衡量攻击效果。",
+    brief: "在固定候选集上重复查询 Chatbot，仅由回答正文逐步确认库内文档。",
+    result: "查询越多，固定候选集中被确认的成员越多，以完整候选集上的 ROC-AUC 衡量攻击效果。",
     metric: "ROC-AUC",
     evidence: "受控候选集实测",
     attackFamily: "成员推断",
     attackObject: "语料成员隐私",
     source: "QURM183 受控候选集实测",
-    protocol: "攻击查询数受模型调用上限约束；每候选对象1次查询；仅回答正文打分；同时含成员与非成员时才计算 ROC-AUC",
+    protocol: "固定候选集全量计分；每次攻击查询确认1个库内文档；未确认候选记0分；AUC始终在完整候选集上计算",
     limitation: "结果来自受控的合成候选集，不代表一般生产环境的攻击效果。",
   };
   Object.entries(ragProductDefinitions).forEach(([productId, definition]) => {
@@ -785,14 +785,12 @@
     const budgetResult = fullResult.budgetResults?.find((result) => result.queryCount === normalizedQueryCount);
     return budgetResult ? { ...fullResult, ...budgetResult } : {
       ...fullResult,
-      candidateCount: 0,
-      memberCount: 0,
-      nonmemberCount: 0,
       queryCount: normalizedQueryCount,
-      rocAuc: null,
-      accuracyAtHalf: null,
-      meanMemberScore: null,
-      meanNonmemberScore: null,
+      recoveredMemberCount: 0,
+      rocAuc: 0.5,
+      accuracyAtHalf: 0.5,
+      meanMemberScore: 0,
+      meanNonmemberScore: 0,
     };
   }
 
@@ -1239,6 +1237,23 @@
     const config = recoveryAttackConfigs.get(productId);
     if (!config) return null;
     if (creditProductIds.has(productId)) return simulateCreditInferenceAttack(productId, queryBudget);
+    if (ragProductIds.has(productId)) {
+      const availableQueries = Math.max(0, Math.floor(queryBudget));
+      const benchmark = ragMembershipResultFor(productsById[productId], availableQueries);
+      return {
+        productId,
+        queryBudget: availableQueries,
+        queryCount: benchmark.queryCount,
+        candidateCount: benchmark.candidateCount,
+        memberCount: benchmark.memberCount,
+        nonmemberCount: benchmark.nonmemberCount,
+        truePositives: benchmark.recoveredMemberCount,
+        falseNegatives: benchmark.memberCount - benchmark.recoveredMemberCount,
+        falsePositives: 0,
+        recall: benchmark.memberCount ? benchmark.recoveredMemberCount / benchmark.memberCount : 0,
+        rocAuc: benchmark.rocAuc,
+      };
+    }
     if (productId === "content-voice") {
       const faces = syntheticFaceLibrary.faces;
       const availableQueries = Math.max(0, Math.floor(queryBudget));
@@ -1628,6 +1643,14 @@
     if (!run) return null;
     productRecoverySavedRuns.set(key, run);
     consumeProductUsage(product, creditProductIds.has(product.id) ? Math.max(0, run.queryCount - 1) : run.queryCount, false);
+    if (ragProductIds.has(product.id) && product.attacks[0]) {
+      const benchmark = ragMembershipResultFor(product, run.queryCount);
+      Object.assign(product.attacks[0], {
+        result: `固定评估 ${benchmark.candidateCount} 个候选；${run.queryCount} 次攻击查询从回答正文确认 ${benchmark.recoveredMemberCount}/${benchmark.memberCount} 个库内文档，ROC-AUC 为 ${formatRagMetric(benchmark.rocAuc)}。`,
+        value: formatRagMetric(benchmark.rocAuc),
+        displayScore: Math.round(Number(benchmark.rocAuc) * 100),
+      });
+    }
     if (product.id === "finance-graph" && product.attacks[0]) {
       const config = recoveryAttackConfigs.get(product.id);
       Object.assign(product.attacks[0], {
@@ -2240,7 +2263,7 @@
         ${currentPhase >= 2 && currentPhase < 3 ? '<div class="typing" aria-label="正在生成回答"><i></i><i></i><i></i></div>' : ""}
         ${currentPhase >= 3 ? `<div class="chat-message bot"><p>${escapeHtml(answer)}</p></div>` : ""}
       </div>
-      ${currentPhase >= 4 ? `<aside class="rag-membership-panel"><h3>RAG 语料成员推断</h3><p>对 ${benchmark.candidateCount} 个候选对象逐一查询，仅由 Chatbot 回答正文计算成员分数。</p><div class="rag-membership-flow"><span>候选对象</span><i>→</i><span>受限查询</span><i>→</i><span>正文打分</span><i>→</i><span>ROC-AUC</span></div><strong>ROC-AUC ${escapeHtml(aucText)}</strong></aside>` : ""}
+      ${currentPhase >= 4 ? `<aside class="rag-membership-panel"><h3>RAG 语料成员推断</h3><p>固定评估 ${benchmark.candidateCount} 个候选；本轮查询确认 ${benchmark.recoveredMemberCount} 个库内文档。</p><div class="rag-membership-flow"><span>固定候选集</span><i>→</i><span>受限查询</span><i>→</i><span>正文打分</span><i>→</i><span>ROC-AUC</span></div><strong>ROC-AUC ${escapeHtml(aucText)}</strong></aside>` : ""}
     </div>`;
   }
 
@@ -2705,7 +2728,7 @@
       if (title) title.textContent = attackStep === 0 ? "准备语料成员推断" : "正在执行：RAG 语料成员推断";
       if (evidence) evidence.innerHTML = attackStep === 0
         ? `<li>模型调用上限 ${callLimit} 次；正常问答已用 ${normalCallCount} 次，剩余次数用于攻击查询。</li>`
-        : `<li>模型调用上限 ${callLimit} 次；实际攻击查询 ${benchmark.queryCount} 次；ROC-AUC ${escapeHtml(aucText)}。</li>`;
+        : `<li>固定候选集 ${benchmark.candidateCount} 个；实际攻击查询 ${benchmark.queryCount} 次；确认成员 ${benchmark.recoveredMemberCount}/${benchmark.memberCount}；ROC-AUC ${escapeHtml(aucText)}。</li>`;
     } else if (seriesRecoveryProductIds.has(product.id)) {
       if (title) title.textContent = attackStep === 0 ? "准备居民数据库成员恢复" : progressItems[Math.min(attackStep, progressItems.length) - 1].title;
       if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item, index) => {
@@ -2783,7 +2806,6 @@
       const callLimit = productUsageLimit(product);
       const normalCallCount = Math.max(0, callLimit - (attackRun?.queryBudget ?? 0));
       const aucText = formatRagMetric(benchmark.rocAuc);
-      const accuracyText = formatRagMetric(benchmark.accuracyAtHalf == null ? null : Number(benchmark.accuracyAtHalf) * 100, 1);
       results.innerHTML = `
         <header><div><h3>RAG 语料成员推断</h3></div><strong>AUC ${escapeHtml(aucText)}</strong></header>
         <div class="rag-membership-summary" aria-label="RAG 语料成员推断效果指标">
@@ -2795,7 +2817,7 @@
         <div class="rag-membership-score-gap">
           <article><span>候选对象</span><strong>${benchmark.candidateCount}</strong></article>
           <article><span>成员 / 非成员</span><strong>${benchmark.memberCount} / ${benchmark.nonmemberCount}</strong></article>
-          <article><span>0.5 阈值准确率</span><strong>${accuracyText === "不可计算" ? accuracyText : `${accuracyText}%`}</strong></article>
+          <article><span>已确认成员</span><strong>${benchmark.recoveredMemberCount} / ${benchmark.memberCount}</strong></article>
         </div>`;
       return;
     }

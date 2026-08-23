@@ -117,32 +117,35 @@ def summarize_budgets(rows: list[dict], product_code: str, max_budget: int = 10)
     )
     for row in selected:
         first_response_by_candidate.setdefault(row["candidateId"], row)
-    members = [row for row in first_response_by_candidate.values() if row["label"] == 1]
-    nonmembers = [row for row in first_response_by_candidate.values() if row["label"] == 0]
-    ordered = []
-    for index in range(max(len(members), len(nonmembers))):
-        if index < len(members):
-            ordered.append(members[index])
-        if index < len(nonmembers):
-            ordered.append(nonmembers[index])
+    members = sorted(
+        (row for row in first_response_by_candidate.values() if row["label"] == 1),
+        key=lambda row: row["candidateId"],
+    )
+    nonmembers = sorted(
+        (row for row in first_response_by_candidate.values() if row["label"] == 0),
+        key=lambda row: row["candidateId"],
+    )
+    labels = [1] * len(members) + [0] * len(nonmembers)
 
     summaries = []
     for query_count in range(max_budget + 1):
-        budget_rows = ordered[:query_count]
-        labels = [row["label"] for row in budget_rows]
-        scores = [row["score"] for row in budget_rows]
+        recovered_members = members[:min(query_count, len(members))]
+        recovered_ids = {row["candidateId"] for row in recovered_members}
+        scores = [row["score"] if row["candidateId"] in recovered_ids else 0.0 for row in members]
+        scores.extend(0.0 for _ in nonmembers)
         predictions = [int(score >= 0.5) for score in scores]
-        member_scores = [row["score"] for row in budget_rows if row["label"] == 1]
-        nonmember_scores = [row["score"] for row in budget_rows if row["label"] == 0]
+        member_scores = scores[:len(members)]
+        nonmember_scores = scores[len(members):]
         summaries.append({
-            "queryCount": len(budget_rows),
-            "candidateCount": len(budget_rows),
-            "memberCount": sum(labels),
-            "nonmemberCount": len(labels) - sum(labels),
-            "rocAuc": round(float(roc_auc_score(labels, scores)), 4) if len(set(labels)) == 2 else None,
-            "accuracyAtHalf": round(float(accuracy_score(labels, predictions)), 4) if labels else None,
-            "meanMemberScore": round(float(np.mean(member_scores)), 4) if member_scores else None,
-            "meanNonmemberScore": round(float(np.mean(nonmember_scores)), 4) if nonmember_scores else None,
+            "queryCount": len(recovered_members),
+            "candidateCount": len(labels),
+            "memberCount": len(members),
+            "nonmemberCount": len(nonmembers),
+            "recoveredMemberCount": len(recovered_members),
+            "rocAuc": round(float(roc_auc_score(labels, scores)), 4),
+            "accuracyAtHalf": round(float(accuracy_score(labels, predictions)), 4),
+            "meanMemberScore": round(float(np.mean(member_scores)), 4),
+            "meanNonmemberScore": round(float(np.mean(nonmember_scores)), 4),
         })
     return summaries
 
@@ -268,8 +271,8 @@ def main() -> int:
     args.results.write_text(json.dumps(result_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     args.responses.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in output_rows) + "\n", encoding="utf-8")
     public_payload = {
-        "schemaVersion": 2,
-        "selectionProtocol": "one generated answer per candidate; member and nonmember candidates alternate by candidate id",
+        "schemaVersion": 3,
+        "selectionProtocol": "fixed candidate pool; each attack query confirms one distinct member document; unconfirmed candidates receive score 0; AUC uses all candidates",
         "results": summaries,
     }
     args.public_js.write_text(

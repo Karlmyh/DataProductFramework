@@ -192,7 +192,8 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   assert.match(labScript, /ROC-AUC/);
   assert.match(labScript, /模型调用上限/);
   assert.match(labScript, /实际攻击查询/);
-  assert.match(labScript, /不可计算/);
+  assert.match(labScript, /固定候选集/);
+  assert.match(labScript, /已确认成员/);
   assert.match(labScript, /候选对象/);
   assert.match(labScript, /ragProductUsageLimitOptions = \[2, 5, 10\]/);
   assert.match(labScript, /productUsageLimitOptionsFor\(product\)\.map/);
@@ -224,21 +225,30 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   const membershipResults = context.window.__RAG_MEMBERSHIP_RESULTS__;
   assert.equal(ragData.schemaVersion, 2);
   assert.equal(ragData.responses.length, 6);
-  assert.equal(membershipResults.schemaVersion, 2);
+  assert.equal(membershipResults.schemaVersion, 3);
   assert.deepEqual(
     Array.from(membershipResults.results, (result) => [result.productCode, result.candidateCount, result.memberCount, result.nonmemberCount, result.queryCount]),
     [["030701", 40, 20, 20, 80], ["030705", 24, 12, 12, 48]],
   );
+  const expectedBudgets = new Map([
+    ["030701", [[1, 0.525], [4, 0.6], [9, 0.725]]],
+    ["030705", [[1, 0.5417], [4, 0.6667], [9, 0.875]]],
+  ]);
   for (const result of membershipResults.results) {
     assert.ok(result.rocAuc >= 0.5 && result.rocAuc <= 1);
     assert.equal(result.scoreSource, "chatbot_answer_text_only");
     assert.equal(result.budgetResults.length, 11);
-    const oneQuery = result.budgetResults.find((row) => row.queryCount === 1);
-    const fourQueries = result.budgetResults.find((row) => row.queryCount === 4);
-    const nineQueries = result.budgetResults.find((row) => row.queryCount === 9);
-    assert.deepEqual([oneQuery.memberCount, oneQuery.nonmemberCount, oneQuery.rocAuc], [1, 0, null]);
-    assert.deepEqual([fourQueries.memberCount, fourQueries.nonmemberCount, fourQueries.rocAuc], [2, 2, 1]);
-    assert.deepEqual([nineQueries.memberCount, nineQueries.nonmemberCount, nineQueries.rocAuc], [5, 4, 1]);
+    assert.ok(result.budgetResults.every((row) => row.candidateCount === result.candidateCount));
+    assert.ok(result.budgetResults.every((row) => row.memberCount === result.memberCount && row.nonmemberCount === result.nonmemberCount));
+    assert.ok(result.budgetResults.every((row, index, rows) => index === 0 || row.rocAuc >= rows[index - 1].rocAuc));
+    assert.equal(result.budgetResults[0].rocAuc, 0.5);
+    for (const [queryCount, expectedAuc] of expectedBudgets.get(result.productCode)) {
+      const budget = result.budgetResults.find((row) => row.queryCount === queryCount);
+      assert.deepEqual(
+        [budget.candidateCount, budget.memberCount, budget.nonmemberCount, budget.recoveredMemberCount, budget.rocAuc],
+        [result.candidateCount, result.memberCount, result.nonmemberCount, queryCount, expectedAuc],
+      );
+    }
   }
   for (const image of ragData.images) await access(new URL(image.path, pagesRoot));
   assert.deepEqual([...new Set(ragData.responses.map((response) => response.productCode))], ["030701", "030705"]);
