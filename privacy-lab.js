@@ -2188,6 +2188,15 @@
   }
 
   function visionVisual(product, currentPhase) {
+    if (product.previewImage) {
+      return `<div class="vision-product-view model-image-prediction-view">
+        <div class="vision-frame model-image-frame ${currentPhase >= 2 ? "scanning" : ""}">
+          <img src="${escapeHtml(product.previewImage.src)}" alt="${escapeHtml(product.previewImage.alt)}" />
+          ${currentPhase >= 2 ? '<i class="scan-line"></i>' : ""}
+        </div>
+        <div class="vision-readout"><span>${escapeHtml(product.inputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待模型预测"}</strong><div class="confidence-track"><i style="width:${currentPhase >= 3 ? "88%" : "0"}"></i></div><p>${escapeHtml(product.outputDetail)}</p></div>
+      </div>`;
+    }
     return `<div class="vision-product-view">
       <div class="vision-frame ${currentPhase >= 2 ? "scanning" : ""}">
         <div class="scene-sky"></div><div class="scene-ground"></div>
@@ -2268,6 +2277,16 @@
     return `<div class="gradient-product-view"><div class="gradient-header"><span>${escapeHtml(product.inputLabel)}</span><strong>${escapeHtml(product.inputValue)}</strong></div><div class="embedded-product-flow" aria-label="训练更新流程">${product.flow.map((step, index) => `<span class="${currentPhase > index ? "active" : ""}">${escapeHtml(step)}</span>`).join('<i aria-hidden="true">→</i>')}</div><div class="gradient-matrix">${cells}</div><div class="gradient-output"><span>${escapeHtml(product.outputLabel)}</span><strong>${currentPhase >= 3 ? escapeHtml(product.outputValue) : "等待聚合…"}</strong></div>${currentPhase >= 4 ? '<div class="gradient-leak"><div class="reconstructed-record">重建样本轮廓</div><strong>标签与群体属性已暴露</strong></div>' : ""}</div>`;
   }
 
+  function modelAttackEvidenceVisual(product, step) {
+    const showcase = product.showcase;
+    if (!showcase || step <= 0) return "";
+    const visibleItems = showcase.items.slice(0, step);
+    return `<section class="model-attack-evidence-view">
+      <header><div><span>实测攻击证据</span><h3>${escapeHtml(showcase.title)}</h3></div><strong>${Math.min(step, showcase.items.length)} / ${showcase.items.length}</strong><p>${escapeHtml(showcase.description)}</p></header>
+      <div class="model-attack-evidence-grid">${visibleItems.map((item, index) => `<figure style="--delay:${index * 80}ms"><div><img src="${escapeHtml(item.src)}" alt="${escapeHtml(item.alt)}" /></div><figcaption><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.metric)}</strong><p>${escapeHtml(item.note)}</p></figcaption></figure>`).join("")}</div>
+    </section>`;
+  }
+
   function speechModelVisual(product, currentPhase) {
     return `<div class="attribute-product-view">
       <div class="subject-card"><span>输入语音</span><strong>${escapeHtml(product.inputValue)}</strong><small>合成语音演示文件</small></div>
@@ -2286,6 +2305,7 @@
 
   function renderVisual(activeSeries, product, currentPhase) {
     if (product.id === "content-voice") return residentFaceVerificationVisual(product, currentPhase);
+    if (product.id === "content-vision" && product.previewImage) return visionVisual(product, currentPhase);
     if (product.id === "content-speech") return speechModelVisual(product, currentPhase);
     if (product.id === "model-distillation") return distillationModelVisual(product, currentPhase);
     if (creditProductIds.has(product.id)) return creditProductVisual(product, currentPhase);
@@ -2641,7 +2661,11 @@
     const progressItems = attackProgressItems(product);
     attackStep = nextStep;
     const attackCanvas = root.querySelector("[data-attack-canvas]");
-    if (attackCanvas) attackCanvas.innerHTML = seriesRecoveryProductIds.has(product.id) ? productRecoveryAttackVisual(product, attackStep) : renderVisual(activeSeries, displayProduct, attackStep > 0 ? 4 : 3);
+    if (attackCanvas) attackCanvas.innerHTML = seriesRecoveryProductIds.has(product.id)
+      ? productRecoveryAttackVisual(product, attackStep)
+      : product.showcase && attackStep > 0
+        ? modelAttackEvidenceVisual(product, attackStep)
+        : renderVisual(activeSeries, displayProduct, attackStep > 0 ? 4 : 3);
     root.querySelectorAll("[data-attack-index]").forEach((item) => {
       const index = Number(item.getAttribute("data-attack-index"));
       item.classList.toggle("active", index === attackStep - 1);
