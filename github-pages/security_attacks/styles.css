@@ -556,6 +556,16 @@ th { font-weight: 700; }
 .text-inference-result p { margin: 0; font-size: 11px; line-height: 1.6; }
 .text-inference-result p b { display: block; margin-bottom: 3px; }
 .text-inference-result > strong { color: #9c2e22; font-size: 13px; }
+.rag-inference-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--ink); border-top: 0; background: var(--paper); }
+.rag-inference-summary article { display: grid; min-height: 86px; place-content: center; gap: 5px; padding: 12px; text-align: center; }
+.rag-inference-summary article + article { border-left: 1px solid var(--ink); }
+.rag-inference-summary span { font-size: 10px; font-weight: 700; }
+.rag-inference-summary strong { font-size: 22px; line-height: 1; }
+.rag-inference-summary article:last-child strong { color: #9c2e22; font-size: 17px; }
+.rag-inference-keywords { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 12px; padding: 13px 16px; border: 1px solid var(--ink); border-top: 0; background: var(--soft); }
+.rag-inference-keywords > b { padding-top: 5px; font-size: 10px; }
+.rag-inference-keywords > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.rag-inference-keywords span { padding: 4px 7px; border: 1px solid var(--ink); background: var(--paper); font-size: 10px; }
 
 .graph-product-view { padding: 14px; }
 .graph-query { display: flex; justify-content: space-between; gap: 16px; padding: 9px 11px; border: 1px solid var(--ink); background: var(--paper); font-size: 10px; }
@@ -758,6 +768,10 @@ th { font-weight: 700; }
   .credit-inference-summary { grid-template-columns: 1fr 1fr; }
   .credit-inference-summary article:nth-child(3) { border-left: 0; }
   .credit-inference-summary article:nth-child(n + 3) { border-top: 1px solid var(--ink); }
+  .rag-inference-summary { grid-template-columns: 1fr 1fr; }
+  .rag-inference-summary article:nth-child(3) { border-left: 0; }
+  .rag-inference-summary article:nth-child(n + 3) { border-top: 1px solid var(--ink); }
+  .rag-inference-keywords { grid-template-columns: 1fr; }
   .embedded-product-flow { flex-wrap: wrap; }
   .technical-view { grid-template-columns: 1fr; }
   .runtime-panel { border-top: 1px solid #4b4b4b; border-left: 0; }

@@ -777,11 +777,13 @@
     const matches = hypothesis.anchors.filter((anchor) => answer.includes(anchor));
     const threshold = Math.max(1, Math.ceil(hypothesis.anchors.length * .75));
     const used = matches.length >= threshold;
+    const hitRate = hypothesis.anchors.length ? Math.round(matches.length / hypothesis.anchors.length * 100) : 0;
     return {
       answer,
       claim: hypothesis.claim,
       matches,
       total: hypothesis.anchors.length,
+      hitRate,
       used,
       conclusion: used ? "判断回答使用了该候选依据" : "现有正文特征不足以判断使用了该候选依据",
     };
@@ -2735,7 +2737,14 @@
       const inference = ragTextInferenceFor(product);
       results.innerHTML = `
         <header><div><h3>回答依据推断</h3></div><strong>${inference.matches.length} / ${inference.total}</strong></header>
-        <div class="text-inference-result"><p><b>候选依据</b>${escapeHtml(inference.claim)}</p><p><b>正文特征</b>${inference.matches.length ? inference.matches.map((match) => `“${escapeHtml(match)}”`).join("、") : "未命中足够的特征"}</p><strong>攻击结果：${escapeHtml(inference.conclusion)}</strong></div>`;
+        <div class="text-inference-result"><p><b>候选依据</b>${escapeHtml(inference.claim)}</p><strong>攻击结果：${escapeHtml(inference.conclusion)}</strong></div>
+        <div class="rag-inference-summary" aria-label="回答依据推断效果指标">
+          <article><span>候选特征</span><strong>${inference.total}</strong></article>
+          <article><span>命中特征</span><strong>${inference.matches.length}</strong></article>
+          <article><span>正文命中率</span><strong>${inference.hitRate}%</strong></article>
+          <article><span>推断结论</span><strong>${inference.used ? "已使用" : "未确认"}</strong></article>
+        </div>
+        <div class="rag-inference-keywords"><b>命中关键词</b><div>${inference.matches.length ? inference.matches.map((match) => `<span>${escapeHtml(match)}</span>`).join("") : "<span>无</span>"}</div></div>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {

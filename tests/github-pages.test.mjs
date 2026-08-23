@@ -184,6 +184,9 @@ test("uses one fixed-question chatbot and text-only evidence inference for 03070
   assert.match(labScript, /rag-image-input/);
   assert.match(labScript, /ragTextInferenceFor/);
   assert.match(labScript, /仅读取用户可见的回答文本/);
+  assert.match(labScript, /rag-inference-summary/);
+  assert.match(labScript, /正文命中率/);
+  assert.match(labScript, /命中关键词/);
   for (const hiddenCopy of ["Qwen2.5-7B + RAG", "默认链路", "政策知识库已连接", "基于检索结果", "生成耗时", "固定问题预生成结果", "RAG 检索记录"]) {
     assert.equal(labScript.includes(hiddenCopy), false);
   }
