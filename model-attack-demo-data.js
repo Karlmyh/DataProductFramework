@@ -23,15 +23,15 @@
 
   const imageProduct = data.productsById["content-vision"];
   Object.assign(imageProduct, {
-    name: "人脸身份图片预测模型",
-    tagline: "输入人脸图片并返回身份标签，再按相同产品边界执行成员推断与模型反演。",
+    name: "人脸图片二分类模型",
+    tagline: "输入人脸图片并返回男性或女性标签，再按相同产品边界执行成员推断与模型反演。",
     inputLabel: "待预测图片",
-    inputValue: "CelebA · identity_00015.jpg",
+    inputValue: "face_00015.jpg",
     callLabel: "运行图片预测",
-    flow: ["标准化人脸图像", "固定分类模型推理", "返回身份标签"],
-    outputLabel: "预测结果",
-    outputValue: "Identity 15 · Top-1",
-    outputDetail: "正常产品只返回当前图片的身份预测；攻击阶段使用模型类攻击包中的固定实验结果。",
+    flow: ["标准化人脸图像", "固定分类模型推理", "返回二分类标签"],
+    outputLabel: "二分类标签",
+    outputValue: "男性",
+    outputDetail: "",
     previewImage: {
       src: "demo-assets/model-attack/face-input-00015.jpg",
       alt: "CelebA 身份 15 的输入人脸样例",
@@ -119,41 +119,14 @@
   const gradientProduct = data.productsById["finance-gradient"];
   Object.assign(gradientProduct, {
     name: "联邦图像训练更新交付",
-    tagline: "客户端完成图像模型本地训练后交付梯度或参数增量，再评估更新信号中的样本泄露。",
-    inputLabel: "本地训练批次",
-    inputValue: "图像批次 · B=1 / 本地更新 E=20",
-    callLabel: "生成并交付更新",
+    tagline: "选择调用次数，直接查看共享梯度被反演后恢复出的人脸。",
+    inputLabel: "调用次数",
+    inputValue: "",
+    callLabel: "查看梯度反演结果",
     flow: ["本地前向与反向传播", "导出梯度或参数增量", "服务器接收并聚合"],
-    outputLabel: "训练交付结果",
-    outputValue: "UPDATE #020 · 已接收",
-    outputDetail: "同一产品覆盖单轮共享梯度和多步参数更新，攻击阶段展示 GradInversion、iDLG 与 SME。",
-    showcase: {
-      title: "梯度与训练更新攻击结果",
-      description: "三组结果对应单轮梯度、标签泄露适配与多步更新反演；批量、网络和防御会改变风险。",
-      items: [
-        {
-          src: "demo-assets/model-attack/gradinv-batch1.png",
-          alt: "GradInversion ImageNet batch 1 原图与重建图",
-          label: "GradInversion · ImageNet B=1",
-          metric: "FeatCos 0.901",
-          note: "标签集合恢复 100%，PSNR 8.99 dB；主要保留类别级结构。",
-        },
-        {
-          src: "demo-assets/model-attack/idlg-lfw-batch1.png",
-          alt: "iDLG LFW batch 1 原图与重建图",
-          label: "iDLG · LFW B=1",
-          metric: "标签 100%",
-          note: "无池化 CNN + Adam 适配；不可与原论文设置直接比较。",
-        },
-        {
-          src: "demo-assets/model-attack/sme-cifar100.png",
-          alt: "SME CIFAR-100 多步模型更新反演对比",
-          label: "SME · CIFAR-100 E=20",
-          metric: "PSNR 20.56 dB",
-          note: "相对多步 IG 基线 13.85 dB 提升 6.70 dB。",
-        },
-      ],
-    },
+    outputLabel: "",
+    outputValue: "",
+    outputDetail: "",
     attacks: [
       {
         id: "gradinv",
