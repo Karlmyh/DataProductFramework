@@ -600,9 +600,11 @@
   let faceImageMatchesResident = true;
   let timers = [];
   const productUsageLimitOptions = [100, 500, 1000];
-  const productUsageInitialLimit = productUsageLimitOptions[0];
-  const productUsageLimits = new Map(Object.keys(productsById).map((productId) => [productId, productUsageInitialLimit]));
-  const productUsageRemaining = new Map(Object.keys(productsById).map((productId) => [productId, productUsageInitialLimit]));
+  const ragProductUsageLimitOptions = [1, 10, 100];
+  const productUsageLimitOptionsFor = (product) => ragProductIds.has(product.id) ? ragProductUsageLimitOptions : productUsageLimitOptions;
+  const productUsageInitialLimitFor = (product) => productUsageLimitOptionsFor(product)[0];
+  const productUsageLimits = new Map(Object.values(productsById).map((product) => [product.id, productUsageInitialLimitFor(product)]));
+  const productUsageRemaining = new Map(Object.values(productsById).map((product) => [product.id, productUsageInitialLimitFor(product)]));
   const membershipRecoverySteps = [
     { name: "准备候选居民", title: "建立候选居民集合", evidence: "候选池包含 112 条已知特征记录，其中真实数据库成员对攻击者不可见。" },
     { name: "执行存在性查询", title: "代码正在调用存在性查询", evidence: "实际查询次数、缓存命中和新执行次数将在运行后生成。" },
@@ -786,17 +788,17 @@
   }
 
   function productUsageCount(product) {
-    return productUsageRemaining.get(product.id) ?? productUsageInitialLimit;
+    return productUsageRemaining.get(product.id) ?? productUsageInitialLimitFor(product);
   }
 
   function productUsageLimit(product) {
-    return productUsageLimits.get(product.id) ?? productUsageInitialLimit;
+    return productUsageLimits.get(product.id) ?? productUsageInitialLimitFor(product);
   }
 
   function renderProductUsageCounter(product) {
     const remaining = productUsageCount(product);
     const limit = productUsageLimit(product);
-    return `<div class="product-usage-counter ${remaining === 0 ? "is-exhausted" : ""}" data-product-usage-counter><label><span>${productUsageLabel(product)}</span><select data-product-usage-limit aria-label="选择${productUsageLabel(product)}上限">${productUsageLimitOptions.map((option) => `<option value="${option}" ${option === limit ? "selected" : ""}>${option}</option>`).join("")}</select></label><strong data-product-usage-value>${remaining}</strong><small>剩余</small></div>`;
+    return `<div class="product-usage-counter ${remaining === 0 ? "is-exhausted" : ""}" data-product-usage-counter><label><span>${productUsageLabel(product)}</span><select data-product-usage-limit aria-label="选择${productUsageLabel(product)}上限">${productUsageLimitOptionsFor(product).map((option) => `<option value="${option}" ${option === limit ? "selected" : ""}>${option}</option>`).join("")}</select></label><strong data-product-usage-value>${remaining}</strong><small>剩余</small></div>`;
   }
 
   function refreshProductUsageCounter(product = current().product) {
@@ -1581,7 +1583,7 @@
     };
   }
 
-  recoveryAttackConfigs.forEach((_, productId) => productUsageLimitOptions.forEach((budget) => productRecoverySavedRuns.set(`${productId}:${budget}`, simulateProductRecoveryBudget(productId, budget))));
+  recoveryAttackConfigs.forEach((_, productId) => productUsageLimitOptionsFor(productsById[productId]).forEach((budget) => productRecoverySavedRuns.set(`${productId}:${budget}`, simulateProductRecoveryBudget(productId, budget))));
 
   function runMembershipRecoveryAttack() {
     const product = productsById["city-existence"];
@@ -2858,7 +2860,7 @@
     if (target.matches("[data-product-usage-limit]")) {
       const product = current().product;
       const limit = Number(target.value);
-      if (productUsageLimitOptions.includes(limit)) {
+      if (productUsageLimitOptionsFor(product).includes(limit)) {
         productUsageLimits.set(product.id, limit);
         productUsageRemaining.set(product.id, limit);
         membershipRecoveryRun = null;

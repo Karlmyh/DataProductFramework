@@ -9,6 +9,8 @@ This directory contains the reproducible, offline build pipeline for the fixed-q
 
 The public page receives only the fixed questions, generated answer text, and the three demo images. Retrieval records, document identifiers, model metadata, timings, the SQLite database, and raw embeddings remain private build artifacts. The browser-side attack therefore works only from answer text and never reads retrieval traces.
 
+The two public RAG chatbot products expose the same low-budget call-limit choices: `1`, `10`, and `100`. Other product demos keep their existing limits.
+
 ## RAG corpus membership benchmark
 
 The membership benchmark creates a separate, real SQLite RAG database and a balanced candidate dataset. Only member candidates are inserted into `rag_documents`; every candidate is then queried twice through Qwen2.5-7B-Instruct. The attack score is computed from the generated Chatbot answer text only. Membership labels are never used by retrieval, generation, or scoring and are read only when computing ROC-AUC.
