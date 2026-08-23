@@ -13,11 +13,6 @@
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
   const enterpriseCreditStore = window.__ENTERPRISE_CREDIT_DATA__ ?? { name: "模拟企业信用数据集", schema: [], records: [], split: { reference: 0, target: 0 }, observerRule: {} };
   const ragChatData = window.__RAG_CHAT_DATA__ ?? {
-    mode: "Qwen + RAG",
-    generationModel: "Qwen/Qwen2.5-7B-Instruct",
-    textEmbeddingModel: "BAAI/bge-small-en-v1.5",
-    imageEmbeddingModel: "OpenAI CLIP ViT-B/32",
-    database: { engine: "SQLite", documents: 0, answers: 0 },
     images: [],
     responses: [],
   };
@@ -28,6 +23,14 @@
   ]);
   const ragImagesById = new Map(ragChatData.images.map((image) => [image.id, image]));
   const selectedRagQuestionIds = new Map(Array.from(ragResponsesByProduct, ([productId, responses]) => [productId, responses[0]?.id ?? ""]));
+  const ragEvidenceHypotheses = new Map([
+    ["Q-TEXT-WT", { claim: "申报对象需满足注册年限与信用条件，申报后经过区级形式审查、市级联合评审和公示。", anchors: ["登记注册满2年", "近12个月内无重大失信记录", "5个工作日", "公示3个工作日"] }],
+    ["Q-TEXT-ELD", { claim: "居家养老服务补贴同时考察年龄、居住时间、收入和家庭情况，申请时需提交身份、居住与收入证明。", anchors: ["60周岁", "连续居住满12个月", "月收入不超过4500元", "近3个月的收入证明"] }],
+    ["Q-TEXT-HOU", { claim: "住房租赁补贴按家庭人数增加且设月度上限，资格经街道和住房保障部门复核后由财政部门拨付。", anchors: ["每月补贴1200元", "增加300元", "最高不超过2100元", "财政部门按季度拨付"] }],
+    ["Q-IMAGE-FRAMEWORK", { claim: "数据产品安全衡量由产品表示、攻击匹配、统一衡量和风险聚合串联而成。", anchors: ["产品表示", "攻击匹配", "统一衡量", "风险聚合"] }],
+    ["Q-IMAGE-PORTRAIT", { claim: "居民人脸核验图片需要单独同意、加密、原图与模板分区保存，并设置最短留存期。", anchors: ["单独同意", "加密", "分区保存", "最短留存期限"] }],
+    ["Q-IMAGE-FACEGRID", { claim: "批量人脸库存在身份关联、模板泄露和越权导出风险，需要限制检索频率并审批导出操作。", anchors: ["批量身份关联", "模板泄露", "检索频率限制", "导出操作进行审批"] }],
+  ]);
   const creditProductIds = new Set(["finance-index", "city-grade", "content-rank"]);
   const creditFeatureKeys = enterpriseCreditStore.schema.map((field) => field.key);
   const creditPublicFeatureKeys = enterpriseCreditStore.schema.filter((field) => !field.sensitive).map((field) => field.key);
@@ -51,22 +54,37 @@
   const ragProductDefinitions = {
     "city-rag": {
       name: "政策知识问答助手",
-      tagline: "从虚构政策知识库检索依据，再由千问生成带引用的回答。",
+      tagline: "回答用户选择的政策问题。",
       inputLabel: "选择一个政策问题",
-      callLabel: "使用千问 + RAG 回答",
-      flow: ["BGE 向量检索", "组装授权上下文", "千问生成回答"],
-      outputLabel: "千问 + RAG 回答",
-      outputDetail: "回答由 QURM183 上的 Qwen2.5-7B-Instruct 根据 SQLite RAG 库检索结果生成。",
+      callLabel: "提交问题",
+      flow: ["接收问题", "生成回答", "返回结果"],
+      outputLabel: "回答",
+      outputDetail: "仅向用户展示回答正文。",
     },
     "content-multimodal": {
       name: "多模态知识问答助手",
-      tagline: "在同一问答界面中增加图片输入，以 CLIP 检索图片知识，再由千问生成带引用的回答。",
+      tagline: "在同一问答界面中增加图片输入。",
       inputLabel: "选择图片与问题",
-      callLabel: "使用多模态 RAG 回答",
-      flow: ["CLIP 图片检索", "检索关联知识", "千问生成回答"],
-      outputLabel: "千问 + 多模态 RAG 回答",
-      outputDetail: "图片由 CLIP ViT-B/32 编码检索，文本上下文交由 Qwen2.5-7B-Instruct 生成最终回答。",
+      callLabel: "提交图片与问题",
+      flow: ["接收图片与问题", "生成回答", "返回结果"],
+      outputLabel: "回答",
+      outputDetail: "仅向用户展示图片、问题和回答正文。",
     },
+  };
+  const ragTextInferenceAttack = {
+    id: "text-evidence-inference",
+    name: "回答依据推断",
+    brief: "只分析回答正文中的关键事实组合，判断是否使用了候选依据。",
+    result: "回答正文与候选依据的特征事实高度一致，判断使用了该依据。",
+    metric: "正文事实命中",
+    value: "4 / 4",
+    displayScore: 90,
+    evidence: "文本推断",
+    attackFamily: "依据推断",
+    attackObject: "知识使用隐私",
+    source: "回答正文语义特征",
+    protocol: "仅读取用户可见的回答文本；不读取引用、文档 ID 或检索记录",
+    limitation: "文本相似只能支持使用依据的推断，不等于直接读取内部知识库。",
   };
   Object.entries(ragProductDefinitions).forEach(([productId, definition]) => {
     const product = productsById[productId];
@@ -75,8 +93,10 @@
     Object.assign(product, {
       ...definition,
       inputValue: firstResponse?.question ?? product.inputValue,
-      outputValue: firstResponse?.answer ?? "RAG 构建结果尚未载入",
+      outputValue: publicRagAnswer(firstResponse?.answer ?? "回答尚未载入"),
+      attacks: [{ ...ragTextInferenceAttack }],
     });
+    candidatesByProduct[productId] = [{ id: ragTextInferenceAttack.id, name: ragTextInferenceAttack.name, applicable: true, executed: true, reason: "适用：攻击者可以读取完整回答正文并与候选依据做语义比较。" }];
   });
   const protectedResidentFieldKeys = new Set(["monthlyIncome", "subsidyStatus", "insurance"]);
   const qualificationPolicies = ["养老服务补贴", "住房租赁补贴", "医疗救助"];
@@ -716,6 +736,29 @@
     return responses.find((response) => response.id === selectedId) ?? responses[0] ?? null;
   }
 
+  function publicRagAnswer(value) {
+    return String(value ?? "")
+      .replace(/\s*依据\s*[:：][\s\S]*$/u, "")
+      .trim();
+  }
+
+  function ragTextInferenceFor(product) {
+    const response = ragResponseFor(product);
+    const answer = publicRagAnswer(response?.answer ?? product.outputValue);
+    const hypothesis = ragEvidenceHypotheses.get(response?.id) ?? { claim: "候选依据与回答正文包含相同的关键事实。", anchors: [] };
+    const matches = hypothesis.anchors.filter((anchor) => answer.includes(anchor));
+    const threshold = Math.max(1, Math.ceil(hypothesis.anchors.length * .75));
+    const used = matches.length >= threshold;
+    return {
+      answer,
+      claim: hypothesis.claim,
+      matches,
+      total: hypothesis.anchors.length,
+      used,
+      conclusion: used ? "判断回答使用了该候选依据" : "现有正文特征不足以判断使用了该候选依据",
+    };
+  }
+
   function productUsageLabel(product) {
     if (product.category.startsWith("0304")) return "核验次数";
     if (product.category.startsWith("0301")) return "查询次数";
@@ -1000,8 +1043,35 @@
     });
   }
 
-  function gradeFromLearnedScore(score, thresholds) {
-    return score < thresholds[0] ? "A" : score < thresholds[1] ? "B" : score < thresholds[2] ? "C" : "D";
+  function inverseCreditGradeRange(weights, thresholds, target, grade) {
+    const gradeIndex = { A: 0, B: 1, C: 2, D: 3 }[grade] ?? 0;
+    const sensitiveIndex = creditFeatureKeys.indexOf(creditSensitiveFeatureKey);
+    const sensitiveWeight = weights[sensitiveIndex];
+    const sensitiveScale = creditFeatureScales[creditSensitiveFeatureKey];
+    const publicContribution = creditFeatureKeys.reduce((sum, key, index) => key === creditSensitiveFeatureKey
+      ? sum
+      : sum + weights[index] * Number(target[key]) / creditFeatureScales[key], 0);
+    const scoreMinimum = gradeIndex === 0 ? Number.NEGATIVE_INFINITY : thresholds[gradeIndex - 1];
+    const scoreMaximum = gradeIndex === 3 ? Number.POSITIVE_INFINITY : thresholds[gradeIndex];
+    if (Math.abs(sensitiveWeight) < 1e-8) {
+      return { estimate: sensitiveScale / 2, minimum: 0, maximum: sensitiveScale, publicContribution, scoreMinimum, scoreMaximum };
+    }
+    const inverseScore = (score) => (score - publicContribution) * sensitiveScale / sensitiveWeight;
+    const rawMinimum = sensitiveWeight > 0 ? inverseScore(scoreMinimum) : inverseScore(scoreMaximum);
+    const rawMaximum = sensitiveWeight > 0 ? inverseScore(scoreMaximum) : inverseScore(scoreMinimum);
+    const minimum = Math.max(0, Number.isFinite(rawMinimum) ? rawMinimum : 0);
+    const maximum = Math.min(sensitiveScale, Number.isFinite(rawMaximum) ? rawMaximum : sensitiveScale);
+    if (minimum <= maximum) {
+      return { estimate: (minimum + maximum) / 2, minimum, maximum, publicContribution, scoreMinimum, scoreMaximum };
+    }
+    const candidates = Array.from({ length: 121 }, (_, index) => index * 0.25);
+    const targetScore = gradeIndex === 0
+      ? thresholds[0]
+      : gradeIndex === 3
+        ? thresholds[2]
+        : (thresholds[gradeIndex - 1] + thresholds[gradeIndex]) / 2;
+    const estimate = candidates.sort((left, right) => Math.abs(predictCreditDirection(weights, target, left) - targetScore) - Math.abs(predictCreditDirection(weights, target, right) - targetScore))[0];
+    return { estimate, minimum: estimate, maximum: estimate, publicContribution, scoreMinimum, scoreMaximum };
   }
 
   function simulateCreditInferenceAttack(productId, queryBudget) {
@@ -1036,27 +1106,7 @@
       const weights = fitCreditPairwiseDirection(references, (record) => gradeOrder[record.grade]);
       const thresholds = learnedGradeThresholds(weights, references);
       learnedModel = { type: "ordinal-pairwise", weights, thresholds };
-      inferredRows = targets.map((target) => {
-        const compatible = [];
-        for (let candidate = 0; candidate <= 30; candidate += 0.25) {
-          const score = predictCreditDirection(weights, target, candidate);
-          if (gradeFromLearnedScore(score, thresholds) === target.observedOutput) compatible.push(candidate);
-        }
-        if (!compatible.length) {
-          const gradeIndex = gradeOrder[target.observedOutput];
-          const center = gradeIndex === 0
-            ? thresholds[0] - 0.2
-            : gradeIndex === 3
-              ? thresholds[2] + 0.2
-              : (thresholds[gradeIndex - 1] + thresholds[gradeIndex]) / 2;
-          const candidates = Array.from({ length: 121 }, (_, index) => index * 0.25);
-          const estimate = candidates.sort((left, right) => Math.abs(predictCreditDirection(weights, target, left) - center) - Math.abs(predictCreditDirection(weights, target, right) - center))[0];
-          return { target, estimate, minimum: estimate, maximum: estimate };
-        }
-        const minimum = compatible[0];
-        const maximum = compatible.at(-1);
-        return { target, estimate: (minimum + maximum) / 2, minimum, maximum };
-      });
+      inferredRows = targets.map((target) => ({ target, ...inverseCreditGradeRange(weights, thresholds, target, target.observedOutput) }));
     } else {
       const weights = fitCreditPairwiseDirection(references, (record) => 101 - record.riskRank);
       const referenceScores = references.map((record) => predictCreditDirection(weights, record)).sort((left, right) => left - right);
@@ -1070,7 +1120,9 @@
         });
         candidates.sort((left, right) => left.distance - right.distance || left.sensitiveValue - right.sensitiveValue);
         const estimate = candidates[0].sensitiveValue;
-        return { target, estimate, minimum: estimate, maximum: estimate };
+        const distanceLimit = Math.max(3, candidates[0].distance + 1.5);
+        const compatible = candidates.filter((candidate) => candidate.distance <= distanceLimit).map((candidate) => candidate.sensitiveValue).sort((left, right) => left - right);
+        return { target, estimate, minimum: compatible[0] ?? estimate, maximum: compatible.at(-1) ?? estimate };
       });
     }
     const tolerance = productId === "finance-index" ? 1 : productId === "content-rank" ? 4 : null;
@@ -1081,7 +1133,7 @@
         ? actual >= row.minimum - 1e-9 && actual <= row.maximum + 1e-9
         : error <= tolerance;
       const candidate = config.targets.find((item) => item.id === row.target.id) ?? { id: row.target.id, summary: row.target.name };
-      const recoveredSummary = productId === "city-grade"
+      const recoveredSummary = productId === "city-grade" || productId === "content-rank"
         ? `${row.target.name} · 推断区间 ${row.minimum.toFixed(1)}%—${row.maximum.toFixed(1)}% · 真实 ${actual.toFixed(1)}%`
         : `${row.target.name} · 推断 ${row.estimate.toFixed(1)}% · 真实 ${actual.toFixed(1)}%`;
       return {
@@ -1093,6 +1145,7 @@
         estimate: row.estimate,
         minimum: row.minimum,
         maximum: row.maximum,
+        publicContribution: row.publicContribution,
         actual,
         error,
         recoveredSummary,
@@ -1638,7 +1691,7 @@
       return {
         ...product,
         inputValue: response?.question ?? product.inputValue,
-        outputValue: response?.answer ?? "RAG 构建结果尚未载入",
+        outputValue: publicRagAnswer(response?.answer ?? "回答尚未载入"),
       };
     }
     if (!structuredConfig(product)) return { ...product, inputValue: inputValue.trim() || product.inputValue };
@@ -1846,29 +1899,17 @@
     </div>`;
   }
 
-  function creditLearnedRuleSummary(product, run) {
-    if (!run) return "等待攻击代码学习";
-    const learned = run.learnedModel;
-    if (product.id === "finance-index") {
-      return enterpriseCreditStore.schema.map((field) => `${field.label} β≈${learned.rawCoefficients[field.key].toFixed(3)}`).join("；");
-    }
-    if (product.id === "city-grade") {
-      return `有序方向已学习；代理边界 ${learned.thresholds.map((value) => value.toFixed(3)).join(" / ")}`;
-    }
-    return `成对排序方向已学习；六维方向权重 ${learned.weights.map((value) => value.toFixed(3)).join(" / ")}`;
-  }
-
   function creditInferenceAttackVisual(product, step) {
     const currentStep = Math.max(0, Math.min(creditInferenceSteps.length, step));
     const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
     const visibleResults = run ? run.candidateResults.slice(0, currentStep >= 4 ? 12 : currentStep >= 3 ? 8 : 0) : [];
     const completed = currentStep === creditInferenceSteps.length;
+    const publicOutput = product.id === "finance-index" ? "风险指数" : product.id === "city-grade" ? "风险等级" : "风险名次";
     return `<div class="credit-inference-view">
-      <section class="credit-knowledge-boundary"><header><span>攻击者知识边界</span><strong>真实公式读取 ${run?.formulaAccessCount ?? 0} 次</strong></header><div><article><b>60家参考企业</b><p>六个信用维度全部已知，并可读取对应产品输出。</p></article><article><b>40家目标企业</b><p>只知道五个非敏感维度和产品输出，近90天逾期率被遮蔽。</p></article><article class="is-blocked"><b>页面真实公式</b><p>只供演示观察者核对，不传入攻击训练函数。</p></article></div></section>
-      <section class="credit-learning-card ${currentStep >= 2 ? "is-ready" : ""}"><header><span>${product.id === "finance-index" ? "线性回归代理规则" : product.id === "city-grade" ? "有序等级代理规则" : "成对排序代理规则"}</span><strong>${run ? `${run.referenceCount} 条训练样本` : "等待训练"}</strong></header><p>${escapeHtml(creditLearnedRuleSummary(product, run))}</p></section>
-      <section class="credit-inference-table"><header><div><span>目标企业敏感属性反演</span><strong>${run ? `${run.targetCount} 家` : "尚未开始"}</strong></div><small>${product.id === "city-grade" ? "等级只约束区间，无法稳定恢复精确值" : "固定五个公开维度，搜索与产品输出最一致的逾期率"}</small></header>
+      <p class="credit-knowledge-line">攻击者利用60家参考企业的六维特征和公开${publicOutput}学习代理公式，再将40家目标企业的五个公开特征代入，并结合各自的公开${publicOutput}反推近90天逾期率；攻击代码不读取页面公式。</p>
+      <section class="credit-inference-table">
         <div class="credit-inference-row credit-inference-head"><span>企业</span><span>产品输出</span><span>攻击推断</span><span>模拟真值</span></div>
-        ${visibleResults.length ? visibleResults.map((result) => `<div class="credit-inference-row ${completed ? result.predictedMember ? "is-correct" : "is-error" : ""}"><span><b>${escapeHtml(result.target.name)}</b><small>${escapeHtml(result.target.id)}</small></span><span>${escapeHtml(product.id === "finance-index" ? `${Number(result.target.observedOutput).toFixed(1)}分` : product.id === "city-grade" ? `${result.target.observedOutput}级` : `第${result.target.observedOutput}名`)}</span><strong>${product.id === "city-grade" ? `${result.minimum.toFixed(1)}%—${result.maximum.toFixed(1)}%` : `${result.estimate.toFixed(1)}%`}</strong><em>${completed ? `${result.actual.toFixed(1)}%` : "评估阶段揭示"}</em></div>`).join("") : '<div class="membership-empty">学习代理规则后显示目标企业反演结果</div>'}
+        ${visibleResults.length ? visibleResults.map((result) => `<div class="credit-inference-row ${completed ? result.predictedMember ? "is-correct" : "is-error" : ""}"><span><b>${escapeHtml(result.target.name)}</b><small>${escapeHtml(result.target.id)}</small></span><span>${escapeHtml(product.id === "finance-index" ? `${Number(result.target.observedOutput).toFixed(1)}分` : product.id === "city-grade" ? `${result.target.observedOutput}级` : `第${result.target.observedOutput}名`)}</span><strong>${product.id === "finance-index" ? `${result.estimate.toFixed(1)}%` : `${result.minimum.toFixed(1)}%—${result.maximum.toFixed(1)}%`}</strong><em>${completed ? `${result.actual.toFixed(1)}%` : "—"}</em></div>`).join("") : '<div class="membership-empty">等待执行</div>'}
       </section>
       ${completed && run ? `<div class="credit-inference-summary"><article><span>产品输出读取</span><strong>${run.queryCount}</strong></article><article><span>目标企业</span><strong>${run.targetCount}</strong></article><article><span>${product.id === "city-grade" ? "区间覆盖率" : "平均绝对误差"}</span><strong>${product.id === "city-grade" ? `${(run.recall * 100).toFixed(1)}%` : `${run.meanAbsoluteError.toFixed(2)} 个百分点`}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>` : ""}
     </div>`;
@@ -2122,20 +2163,16 @@
 
   function chatVisual(product, currentPhase) {
     const response = ragResponseFor(product);
-    const retrieved = response?.retrieved ?? [];
     const image = response?.imageId ? ragImagesById.get(response.imageId) : null;
     const question = response?.question ?? product.inputValue;
-    const answer = response?.answer ?? product.outputValue;
-    const retrievalReady = currentPhase >= 3;
-    const isMultimodal = product.id === "content-multimodal";
+    const inference = ragTextInferenceFor(product);
     return `<div class="chat-product-view">
       <div class="chat-thread">
-        <div class="chat-system"><b>Qwen2.5-7B + RAG</b><span>${isMultimodal ? "CLIP 图片检索已连接" : "政策知识库已连接"}</span></div>
-        ${currentPhase >= 1 ? `<div class="chat-message user"><span>用户选择的问题</span>${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" />` : ""}<p>${escapeHtml(question)}</p></div>` : '<div class="chat-welcome"><strong>请选择下方一个问题</strong><span>本演示不接受自由输入，所有回答默认使用 RAG。</span></div>'}
-        ${currentPhase >= 2 && currentPhase < 3 ? `<div class="rag-running"><span>${isMultimodal ? "CLIP 正在匹配图片" : "BGE 正在检索知识片段"}</span><div class="typing"><i></i><i></i><i></i></div><small>检索完成后将上下文交给千问生成</small></div>` : ""}
-        ${currentPhase >= 3 ? `<div class="chat-message bot"><span>千问 · 基于检索结果</span><p>${escapeHtml(answer)}</p><small>生成耗时 ${escapeHtml(response?.generationSeconds ?? "—")} 秒 · 固定问题预生成结果</small></div>` : ""}
+        ${currentPhase >= 1 ? `<div class="chat-message user">${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" />` : ""}<p>${escapeHtml(question)}</p></div>` : '<div class="chat-welcome"><strong>请选择一个问题</strong></div>'}
+        ${currentPhase >= 2 && currentPhase < 3 ? '<div class="typing" aria-label="正在生成回答"><i></i><i></i><i></i></div>' : ""}
+        ${currentPhase >= 3 ? `<div class="chat-message bot"><p>${escapeHtml(inference.answer)}</p></div>` : ""}
       </div>
-      <aside class="retrieval-drawer ${currentPhase >= 4 ? "exposed" : ""}"><span>RAG 检索记录</span>${retrievalReady ? `<strong>命中 ${retrieved.length} 条依据</strong><ul>${retrieved.map((item) => `<li><b>${escapeHtml(item.id)}</b><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.source)}</small></li>`).join("")}</ul><p>${currentPhase >= 4 ? "攻击演示：重复调用可能累计暴露知识库结构。" : "正常回答仅显示允许公开的引用。"}</p>` : `<strong>${escapeHtml(ragChatData.database.engine)} 向量库 · ${ragChatData.database.documents} 条</strong><div class="locked-lines"><i></i><i></i><i></i></div><small>${escapeHtml(isMultimodal ? ragChatData.imageEmbeddingModel : ragChatData.textEmbeddingModel)}</small>`}</aside>
+      ${currentPhase >= 4 ? `<aside class="text-inference-panel"><h3>回答依据推断</h3><p><b>候选依据</b>${escapeHtml(inference.claim)}</p><div class="inference-match-list">${inference.matches.map((match) => `<span>正文命中“${escapeHtml(match)}”</span>`).join("")}</div><strong>攻击结果：${escapeHtml(inference.conclusion)}（${inference.matches.length}/${inference.total}）</strong></aside>` : ""}
     </div>`;
   }
 
@@ -2152,24 +2189,27 @@
     return creditRecordById.get(selectedId) ?? creditExampleRecord;
   }
 
+  function creditFormulaStrip(product) {
+    const formula = enterpriseCreditStore.observerRule?.formula ?? "";
+    const gradeThresholds = enterpriseCreditStore.observerRule?.gradeThresholds ?? [35, 50, 65];
+    const productRule = product.id === "city-grade"
+      ? `等级：A（R＜${gradeThresholds[0]}）· B（${gradeThresholds[0]}≤R＜${gradeThresholds[1]}）· C（${gradeThresholds[1]}≤R＜${gradeThresholds[2]}）· D（R≥${gradeThresholds[2]}）`
+      : product.id === "content-rank"
+        ? enterpriseCreditStore.observerRule?.rankRule ?? "按风险指数 R 从高到低排列。"
+        : "";
+    return `<div class="credit-formula-strip"><code>${escapeHtml(formula)}</code>${productRule ? `<strong>${escapeHtml(productRule)}</strong>` : ""}</div>`;
+  }
+
   function creditProductVisual(product, currentPhase) {
     const record = selectedCreditRecord();
     const ready = currentPhase >= 3;
     const exposed = currentPhase >= 4;
-    const gradeThresholds = enterpriseCreditStore.observerRule?.gradeThresholds ?? [35, 50, 65];
-    const deliveryRule = product.id === "finance-index"
-      ? "直接发布连续风险指数 R。"
-      : product.id === "city-grade"
-        ? `A：R＜${gradeThresholds[0]}；B：${gradeThresholds[0]}≤R＜${gradeThresholds[1]}；C：${gradeThresholds[1]}≤R＜${gradeThresholds[2]}；D：R≥${gradeThresholds[2]}。`
-        : enterpriseCreditStore.observerRule?.rankRule ?? "按风险指数从高到低排序。";
     return `<div class="credit-product-view">
-      <header class="credit-dataset-header"><div><span>统一模拟数据集</span><strong>${enterpriseCreditStore.records.length} 家企业 · ${enterpriseCreditStore.schema.length} 个信用维度</strong></div><small>60家完整参考企业 + 40家敏感属性待推断企业</small></header>
-      <section class="credit-formula-card"><div><span>演示观察者可见的产品真实公式</span><b>攻击者未知 · 攻击代码不会读取</b></div><code>${escapeHtml(enterpriseCreditStore.observerRule?.formula ?? "")}</code><p>${escapeHtml(deliveryRule)}</p></section>
-      <section class="credit-enterprise-card"><header><div><span>当前企业</span><strong>${escapeHtml(record.name)}</strong></div><b>${escapeHtml(record.id)}</b></header><div class="credit-feature-grid">${enterpriseCreditStore.schema.map((field) => {
+      <section class="credit-enterprise-card"><header><strong>${escapeHtml(record.name)}</strong><b>${escapeHtml(record.id)}</b></header><div class="credit-feature-grid">${enterpriseCreditStore.schema.map((field) => {
         const sensitive = field.sensitive === true;
-        return `<article class="${sensitive ? "is-sensitive" : ""}"><span>${escapeHtml(field.label)}</span><strong>${sensitive ? exposed ? "已被攻击反演" : "受保护" : `${escapeHtml(record[field.key])}${escapeHtml(field.unit)}`}</strong><small>${sensitive ? "目标敏感维度" : "攻击者可知"}</small></article>`;
+        return `<article class="${sensitive ? "is-sensitive" : ""}"><span>${escapeHtml(field.label)}</span><strong>${sensitive ? exposed ? "已被攻击反演" : "受保护" : `${escapeHtml(record[field.key])}${escapeHtml(field.unit)}`}</strong></article>`;
       }).join("")}</div></section>
-      <div class="credit-output-card ${ready ? "is-ready" : ""}"><span>${escapeHtml(product.outputLabel)}</span><strong>${ready ? escapeHtml(creditOutputText(product.id, record)) : "等待读取"}</strong><small>${escapeHtml(product.outputDetail)}</small></div>
+      <div class="credit-output-card ${ready ? "is-ready" : ""}"><span>${escapeHtml(product.outputLabel)}</span><strong>${ready ? escapeHtml(creditOutputText(product.id, record)) : "等待读取"}</strong></div>
       ${exposed ? '<div class="attack-overlay">参考企业的完整特征—输出对被用来学习代理规则，目标企业的逾期率开始显现。</div>' : ""}
     </div>`;
   }
@@ -2299,27 +2339,17 @@
       output: `{ paths: 3, entities: 7, status: "authorized" }`,
     };
     if (activeSeries.visual === "chat") return {
-      language: "QWEN + RAG TRACE",
+      language: "请求 / 回答",
       code: (() => {
         const response = ragResponseFor(product);
         return JSON.stringify({
-          question_id: response?.id,
           question: response?.question,
-          image_id: response?.imageId ?? null,
-          database: ragChatData.database,
-          text_retriever: ragChatData.textEmbeddingModel,
-          image_retriever: response?.imageId ? ragChatData.imageEmbeddingModel : null,
-          generator: ragChatData.generationModel,
-          top_k: response?.retrieved?.length ?? 0,
-          rag: true,
+          image_attached: Boolean(response?.imageId),
         }, null, 2);
       })(),
       output: (() => {
-        const response = ragResponseFor(product);
         return JSON.stringify({
-          answer: response?.answer ?? product.outputValue,
-          citations: response?.retrieved?.map((item) => item.id) ?? [],
-          generation_seconds: response?.generationSeconds ?? null,
+          answer: ragTextInferenceFor(product).answer,
         }, null, 2);
       })(),
     };
@@ -2394,7 +2424,6 @@
       const condition = structuredConditions[0];
       const field = fields.get(condition.field) ?? schema[0];
       return `<form class="product-control structured-query-control credit-product-control" data-product-form><div class="condition-builder">
-        <div class="condition-builder-heading"><span>选择同一模拟数据集中的企业</span><small>三个产品共用100家企业和同一组六维信用特征</small></div>
         <div class="processing-setting-list"><label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, 0)}</label></div>
       </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
     }
@@ -2454,8 +2483,8 @@
             return `<label class="${responseImage ? "has-image " : ""}${response.id === selected?.id ? "is-selected" : ""}">${responseImage ? `<img src="${escapeHtml(responseImage.path)}" alt="" />` : ""}<input type="radio" name="rag-question" value="${escapeHtml(response.id)}" data-rag-question ${response.id === selected?.id ? "checked" : ""} /><span>${escapeHtml(response.question)}</span></label>`;
           }).join("")}</div>
         </fieldset>
-        ${product.id === "content-multimodal" ? `<div class="rag-image-input"><span>图片输入</span>${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" /><strong>${escapeHtml(image.title)}</strong><small>选择问题时同步切换固定演示图片</small>` : "<strong>尚未选择图片</strong>"}</div>` : ""}
-        <div class="rag-submit"><small>默认链路：${escapeHtml(product.id === "content-multimodal" ? "CLIP + SQLite + Qwen" : "BGE + SQLite + Qwen")}</small><button type="submit" data-run-product ${responses.length ? "" : "disabled"}>${escapeHtml(product.callLabel)}</button></div>
+        ${product.id === "content-multimodal" ? `<div class="rag-image-input">${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" /><strong>${escapeHtml(image.title)}</strong>` : "<strong>尚未选择图片</strong>"}</div>` : ""}
+        <div class="rag-submit"><button type="submit" data-run-product ${responses.length ? "" : "disabled"}>${escapeHtml(product.callLabel)}</button></div>
       </form>`;
     }
     if (structuredConfig(product)) return renderStructuredProductControl(product);
@@ -2500,7 +2529,7 @@
       <div class="guided-tour">
         <section class="demo-act product-demo-act">
           <header class="demo-act-heading"><strong>产品演示</strong></header>
-          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header>${renderProductUsageCounter(product)}<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${minimalFooter ? "minimal-product-footer" : ""}">${minimalFooter ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
+          <article class="product-window"><header><div><span class="product-avatar">${escapeHtml(activeSeries.code)}</span><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.category)} · ${escapeHtml(product.family)}</small></span></div><div class="product-header-tools"><div class="view-mode-switch" aria-label="产品展示方式">${[["interface", "产品界面"], ["technical", "代码与数据"]].map(([mode, label]) => `<button type="button" data-view-mode="${mode}" aria-pressed="${mode === viewMode}" class="${mode === viewMode ? "active" : ""}">${label}</button>`).join("")}</div><a href="security_attacks/${encodeURIComponent(product.category)}.html">类别说明</a></div></header>${creditProductIds.has(product.id) ? creditFormulaStrip(product) : ""}${renderProductUsageCounter(product)}<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form><div class="product-canvas" data-product-canvas>${renderProductPresentation(activeSeries, displayProduct, 0)}</div><footer class="${minimalFooter ? "minimal-product-footer" : ""}">${minimalFooter ? "" : '<button type="button" data-rerun>↻ 重播当前输入</button><span data-product-status>请编辑输入并运行产品</span>'}<button type="button" class="start-attack" data-start-attack disabled>开始隐私攻击演示 →</button></footer></article>
         </section>
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
@@ -2577,7 +2606,13 @@
     const value = root.querySelector("[data-risk-value]");
     const bar = root.querySelector("[data-risk-bar]");
     const evidence = root.querySelector("[data-evidence-list]");
-    if (seriesRecoveryProductIds.has(product.id)) {
+    if (ragProductIds.has(product.id)) {
+      const inference = ragTextInferenceFor(product);
+      if (title) title.textContent = attackStep === 0 ? "准备分析回答正文" : "正在执行：回答依据推断";
+      if (evidence) evidence.innerHTML = attackStep === 0
+        ? "<li>等待读取用户可见的回答正文</li>"
+        : `<li>仅从回答正文命中 ${inference.matches.length}/${inference.total} 个候选事实特征；${escapeHtml(inference.conclusion)}。</li>`;
+    } else if (seriesRecoveryProductIds.has(product.id)) {
       if (title) title.textContent = attackStep === 0 ? "准备居民数据库成员恢复" : progressItems[Math.min(attackStep, progressItems.length) - 1].title;
       if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item, index) => {
         if (membershipRecoveryRun && index === 1) return `<li>代码实际调用 ${membershipRecoveryRun.queryCount} 次：缓存命中 ${membershipRecoveryRun.cacheHits} 次，新执行 ${membershipRecoveryRun.cacheMisses} 次。</li>`;
@@ -2643,9 +2678,15 @@
       if (!run) return;
       const primaryMetric = product.id === "city-grade" ? `${(run.recall * 100).toFixed(1)}%` : `${run.meanAbsoluteError.toFixed(2)} 个百分点`;
       results.innerHTML = `
-        <header><div><span>敏感属性反演结果</span><h3>${escapeHtml(product.attacks[0].name)}</h3></div><strong>${primaryMetric}</strong></header>
-        <div class="membership-result-stats"><article><span>统一数据集</span><strong>${enterpriseCreditStore.records.length} 家</strong></article><article><span>完整参考企业</span><strong>${run.referenceCount}</strong></article><article><span>待推断企业</span><strong>${run.targetCount}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>
-        <div class="credit-result-note"><strong>${product.id === "city-grade" ? "等级反演结论" : "属性反演结论"}</strong><p>${escapeHtml(product.attacks[0].result)}</p></div>`;
+        <header><div><h3>${escapeHtml(product.attacks[0].name)}</h3></div><strong>${primaryMetric}</strong></header>
+        <div class="membership-result-stats"><article><span>统一数据集</span><strong>${enterpriseCreditStore.records.length} 家</strong></article><article><span>完整参考企业</span><strong>${run.referenceCount}</strong></article><article><span>待推断企业</span><strong>${run.targetCount}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>`;
+      return;
+    }
+    if (ragProductIds.has(product.id)) {
+      const inference = ragTextInferenceFor(product);
+      results.innerHTML = `
+        <header><div><h3>回答依据推断</h3></div><strong>${inference.matches.length} / ${inference.total}</strong></header>
+        <div class="text-inference-result"><p><b>候选依据</b>${escapeHtml(inference.claim)}</p><p><b>正文特征</b>${inference.matches.length ? inference.matches.map((match) => `“${escapeHtml(match)}”`).join("、") : "未命中足够的特征"}</p><strong>攻击结果：${escapeHtml(inference.conclusion)}</strong></div>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {

@@ -117,6 +117,19 @@ test("uses one 100-company six-feature credit dataset for 030501 through 030503"
   assert.match(labScript, /formulaAccessCount: 0/);
   assert.match(labScript, /60家参考企业六维全知/);
   assert.match(labScript, /40家目标企业只暴露五个非敏感维度/);
+  assert.match(labScript, /creditFormulaStrip\(product\)/);
+  assert.doesNotMatch(labScript, /credit-dataset-header/);
+  assert.doesNotMatch(labScript, /credit-formula-card/);
+  assert.doesNotMatch(labScript, /选择同一模拟数据集中的企业/);
+  assert.doesNotMatch(labScript, /三个产品共用100家企业和同一组六维信用特征/);
+  assert.doesNotMatch(labScript, /目标敏感维度/);
+  assert.doesNotMatch(labScript, /敏感属性反演结果/);
+  assert.doesNotMatch(labScript, /credit-result-note/);
+  assert.doesNotMatch(labScript, /属性反演结论/);
+  assert.doesNotMatch(labScript, /credit-knowledge-boundary/);
+  assert.doesNotMatch(labScript, /credit-learning-card/);
+  assert.doesNotMatch(labScript, /目标企业敏感属性反演/);
+  assert.doesNotMatch(labScript, /成对排序代理规则/);
   assert.match(indexPage, /未知评分公式学习/);
   assert.match(gradePage, /逾期率兼容区间反演/);
   assert.match(rankPage, /成对排序代理规则学习/);
@@ -140,10 +153,13 @@ test("uses one 100-company six-feature credit dataset for 030501 through 030503"
   }
   assert.ok(runs["finance-index"].meanAbsoluteError < 0.2);
   assert.ok(runs["city-grade"].recall >= 0.8);
+  assert.ok(new Set(runs["city-grade"].candidateResults.map((row) => `${row.minimum.toFixed(1)}-${row.maximum.toFixed(1)}`)).size >= 20);
+  assert.ok(new Set(runs["city-grade"].candidateResults.map((row) => row.publicContribution.toFixed(4))).size >= 20);
   assert.ok(runs["content-rank"].meanAbsoluteError < 4);
+  assert.ok(runs["content-rank"].meanIntervalWidth > 0);
 });
 
-test("uses one fixed-question Qwen RAG chatbot for 030701 and 030705", async () => {
+test("uses one fixed-question chatbot and text-only evidence inference for 030701 and 030705", async () => {
   const [html, ragScript, labScript, buildScript, textCorpus, imageCorpus] = await Promise.all([
     readFile(new URL("index.html", pagesRoot), "utf8"),
     readFile(new URL("rag-chat-data.js", pagesRoot), "utf8"),
@@ -156,12 +172,16 @@ test("uses one fixed-question Qwen RAG chatbot for 030701 and 030705", async () 
   assert.match(html, /chatSeries\) chatSeries\.productIds = \["city-rag", "content-multimodal"\]/);
   assert.doesNotMatch(html, /chatSeries\.productIds = \["city-rag", "finance-graph"/);
   assert.match(labScript, /data-rag-question/);
-  assert.match(labScript, /图片输入/);
-  assert.match(labScript, /Qwen2\.5-7B \+ RAG/);
-  assert.match(labScript, /所有回答默认使用 RAG/);
+  assert.match(labScript, /rag-image-input/);
+  assert.match(labScript, /ragTextInferenceFor/);
+  assert.match(labScript, /仅读取用户可见的回答文本/);
+  for (const hiddenCopy of ["Qwen2.5-7B + RAG", "默认链路", "政策知识库已连接", "基于检索结果", "生成耗时", "固定问题预生成结果", "RAG 检索记录"]) {
+    assert.equal(labScript.includes(hiddenCopy), false);
+  }
   assert.match(buildScript, /CREATE TABLE rag_documents/);
   assert.match(buildScript, /Qwen\/Qwen2\.5-7B-Instruct/);
   assert.match(buildScript, /BAAI\/bge-small-en-v1\.5/);
+  assert.match(buildScript, /不得输出资料编号、文件名、来源、引用或检索过程/);
   assert.equal(textCorpus.trim().split("\n").length, 9);
   assert.equal(imageCorpus.trim().split("\n").length, 3);
 
@@ -169,14 +189,15 @@ test("uses one fixed-question Qwen RAG chatbot for 030701 and 030705", async () 
   vm.createContext(context);
   vm.runInContext(ragScript, context);
   const ragData = context.window.__RAG_CHAT_DATA__;
-  assert.equal(ragData.mode, "Qwen + RAG");
-  assert.equal(ragData.database.engine, "SQLite");
-  assert.equal(ragData.database.documents, 12);
+  assert.equal(ragData.schemaVersion, 2);
   assert.equal(ragData.responses.length, 6);
   assert.deepEqual([...new Set(ragData.responses.map((response) => response.productCode))], ["030701", "030705"]);
   for (const response of ragData.responses) {
     assert.ok(response.answer.length > 20);
-    assert.ok(response.retrieved.length >= 3);
+    assert.equal(Object.hasOwn(response, "retrieved"), false);
+    assert.equal(Object.hasOwn(response, "generationSeconds"), false);
+    assert.doesNotMatch(response.answer, /依据\s*[:：]/);
+    assert.doesNotMatch(response.answer, /(?:TXT|IMG)-[A-Z0-9-]+/);
   }
 });
 

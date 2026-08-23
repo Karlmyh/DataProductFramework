@@ -7,7 +7,7 @@ This directory contains the reproducible, offline build pipeline for the fixed-q
 - `encode_clip_images.py`: builds CLIP ViT-B/32 image vectors.
 - `build_rag_demo.py`: builds the SQLite vector store, retrieves evidence, invokes locally cached Qwen2.5-7B-Instruct, and exports the audited fixed-question responses.
 
-The public page receives only the generated answers, public citations, model names, and corpus hashes. The SQLite database and raw embeddings remain build artifacts and are not published.
+The public page receives only the fixed questions, generated answer text, and the three demo images. Retrieval records, document identifiers, model metadata, timings, the SQLite database, and raw embeddings remain private build artifacts. The browser-side attack therefore works only from answer text and never reads retrieval traces.
 
 On QURM183, run the fixed-corpus build on a checked idle GPU with:
 

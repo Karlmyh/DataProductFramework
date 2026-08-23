@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
+import re
 import sqlite3
 import time
 from pathlib import Path
@@ -13,10 +13,6 @@ from pathlib import Path
 
 def read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-
-
-def file_sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def vector_blob(vector) -> bytes:
@@ -28,6 +24,11 @@ def vector_blob(vector) -> bytes:
 def public_asset_path(path: str) -> str:
     prefix = "github-pages/"
     return path[len(prefix):] if path.startswith(prefix) else path
+
+
+def public_answer(answer: str) -> str:
+    """Remove retrieval identifiers from the browser-facing answer."""
+    return re.sub(r"\s*依据\s*[:：][\s\S]*$", "", answer).strip()
 
 
 def create_database(path: Path) -> sqlite3.Connection:
@@ -173,7 +174,8 @@ def main() -> int:
                 "content": (
                     "你是数据产品安全衡量框架的知识助手。资料均为虚构演示材料。"
                     "只能依据检索上下文回答，不得补充上下文没有的事实。"
-                    "先直接回答，再用清晰要点说明；结尾用“依据：”列出实际使用的资料编号。"
+                    "先直接回答，再用清晰要点说明。"
+                    "回答中不得输出资料编号、文件名、来源、引用或检索过程。"
                     "若含图片资料，只能依据检索到的图片说明，不得声称看到了说明之外的细节。"
                 ),
             },
@@ -214,24 +216,12 @@ def main() -> int:
             "productCode": question["product_code"],
             "question": question["question"],
             "imageId": question.get("image_id"),
-            "answer": answer,
-            "retrieved": public_retrieval,
-            "generationSeconds": round(generation_seconds, 3),
+            "answer": public_answer(answer),
         })
     connection.commit()
 
     payload = {
-        "schemaVersion": 1,
-        "mode": "Qwen + RAG",
-        "generationModel": args.model,
-        "textEmbeddingModel": args.embedding_model,
-        "imageEmbeddingModel": "OpenAI CLIP ViT-B/32",
-        "database": {"engine": "SQLite", "documents": len(text_documents) + len(image_documents), "answers": len(generated)},
-        "corpusHashes": {
-            "text": file_sha256(args.text_documents),
-            "images": file_sha256(args.image_documents),
-            "questions": file_sha256(args.questions),
-        },
+        "schemaVersion": 2,
         "images": [
             {"id": item["id"], "title": item["title"], "path": public_asset_path(item["path"])}
             for item in image_documents
