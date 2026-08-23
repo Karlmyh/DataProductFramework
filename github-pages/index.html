@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="覆盖行业数据库、检索增强生成、指标发布与梯度产品的互动式隐私攻击演示和统一风险衡量。" />
     <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/" />
-    <link rel="stylesheet" href="security_attacks/styles.css?v=focused-main-demo-19" />
+    <link rel="stylesheet" href="security_attacks/styles.css?v=qwen-rag-21" />
     <title>数据产品安全衡量框架</title>
     <meta property="og:title" content="数据产品安全衡量框架" />
     <meta property="og:description" content="四类核心数据产品 · 互动调用演示 · 多攻击结果聚合" />
@@ -100,7 +100,7 @@
           databaseSeries.name = "行业数据库产品";
           databaseSeries.productIds = databaseSeries.productIds.filter((id) => !["finance-graph", "city-verify", "content-voice", "finance-verify"].includes(id));
         }
-        if (chatSeries) chatSeries.productIds = ["city-rag", "finance-graph", "content-multimodal"];
+        if (chatSeries) chatSeries.productIds = ["city-rag", "content-multimodal"];
         data.series = data.series.filter((item) => !["graph", "vision"].includes(item.id));
 
         const graphAssistant = data.productsById["finance-graph"];
@@ -108,43 +108,6 @@
         graphQueryProduct.id = "finance-graph-query";
         data.productsById["finance-graph-query"] = graphQueryProduct;
         data.candidatesByProduct["finance-graph-query"] = JSON.parse(JSON.stringify(data.candidatesByProduct["finance-graph"]));
-        Object.assign(graphAssistant, {
-          category: "030701",
-          family: "模型",
-          name: "企业关系图谱问答助手",
-          tagline: "检索后台企业关系图谱，并用自然语言回答企业关系问题。",
-          template: "model",
-          inputLabel: "企业关系问题",
-          inputValue: "远澜科技与星桥能源之间存在什么关系？",
-          callLabel: "发送问题",
-          flow: ["理解企业问题", "检索关系图谱", "生成自然语言回答"],
-          outputLabel: "助手回答",
-          outputValue: "远澜科技通过海岸智造间接参与星桥能源的储能项目。",
-          outputDetail: "产品只返回自然语言回答，不向用户开放后台实体表、关系边表或图谱查询接口。",
-          attacks: [{
-            id: "graphrag-extraction",
-            name: "后台关系图谱重建",
-            brief: "连续向 Chatbot 提出不同企业关系问题，解析回答中的实体与关系并去重。",
-            result: "运行攻击代码后，根据 Chatbot 的真实回答生成恢复关系集。",
-            metric: "后台关系恢复率",
-            value: "运行后计算",
-            displayScore: 0,
-            evidence: "代码实测",
-            attackFamily: "结构化数据抽取",
-            attackObject: "后台图谱关系",
-            source: "当前页面虚构企业 GraphRAG 数据",
-            protocol: "自然语言问答接口；固定八轮企业关系问题；从回答中解析实体和关系；与后台图谱对照",
-            limitation: "恢复结果来自 Chatbot 回答中实际出现的关系，不读取后台图谱接口。"
-          }]
-        });
-        data.candidatesByProduct["finance-graph"] = [{
-          id: "graphrag-extraction",
-          name: "后台关系图谱重建",
-          applicable: true,
-          executed: true,
-          reason: "适用：Chatbot 的多轮自然语言回答会累计暴露后台实体和关系。"
-        }];
-
         const policyAssistant = data.productsById["city-rag"];
         policyAssistant.attacks = [
           {
@@ -291,5 +254,7 @@
     </script>
     <script src="shared-resident-data.js?v=larger-relation-dataset-17"></script>
     <script src="face-library-data.js?v=larger-relation-dataset-17"></script>
-    <script src="privacy-lab.js?v=focused-main-demo-19" defer></script></body>
+    <script src="enterprise-credit-data.js?v=unified-credit-data-20"></script>
+    <script src="rag-chat-data.js?v=qwen-rag-21"></script>
+    <script src="privacy-lab.js?v=qwen-rag-21" defer></script></body>
 </html>

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "Q-TEXT-WT",
+    "product_code": "030701",
+    "question": "梧桐计划面向谁申报？由哪些部门执行，完整办理流程是什么？",
+    "retrieval_query": "Wutong Plan applicant eligibility departments responsibilities application process timeline",
+    "fictional": true
+  },
+  {
+    "id": "Q-TEXT-ELD",
+    "product_code": "030701",
+    "question": "申请居家养老服务补贴需要满足哪些条件，并准备哪些材料？",
+    "retrieval_query": "elderly home care subsidy eligibility income age residence documents review",
+    "fictional": true
+  },
+  {
+    "id": "Q-TEXT-HOU",
+    "product_code": "030701",
+    "question": "住房租赁补贴如何计算？资格由谁复核，资金由谁发放？",
+    "retrieval_query": "housing rental subsidy eligibility calculation review finance payment",
+    "fictional": true
+  },
+  {
+    "id": "Q-IMAGE-FRAMEWORK",
+    "product_code": "030705",
+    "question": "这张图展示了怎样的数据产品安全衡量流程？",
+    "retrieval_query": "data product security measurement framework product representation attack matching measurement aggregation citation",
+    "image_id": "IMG-FRAMEWORK",
+    "fictional": true
+  },
+  {
+    "id": "Q-IMAGE-PORTRAIT",
+    "product_code": "030705",
+    "question": "这张居民核验图片进入多模态问答前，需要哪些隐私保护措施？",
+    "retrieval_query": "face image biometric privacy consent encryption retention access audit",
+    "image_id": "IMG-PORTRAIT",
+    "fictional": true
+  },
+  {
+    "id": "Q-IMAGE-FACEGRID",
+    "product_code": "030705",
+    "question": "这类批量人脸库图片有哪些主要风险，应如何控制？",
+    "retrieval_query": "batch face library privacy risk identity linkage template leakage export rate limit audit",
+    "image_id": "IMG-FACEGRID",
+    "fictional": true
+  }
+]

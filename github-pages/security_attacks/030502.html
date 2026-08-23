@@ -26,25 +26,34 @@
         </nav>
         <span class="category-code">攻击面 · 030502</span>
         <h1>标准参照等级与分段<br />攻击页面</h1>
-        <p class="lead">依据固定标准、目标、阈值、规则或模型边界交付有限有序类别。</p>
+        <p class="lead">在与030501相同的100家模拟企业和6个信用维度上，将风险指数压缩为A—D固定等级。</p>
       </header>
 
       <section class="detail-section">
         <h2>攻击面判定</h2>
         <div class="facts-grid">
-          <div class="fact"><span>核心交付</span><p>依据固定标准、目标、阈值、规则或模型边界交付有限有序类别。</p></div>
-          <div class="fact"><span>主要暴露</span><p>离散等级可通过阈值试探、主动学习和替代模型复制恢复分段边界。</p></div>
+          <div class="fact"><span>核心交付</span><p>针对既定企业只发布A—D风险等级，不发布连续指数。</p></div>
+          <div class="fact"><span>主要暴露</span><p>等级仍会约束隐藏逾期率的可能范围，但信号比连续指数更粗。</p></div>
           <div class="fact"><span>分类边界</span><p>对象不变时不受其他参评对象影响；依赖比较集合的结果归入 030503。</p></div>
         </div>
       </section>
 
+      <section class="detail-section">
+        <h2>统一模拟数据与真实分级规则</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>底层数据</span><p>与030501完全相同的100家企业、6个信用维度和风险指数公式。</p></div>
+          <div class="fact"><span>固定等级</span><p>A：R＜35；B：35≤R＜50；C：50≤R＜65；D：R≥65。</p></div>
+          <div class="fact"><span>攻击者知识</span><p>60家参考企业六维全知且知道公开等级；40家目标企业只知道前五维和A—D等级。</p></div>
+        </div>
+        <p>攻击代码不会读取真实公式或真实阈值，而是用参考企业训练有序代理规则；随后固定目标企业的五个公开维度，搜索所有能产生相同等级的逾期率，输出兼容区间而不是伪造精确值。</p>
+      </section>
+
       <section class="detail-section detail-columns">
         <div><h2>四级产品分支</h2><ol class="numbered-list"><li>绝对数值阈值分级</li><li>固定参照偏离分级</li><li>多条件规则分级</li><li>学习型固定边界分级</li></ol></div>
-        <div><h2>主要攻击</h2><ol class="attack-list">
-                <li><span>01</span><strong>阈值试探</strong></li>
-                <li><span>02</span><strong>等级规则提取</strong></li>
-                <li><span>03</span><strong>替代模型训练</strong></li>
-                <li><span>04</span><strong>分段边界泄露</strong></li></ol></div>
+        <div><h2>当前互动攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>有序等级代理规则学习</strong></li>
+                <li><span>02</span><strong>逾期率兼容区间反演</strong></li>
+                <li><span>03</span><strong>真实值区间覆盖评估</strong></li></ol></div>
       </section>
 
       <section class="detail-section">

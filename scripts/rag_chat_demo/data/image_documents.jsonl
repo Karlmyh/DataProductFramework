@@ -1,0 +1,3 @@
+{"id":"IMG-FRAMEWORK","modality":"image","title":"数据产品安全衡量框架概览图","source":"公开演示素材 / 数据产品安全衡量框架","fictional":true,"path":"github-pages/og-privacy-lab.jpg","content":"图片展示数据产品安全衡量框架。核心流程为：产品表示、攻击匹配、统一衡量、风险聚合；结果需要同时保留攻击对象向量、证据等级和适用范围。"}
+{"id":"IMG-PORTRAIT","modality":"image","title":"居民人脸核验示例图","source":"公开演示素材 / 合成居民核验图片","fictional":true,"path":"github-pages/assets/resident-face-verification-demo.jpg","content":"图片是一张用于身份核验演示的合成人脸。此类输入涉及生物识别信息，应使用单独同意、目的限制、加密传输、模板分区保存、最短留存和访问审计。"}
+{"id":"IMG-FACEGRID","modality":"image","title":"合成人脸库拼图示例","source":"公开演示素材 / 合成人脸库第1批","fictional":true,"path":"github-pages/assets/face-library-sheet-1.jpg","content":"图片由多张合成人脸组成，代表批量人脸库场景。主要风险包括批量身份关联、模板泄露、越权导出和高频枚举；应实施分级授权、检索限频、导出审批、模板隔离和删除审计。"}

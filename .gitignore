@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/.venv-kg-privacy
+/scripts/rag_chat_demo/artifacts/
 /.pnp
 .pnp.*
 .yarn/*

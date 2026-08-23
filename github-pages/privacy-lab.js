@@ -11,6 +11,73 @@
   const residentStore = window.__RESIDENT_DATA__ ?? { name: "居民公共服务数据库", schema: [], records: [] };
   const syntheticFaceLibrary = window.__SYNTHETIC_FACE_LIBRARY__ ?? { gridSize: 5, sheets: [], targetDescriptor: [], faces: [] };
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
+  const enterpriseCreditStore = window.__ENTERPRISE_CREDIT_DATA__ ?? { name: "模拟企业信用数据集", schema: [], records: [], split: { reference: 0, target: 0 }, observerRule: {} };
+  const ragChatData = window.__RAG_CHAT_DATA__ ?? {
+    mode: "Qwen + RAG",
+    generationModel: "Qwen/Qwen2.5-7B-Instruct",
+    textEmbeddingModel: "BAAI/bge-small-en-v1.5",
+    imageEmbeddingModel: "OpenAI CLIP ViT-B/32",
+    database: { engine: "SQLite", documents: 0, answers: 0 },
+    images: [],
+    responses: [],
+  };
+  const ragProductIds = new Set(["city-rag", "content-multimodal"]);
+  const ragResponsesByProduct = new Map([
+    ["city-rag", ragChatData.responses.filter((response) => response.productCode === "030701")],
+    ["content-multimodal", ragChatData.responses.filter((response) => response.productCode === "030705")],
+  ]);
+  const ragImagesById = new Map(ragChatData.images.map((image) => [image.id, image]));
+  const selectedRagQuestionIds = new Map(Array.from(ragResponsesByProduct, ([productId, responses]) => [productId, responses[0]?.id ?? ""]));
+  const creditProductIds = new Set(["finance-index", "city-grade", "content-rank"]);
+  const creditFeatureKeys = enterpriseCreditStore.schema.map((field) => field.key);
+  const creditPublicFeatureKeys = enterpriseCreditStore.schema.filter((field) => !field.sensitive).map((field) => field.key);
+  const creditSensitiveFeatureKey = enterpriseCreditStore.schema.find((field) => field.sensitive)?.key ?? "overdueRate";
+  const creditFeatureScales = Object.fromEntries(enterpriseCreditStore.schema.map((field) => [field.key, Number(field.scale) || 100]));
+  const creditRecordById = new Map(enterpriseCreditStore.records.map((record) => [record.id, record]));
+  const creditReferenceCount = enterpriseCreditStore.split?.reference ?? 60;
+  const creditReferenceRecords = enterpriseCreditStore.records.slice(0, creditReferenceCount);
+  const creditTargetRecords = enterpriseCreditStore.records.slice(creditReferenceCount);
+  const creditExampleRecord = creditTargetRecords[12] ?? enterpriseCreditStore.records[0] ?? {};
+  const creditOutputFor = (productId, record) => productId === "finance-index"
+    ? record.riskIndex
+    : productId === "city-grade"
+      ? record.grade
+      : record.riskRank;
+  const creditOutputText = (productId, record) => productId === "finance-index"
+    ? `${Number(record.riskIndex).toFixed(1)} / 100`
+    : productId === "city-grade"
+      ? `${record.grade} 级`
+      : `风险第 ${record.riskRank} 名 · ${record.riskPercentile} 百分位`;
+  const ragProductDefinitions = {
+    "city-rag": {
+      name: "政策知识问答助手",
+      tagline: "从虚构政策知识库检索依据，再由千问生成带引用的回答。",
+      inputLabel: "选择一个政策问题",
+      callLabel: "使用千问 + RAG 回答",
+      flow: ["BGE 向量检索", "组装授权上下文", "千问生成回答"],
+      outputLabel: "千问 + RAG 回答",
+      outputDetail: "回答由 QURM183 上的 Qwen2.5-7B-Instruct 根据 SQLite RAG 库检索结果生成。",
+    },
+    "content-multimodal": {
+      name: "多模态知识问答助手",
+      tagline: "在同一问答界面中增加图片输入，以 CLIP 检索图片知识，再由千问生成带引用的回答。",
+      inputLabel: "选择图片与问题",
+      callLabel: "使用多模态 RAG 回答",
+      flow: ["CLIP 图片检索", "检索关联知识", "千问生成回答"],
+      outputLabel: "千问 + 多模态 RAG 回答",
+      outputDetail: "图片由 CLIP ViT-B/32 编码检索，文本上下文交由 Qwen2.5-7B-Instruct 生成最终回答。",
+    },
+  };
+  Object.entries(ragProductDefinitions).forEach(([productId, definition]) => {
+    const product = productsById[productId];
+    const firstResponse = ragResponsesByProduct.get(productId)?.[0];
+    if (!product) return;
+    Object.assign(product, {
+      ...definition,
+      inputValue: firstResponse?.question ?? product.inputValue,
+      outputValue: firstResponse?.answer ?? "RAG 构建结果尚未载入",
+    });
+  });
   const protectedResidentFieldKeys = new Set(["monthlyIncome", "subsidyStatus", "insurance"]);
   const qualificationPolicies = ["养老服务补贴", "住房租赁补贴", "医疗救助"];
   const qualificationPeriods = ["2026年第3季度", "2026年第2季度", "2026年第1季度"];
@@ -288,6 +355,103 @@
       reason: "条件适用：调用者可任意替换两个主体，且系统缺少主体授权、频率限制和异常枚举检测。",
     }];
   }
+  const creditProductDefinitions = {
+    "finance-index": {
+      name: "企业信用风险指数",
+      tagline: "在同一批100家模拟企业上，用六个信用维度形成0—100的连续风险指数。",
+      inputLabel: "已发布企业",
+      callLabel: "读取风险指数",
+      flow: ["读取六维信用记录", "应用内部真实公式", "发布连续风险指数"],
+      outputLabel: "企业风险指数",
+      outputDetail: "产品对既定企业发布一位小数风险指数；近90天逾期率参与计算但不直接公开。",
+      attack: {
+        id: "credit-index-sensitive-inference",
+        name: "未知公式学习与逾期率反演",
+        brief: "攻击者用60家六维特征全知的参考企业及其公开指数拟合未知评分公式，再用目标企业的五个公开维度和指数反推出近90天逾期率。",
+        result: "运行攻击代码后，对40家目标企业生成逾期率估计并与真实值对照。",
+        metric: "逾期率平均绝对误差",
+        value: "运行后计算",
+        displayScore: 0,
+        evidence: "代码实测",
+        attackFamily: "规则学习与属性反演",
+        attackObject: "近90天逾期率",
+        source: "同一批100家模拟企业信用数据",
+        protocol: "60家参考企业六维全知；40家目标企业仅五维公开；攻击代码只读取产品输出，不读取页面展示的真实公式",
+        limitation: "依赖参考企业与目标企业使用同一稳定规则，且攻击者拥有足够多的完整参考样本。",
+      },
+    },
+    "city-grade": {
+      name: "企业信用风险等级",
+      tagline: "在同一批100家模拟企业上，将相同风险指数按固定阈值发布为A—D四个等级。",
+      inputLabel: "已发布企业",
+      callLabel: "读取风险等级",
+      flow: ["读取同一六维记录", "计算内部风险指数", "按固定阈值发布等级"],
+      outputLabel: "企业风险等级",
+      outputDetail: "产品只公开A—D等级，不公开连续指数和近90天逾期率。",
+      attack: {
+        id: "credit-grade-sensitive-inference",
+        name: "等级规则学习与逾期区间反演",
+        brief: "攻击者用60家完整参考企业的六维特征和公开等级学习有序分级方向，再由目标企业的五个公开维度与等级反推出逾期率兼容区间。",
+        result: "运行攻击代码后，对40家目标企业输出可能的逾期率区间；离散等级造成的区间明显宽于连续指数反演。",
+        metric: "真实逾期率区间覆盖率",
+        value: "运行后计算",
+        displayScore: 0,
+        evidence: "代码实测",
+        attackFamily: "有序规则学习与属性反演",
+        attackObject: "近90天逾期率区间",
+        source: "与030501相同的100家模拟企业信用数据",
+        protocol: "60家参考企业六维全知；40家目标企业仅五维公开；只使用A—D等级训练排序代理模型",
+        limitation: "等级只提供区间约束，通常无法恢复精确逾期率；结果依赖参考样本覆盖每个等级。",
+      },
+    },
+    "content-rank": {
+      name: "企业信用风险排名",
+      tagline: "在同一批100家模拟企业上，按相同风险指数从高到低发布风险名次和百分位。",
+      inputLabel: "榜单企业",
+      callLabel: "读取风险排名",
+      flow: ["计算同一风险指数", "与100家企业比较", "发布风险名次与百分位"],
+      outputLabel: "企业风险排名",
+      outputDetail: "第1名风险最高；产品只公开相对位置，不公开连续指数和近90天逾期率。",
+      attack: {
+        id: "credit-rank-sensitive-inference",
+        name: "排序规则学习与逾期率反演",
+        brief: "攻击者用60家完整参考企业的六维特征和公开名次学习成对排序方向，再寻找能让目标企业落在其公开名次附近的逾期率。",
+        result: "运行攻击代码后，对40家目标企业生成与公开排名一致的逾期率估计。",
+        metric: "逾期率平均绝对误差",
+        value: "运行后计算",
+        displayScore: 0,
+        evidence: "代码实测",
+        attackFamily: "排序学习与属性反演",
+        attackObject: "近90天逾期率",
+        source: "与030501相同的100家模拟企业信用数据",
+        protocol: "60家参考企业六维全知；40家目标企业仅五维公开；根据名次对训练线性排序代理模型",
+        limitation: "排名只保留相对顺序，参照集合变化会降低反演稳定性，精度通常弱于连续指数。",
+      },
+    },
+  };
+  Object.entries(creditProductDefinitions).forEach(([productId, definition]) => {
+    const product = productsById[productId];
+    if (!product) return;
+    Object.assign(product, {
+      name: definition.name,
+      tagline: definition.tagline,
+      inputLabel: definition.inputLabel,
+      inputValue: `${creditExampleRecord.name ?? "模拟企业"}｜${creditExampleRecord.id ?? "CR-073"}`,
+      callLabel: definition.callLabel,
+      flow: definition.flow,
+      outputLabel: definition.outputLabel,
+      outputValue: creditOutputText(productId, creditExampleRecord),
+      outputDetail: definition.outputDetail,
+      attacks: [definition.attack],
+    });
+    candidatesByProduct[productId] = [{
+      id: definition.attack.id,
+      name: definition.attack.name,
+      applicable: true,
+      executed: true,
+      reason: `适用：${definition.attack.brief}`,
+    }];
+  });
   const structuredProductConfigs = {
     "city-existence": {
       schema: residentStore.schema,
@@ -366,6 +530,21 @@
       ],
     },
   };
+  creditProductIds.forEach((productId) => {
+    structuredProductConfigs[productId] = {
+      schema: [{
+        key: "creditEnterprise",
+        label: "模拟企业",
+        type: "enum",
+        values: enterpriseCreditStore.records.map((record) => `${record.name}｜${record.id}`),
+      }],
+      defaults: [{
+        field: "creditEnterprise",
+        operator: "eq",
+        value: `${creditExampleRecord.name ?? "模拟企业"}｜${creditExampleRecord.id ?? "CR-073"}`,
+      }],
+    };
+  });
   const residentQueryProductIds = new Set(["city-existence", "content-library", "finance-aggregate"]);
   const residentProcessingSettingKeys = new Set(["processingMethod", "sampleSize"]);
   let seriesIndex = 0;
@@ -387,6 +566,12 @@
     { name: "准备候选居民", title: "建立候选居民集合", evidence: "候选池包含 112 条已知特征记录，其中真实数据库成员对攻击者不可见。" },
     { name: "执行存在性查询", title: "代码正在调用存在性查询", evidence: "实际查询次数、缓存命中和新执行次数将在运行后生成。" },
     { name: "生成恢复数据集", title: "根据真实响应形成成员数据集", evidence: "恢复数量、遗漏和误判均由代码与真实成员集对照计算。" },
+  ];
+  const creditInferenceSteps = [
+    { name: "划分攻击者知识", title: "建立参考集与目标集", evidence: "60家参考企业六维特征全知；40家目标企业只暴露五个非敏感维度和产品输出。" },
+    { name: "学习未知规则", title: "只用参考样本训练代理规则", evidence: "攻击代码不读取页面展示的真实公式，只从参考企业的特征—输出对中学习。" },
+    { name: "反演敏感维度", title: "搜索近90天逾期率", evidence: "固定目标企业五个公开维度，寻找与公开指数、等级或排名最一致的逾期率。" },
+    { name: "对照模拟真值", title: "计算反演误差", evidence: "真实逾期率只在最后用于离线评估，不进入攻击者训练输入。" },
   ];
   const faceHillClimbSteps = [
     { name: "选定连续起点", title: "对齐合成起点", evidence: "从一张辅助合成人脸起步，不再把彼此独立的人脸库当成连续路径。" },
@@ -480,6 +665,10 @@
     id: `${prefix}-${String(index + 1).padStart(3, "0")}`,
     summary: `${summaries[index % summaries.length]} · 样本 ${String(index + 1).padStart(3, "0")}`,
   }));
+  const creditAttackTargets = creditTargetRecords.map((record) => ({
+    id: record.id,
+    summary: `${record.name} · 近90天逾期率 ${record.overdueRate.toFixed(1)}%`,
+  }));
   const recoveryAttackConfigs = new Map([
     ["content-library", { queriesPerTarget: 10, groundTruthLabel: "系统完整居民记录", recoveredLabel: "攻击拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-graph", { queriesPerTarget: 1, groundTruthLabel: "Chatbot 后台企业关系图谱", recoveredLabel: "从 Chatbot 回答恢复的关系图谱", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复关系", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误推断关系", targets: graphRagBackendRelations }],
@@ -489,9 +678,9 @@
     ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
     ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "对齐的合成人脸起点", recoveredLabel: "连续爬山路径", truthMetricLabel: "接受步", recoveredMetricLabel: "最终相似度", missedMetricLabel: "拒绝探针", falseMetricLabel: "随机重启", targets: [{ id: "FACE-026", summary: "对齐后的辅助合成起点" }] }],
     ["finance-verify", { queriesPerTarget: 1, groundTruthLabel: "后台合成账户归属关系集", recoveredLabel: "攻击恢复账户归属关系集", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误关系", targets: Array.from(verifiedAccountRelationships.entries()).map(([enterprise, account], index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, enterprise, account, summary: `${enterprise} → ${account}` })) }],
-    ["finance-index", { queriesPerTarget: 4, groundTruthLabel: "指数计算真实样本集", recoveredLabel: "攻击恢复的指数样本集", truthMetricLabel: "真实指数样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误恢复", targets: syntheticTargetSet("IDX", ["远澜科技 · 风险指数 72.4", "海岸智造 · 风险指数 61.8", "星桥能源 · 风险指数 48.6", "东浦制造 · 风险指数 83.1"]) }],
-    ["city-grade", { queriesPerTarget: 3, groundTruthLabel: "街区等级真实规则样本", recoveredLabel: "攻击恢复的等级边界样本", truthMetricLabel: "真实规则样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复边界", falseMetricLabel: "错误边界", targets: syntheticTargetSet("GRD", ["梧桐街道 · 拥堵等级 B", "滨江街道 · 拥堵等级 A", "新城街道 · 拥堵等级 C", "湖畔街道 · 拥堵等级 B"]) }],
-    ["content-rank", { queriesPerTarget: 3, groundTruthLabel: "平台真实排序集合", recoveredLabel: "攻击恢复的排序集合", truthMetricLabel: "真实排序样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复名次", falseMetricLabel: "错误名次", targets: syntheticTargetSet("RNK", ["城市漫游 · 第 3 名", "夏日食谱 · 第 7 名", "科学一分钟 · 第 12 名", "周末露营 · 第 18 名"]) }],
+    ["finance-index", { queriesPerTarget: 1, groundTruthLabel: "40家目标企业真实逾期率", recoveredLabel: "由连续指数反演的逾期率", truthMetricLabel: "目标企业", recoveredMetricLabel: "误差≤1个百分点", missedMetricLabel: "误差>1个百分点", falseMetricLabel: "错误推断", targets: creditAttackTargets }],
+    ["city-grade", { queriesPerTarget: 1, groundTruthLabel: "40家目标企业真实逾期率", recoveredLabel: "由A—D等级反演的兼容区间", truthMetricLabel: "目标企业", recoveredMetricLabel: "真实值落入区间", missedMetricLabel: "真实值落在区间外", falseMetricLabel: "错误区间", targets: creditAttackTargets }],
+    ["content-rank", { queriesPerTarget: 1, groundTruthLabel: "40家目标企业真实逾期率", recoveredLabel: "由风险名次反演的逾期率", truthMetricLabel: "目标企业", recoveredMetricLabel: "误差≤4个百分点", missedMetricLabel: "误差>4个百分点", falseMetricLabel: "错误推断", targets: creditAttackTargets }],
     ["city-rag", { queriesPerTarget: 4, groundTruthLabel: "Chatbot 后台政策语料", recoveredLabel: "从回答恢复的政策语料", truthMetricLabel: "后台真实片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: syntheticTargetSet("POL", ["梧桐计划 · 申报资格条款", "养老补贴 · 收入门槛条款", "住房保障 · 家庭人数条款", "就业扶持 · 职业状态条款"]) }],
     ["content-vision", { queriesPerTarget: 5, groundTruthLabel: "视觉模型真实训练片段", recoveredLabel: "攻击恢复的训练片段特征", truthMetricLabel: "真实训练片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: syntheticTargetSet("VIS", ["户外运动 · 跑步场景", "道路交通 · 骑行场景", "室内活动 · 健身场景", "公共空间 · 人群场景"]) }],
     ["content-speech", { queriesPerTarget: 5, groundTruthLabel: "语音模型真实训练语音", recoveredLabel: "攻击恢复的语音与说话人特征", truthMetricLabel: "真实训练语音", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复语音", falseMetricLabel: "错误语音", targets: syntheticTargetSet("SPK", ["说话人 A · 公共服务咨询", "说话人 B · 交通信息播报", "说话人 C · 政策问答语音", "说话人 D · 日常对话语音"]) }],
@@ -520,6 +709,12 @@
     const products = activeSeries.productIds.map((id) => productsById[id]).filter(Boolean);
     return { activeSeries, products, product: products[productIndex] };
   };
+
+  function ragResponseFor(product) {
+    const responses = ragResponsesByProduct.get(product.id) ?? [];
+    const selectedId = selectedRagQuestionIds.get(product.id);
+    return responses.find((response) => response.id === selectedId) ?? responses[0] ?? null;
+  }
 
   function productUsageLabel(product) {
     if (product.category.startsWith("0304")) return "核验次数";
@@ -596,6 +791,7 @@
 
   function formatStructuredConditions(product = current().product) {
     const fields = structuredFields(product);
+    if (creditProductIds.has(product?.id)) return structuredConditions[0]?.value ?? product.inputValue;
     if (product?.id === "finance-derived") {
       return structuredConditions.map((condition) => `${fields.get(condition.field)?.label ?? condition.field}：${condition.value}`).join(" · ");
     }
@@ -709,9 +905,230 @@
 
   productUsageLimitOptions.forEach((budget) => membershipRecoverySavedRuns.set(budget, simulateMembershipRecoveryBudget(budget)));
 
+  function solveLinearSystem(matrix, vector) {
+    const size = vector.length;
+    const augmented = matrix.map((row, index) => [...row, vector[index]]);
+    for (let column = 0; column < size; column += 1) {
+      let pivot = column;
+      for (let row = column + 1; row < size; row += 1) {
+        if (Math.abs(augmented[row][column]) > Math.abs(augmented[pivot][column])) pivot = row;
+      }
+      [augmented[column], augmented[pivot]] = [augmented[pivot], augmented[column]];
+      const divisor = Math.abs(augmented[column][column]) < 1e-10 ? 1e-10 : augmented[column][column];
+      for (let index = column; index <= size; index += 1) augmented[column][index] /= divisor;
+      for (let row = 0; row < size; row += 1) {
+        if (row === column) continue;
+        const factor = augmented[row][column];
+        for (let index = column; index <= size; index += 1) augmented[row][index] -= factor * augmented[column][index];
+      }
+    }
+    return augmented.map((row) => row[size]);
+  }
+
+  function normalizedCreditVector(record, sensitiveValue = record[creditSensitiveFeatureKey]) {
+    return creditFeatureKeys.map((key) => {
+      const value = key === creditSensitiveFeatureKey ? sensitiveValue : record[key];
+      return Number(value) / creditFeatureScales[key];
+    });
+  }
+
+  function fitCreditLinearModel(records, outputForRecord) {
+    const width = creditFeatureKeys.length + 1;
+    const matrix = Array.from({ length: width }, () => Array(width).fill(0));
+    const vector = Array(width).fill(0);
+    records.forEach((record) => {
+      const row = [1, ...normalizedCreditVector(record)];
+      const output = Number(outputForRecord(record));
+      for (let left = 0; left < width; left += 1) {
+        vector[left] += row[left] * output;
+        for (let right = 0; right < width; right += 1) matrix[left][right] += row[left] * row[right];
+      }
+    });
+    for (let index = 1; index < width; index += 1) matrix[index][index] += 1e-7;
+    return solveLinearSystem(matrix, vector);
+  }
+
+  function predictCreditLinear(weights, record, sensitiveValue = record[creditSensitiveFeatureKey]) {
+    const vector = normalizedCreditVector(record, sensitiveValue);
+    return weights[0] + vector.reduce((sum, value, index) => sum + weights[index + 1] * value, 0);
+  }
+
+  function inverseCreditLinear(weights, targetRecord, observedOutput) {
+    const sensitiveIndex = creditFeatureKeys.indexOf(creditSensitiveFeatureKey);
+    const knownContribution = creditFeatureKeys.reduce((sum, key, index) => key === creditSensitiveFeatureKey
+      ? sum
+      : sum + weights[index + 1] * Number(targetRecord[key]) / creditFeatureScales[key], weights[0]);
+    const sensitiveWeight = weights[sensitiveIndex + 1];
+    if (Math.abs(sensitiveWeight) < 1e-8) return 15;
+    const normalized = (Number(observedOutput) - knownContribution) / sensitiveWeight;
+    return Math.max(0, Math.min(30, normalized * creditFeatureScales[creditSensitiveFeatureKey]));
+  }
+
+  function fitCreditPairwiseDirection(records, orderForRecord) {
+    const weights = Array(creditFeatureKeys.length).fill(0);
+    const examples = records.map((record) => ({ record, vector: normalizedCreditVector(record), order: Number(orderForRecord(record)) }));
+    for (let epoch = 0; epoch < 90; epoch += 1) {
+      const learningRate = 0.035 / (1 + epoch * 0.018);
+      for (let left = 0; left < examples.length; left += 1) {
+        for (let right = left + 1; right < examples.length; right += 1) {
+          if (examples[left].order === examples[right].order) continue;
+          const direction = examples[left].order > examples[right].order ? 1 : -1;
+          const difference = examples[left].vector.map((value, index) => value - examples[right].vector[index]);
+          const margin = direction * difference.reduce((sum, value, index) => sum + weights[index] * value, 0);
+          if (margin < 0.08) difference.forEach((value, index) => { weights[index] += learningRate * direction * value; });
+        }
+      }
+    }
+    const norm = Math.sqrt(weights.reduce((sum, value) => sum + value * value, 0)) || 1;
+    return weights.map((value) => value / norm);
+  }
+
+  function predictCreditDirection(weights, record, sensitiveValue = record[creditSensitiveFeatureKey]) {
+    return normalizedCreditVector(record, sensitiveValue).reduce((sum, value, index) => sum + weights[index] * value, 0);
+  }
+
+  function learnedGradeThresholds(weights, referenceRecords) {
+    const gradeOrder = ["A", "B", "C", "D"];
+    const scoresByGrade = new Map(gradeOrder.map((grade) => [grade, []]));
+    referenceRecords.forEach((record) => scoresByGrade.get(record.grade)?.push(predictCreditDirection(weights, record)));
+    return gradeOrder.slice(0, -1).map((grade, index) => {
+      const lowerScores = scoresByGrade.get(grade) ?? [];
+      const upperScores = scoresByGrade.get(gradeOrder[index + 1]) ?? [];
+      const lowerEdge = lowerScores.length ? Math.max(...lowerScores) : index;
+      const upperEdge = upperScores.length ? Math.min(...upperScores) : index + 1;
+      return (lowerEdge + upperEdge) / 2;
+    });
+  }
+
+  function gradeFromLearnedScore(score, thresholds) {
+    return score < thresholds[0] ? "A" : score < thresholds[1] ? "B" : score < thresholds[2] ? "C" : "D";
+  }
+
+  function simulateCreditInferenceAttack(productId, queryBudget) {
+    const config = recoveryAttackConfigs.get(productId);
+    if (!config) return null;
+    const queryCount = Math.min(enterpriseCreditStore.records.length, Math.max(0, Math.floor(queryBudget)));
+    const referenceCount = Math.min(creditReferenceRecords.length, queryCount);
+    const targetCount = Math.min(creditTargetRecords.length, Math.max(0, queryCount - referenceCount));
+    const references = creditReferenceRecords.slice(0, referenceCount);
+    const targets = creditTargetRecords.slice(0, targetCount).map((record) => ({
+      id: record.id,
+      name: record.name,
+      ...Object.fromEntries(creditPublicFeatureKeys.map((key) => [key, record[key]])),
+      observedOutput: creditOutputFor(productId, record),
+    }));
+    const groundTruth = new Map(creditTargetRecords.map((record) => [record.id, record[creditSensitiveFeatureKey]]));
+    let learnedModel;
+    let inferredRows = [];
+    if (productId === "finance-index") {
+      const weights = fitCreditLinearModel(references, (record) => record.riskIndex);
+      learnedModel = {
+        type: "linear-regression",
+        weights,
+        rawCoefficients: Object.fromEntries(creditFeatureKeys.map((key, index) => [key, weights[index + 1] / creditFeatureScales[key]])),
+      };
+      inferredRows = targets.map((target) => {
+        const estimate = inverseCreditLinear(weights, target, target.observedOutput);
+        return { target, estimate, minimum: estimate, maximum: estimate };
+      });
+    } else if (productId === "city-grade") {
+      const gradeOrder = { A: 0, B: 1, C: 2, D: 3 };
+      const weights = fitCreditPairwiseDirection(references, (record) => gradeOrder[record.grade]);
+      const thresholds = learnedGradeThresholds(weights, references);
+      learnedModel = { type: "ordinal-pairwise", weights, thresholds };
+      inferredRows = targets.map((target) => {
+        const compatible = [];
+        for (let candidate = 0; candidate <= 30; candidate += 0.25) {
+          const score = predictCreditDirection(weights, target, candidate);
+          if (gradeFromLearnedScore(score, thresholds) === target.observedOutput) compatible.push(candidate);
+        }
+        if (!compatible.length) {
+          const gradeIndex = gradeOrder[target.observedOutput];
+          const center = gradeIndex === 0
+            ? thresholds[0] - 0.2
+            : gradeIndex === 3
+              ? thresholds[2] + 0.2
+              : (thresholds[gradeIndex - 1] + thresholds[gradeIndex]) / 2;
+          const candidates = Array.from({ length: 121 }, (_, index) => index * 0.25);
+          const estimate = candidates.sort((left, right) => Math.abs(predictCreditDirection(weights, target, left) - center) - Math.abs(predictCreditDirection(weights, target, right) - center))[0];
+          return { target, estimate, minimum: estimate, maximum: estimate };
+        }
+        const minimum = compatible[0];
+        const maximum = compatible.at(-1);
+        return { target, estimate: (minimum + maximum) / 2, minimum, maximum };
+      });
+    } else {
+      const weights = fitCreditPairwiseDirection(references, (record) => 101 - record.riskRank);
+      const referenceScores = references.map((record) => predictCreditDirection(weights, record)).sort((left, right) => left - right);
+      learnedModel = { type: "pairwise-ranking", weights };
+      inferredRows = targets.map((target) => {
+        const candidates = Array.from({ length: 121 }, (_, index) => {
+          const sensitiveValue = index * 0.25;
+          const score = predictCreditDirection(weights, target, sensitiveValue);
+          const percentile = 100 * (referenceScores.filter((referenceScore) => referenceScore <= score).length + 0.5) / referenceScores.length;
+          return { sensitiveValue, distance: Math.abs(percentile - (101 - Number(target.observedOutput))) };
+        });
+        candidates.sort((left, right) => left.distance - right.distance || left.sensitiveValue - right.sensitiveValue);
+        const estimate = candidates[0].sensitiveValue;
+        return { target, estimate, minimum: estimate, maximum: estimate };
+      });
+    }
+    const tolerance = productId === "finance-index" ? 1 : productId === "content-rank" ? 4 : null;
+    const candidateResults = inferredRows.map((row) => {
+      const actual = Number(groundTruth.get(row.target.id));
+      const error = Math.abs(row.estimate - actual);
+      const successful = productId === "city-grade"
+        ? actual >= row.minimum - 1e-9 && actual <= row.maximum + 1e-9
+        : error <= tolerance;
+      const candidate = config.targets.find((item) => item.id === row.target.id) ?? { id: row.target.id, summary: row.target.name };
+      const recoveredSummary = productId === "city-grade"
+        ? `${row.target.name} · 推断区间 ${row.minimum.toFixed(1)}%—${row.maximum.toFixed(1)}% · 真实 ${actual.toFixed(1)}%`
+        : `${row.target.name} · 推断 ${row.estimate.toFixed(1)}% · 真实 ${actual.toFixed(1)}%`;
+      return {
+        candidate,
+        actualMember: true,
+        predictedMember: successful,
+        determined: true,
+        target: row.target,
+        estimate: row.estimate,
+        minimum: row.minimum,
+        maximum: row.maximum,
+        actual,
+        error,
+        recoveredSummary,
+      };
+    });
+    const truePositives = candidateResults.filter((result) => result.predictedMember).length;
+    const meanAbsoluteError = candidateResults.length
+      ? candidateResults.reduce((sum, result) => sum + result.error, 0) / candidateResults.length
+      : 0;
+    const meanIntervalWidth = candidateResults.length
+      ? candidateResults.reduce((sum, result) => sum + result.maximum - result.minimum, 0) / candidateResults.length
+      : 0;
+    return {
+      productId,
+      queryBudget,
+      queryCount,
+      referenceCount,
+      targetCount,
+      formulaAccessCount: 0,
+      learnedModel,
+      candidateResults,
+      recoveredRows: candidateResults.map((result) => result.candidate),
+      truePositives,
+      falseNegatives: candidateResults.length - truePositives,
+      falsePositives: candidateResults.length - truePositives,
+      recall: candidateResults.length ? truePositives / candidateResults.length : 0,
+      meanAbsoluteError,
+      meanIntervalWidth,
+      quotaBlocked: queryCount < enterpriseCreditStore.records.length ? 1 : 0,
+    };
+  }
+
   function simulateProductRecoveryBudget(productId, queryBudget) {
     const config = recoveryAttackConfigs.get(productId);
     if (!config) return null;
+    if (creditProductIds.has(productId)) return simulateCreditInferenceAttack(productId, queryBudget);
     if (productId === "content-voice") {
       const faces = syntheticFaceLibrary.faces;
       const availableQueries = Math.max(0, Math.floor(queryBudget));
@@ -1095,12 +1512,12 @@
   }
 
   function runProductRecoveryAttack(product) {
-    const queryBudget = productUsageCount(product);
+    const queryBudget = creditProductIds.has(product.id) ? productUsageCount(product) + 1 : productUsageCount(product);
     const key = `${product.id}:${queryBudget}`;
     const run = productRecoverySavedRuns.get(key) ?? simulateProductRecoveryBudget(product.id, queryBudget);
     if (!run) return null;
     productRecoverySavedRuns.set(key, run);
-    consumeProductUsage(product, run.queryCount, false);
+    consumeProductUsage(product, creditProductIds.has(product.id) ? Math.max(0, run.queryCount - 1) : run.queryCount, false);
     if (product.id === "finance-graph" && product.attacks[0]) {
       const config = recoveryAttackConfigs.get(product.id);
       Object.assign(product.attacks[0], {
@@ -1154,6 +1571,22 @@
         protocol: `可用核验次数 ${queryBudget}；实际核验 ${run.queryCount}；关系恢复 ${run.truePositives}；错误关系 ${run.falsePositives}`,
       });
     }
+    if (creditProductIds.has(product.id) && product.attacks[0]) {
+      const metricValue = product.id === "city-grade"
+        ? `${(run.recall * 100).toFixed(1)}%`
+        : `${run.meanAbsoluteError.toFixed(2)} 个百分点`;
+      const resultText = product.id === "finance-index"
+        ? `攻击代码用 ${run.referenceCount} 家完整参考企业拟合未知连续评分规则，再对 ${run.targetCount} 家目标企业反演逾期率；平均绝对误差 ${run.meanAbsoluteError.toFixed(2)} 个百分点。`
+        : product.id === "city-grade"
+          ? `攻击代码从 ${run.referenceCount} 家完整参考企业学习有序等级规则，为 ${run.targetCount} 家目标企业生成平均宽度 ${run.meanIntervalWidth.toFixed(2)} 个百分点的逾期率区间，真实值覆盖率 ${(run.recall * 100).toFixed(1)}%。`
+          : `攻击代码用 ${run.referenceCount} 家完整参考企业学习成对排序方向，再由公开名次反演 ${run.targetCount} 家目标企业的逾期率；平均绝对误差 ${run.meanAbsoluteError.toFixed(2)} 个百分点。`;
+      Object.assign(product.attacks[0], {
+        result: resultText,
+        value: metricValue,
+        displayScore: product.id === "city-grade" ? Math.round(run.recall * 100) : Math.max(0, Math.round(100 - run.meanAbsoluteError * 10)),
+        protocol: `100家统一模拟企业；参考集 ${run.referenceCount}；目标集 ${run.targetCount}；实际读取产品输出 ${run.queryCount} 次；攻击代码读取真实公式 ${run.formulaAccessCount} 次`,
+      });
+    }
     refreshProductUsageCounter(product);
     return run;
   }
@@ -1200,8 +1633,21 @@
   }
 
   const withCurrentInput = (product) => {
+    if (ragProductIds.has(product.id)) {
+      const response = ragResponseFor(product);
+      return {
+        ...product,
+        inputValue: response?.question ?? product.inputValue,
+        outputValue: response?.answer ?? "RAG 构建结果尚未载入",
+      };
+    }
     if (!structuredConfig(product)) return { ...product, inputValue: inputValue.trim() || product.inputValue };
     const formattedInput = formatStructuredConditions(product);
+    if (creditProductIds.has(product.id)) {
+      const selectedId = String(structuredConditionValue("creditEnterprise")).split("｜").at(-1);
+      const record = creditRecordById.get(selectedId) ?? creditExampleRecord;
+      return { ...product, inputValue: formattedInput, outputValue: creditOutputText(product.id, record) };
+    }
     if (product.id === "city-existence") {
       const matches = queryResidents();
       return {
@@ -1400,9 +1846,38 @@
     </div>`;
   }
 
+  function creditLearnedRuleSummary(product, run) {
+    if (!run) return "等待攻击代码学习";
+    const learned = run.learnedModel;
+    if (product.id === "finance-index") {
+      return enterpriseCreditStore.schema.map((field) => `${field.label} β≈${learned.rawCoefficients[field.key].toFixed(3)}`).join("；");
+    }
+    if (product.id === "city-grade") {
+      return `有序方向已学习；代理边界 ${learned.thresholds.map((value) => value.toFixed(3)).join(" / ")}`;
+    }
+    return `成对排序方向已学习；六维方向权重 ${learned.weights.map((value) => value.toFixed(3)).join(" / ")}`;
+  }
+
+  function creditInferenceAttackVisual(product, step) {
+    const currentStep = Math.max(0, Math.min(creditInferenceSteps.length, step));
+    const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
+    const visibleResults = run ? run.candidateResults.slice(0, currentStep >= 4 ? 12 : currentStep >= 3 ? 8 : 0) : [];
+    const completed = currentStep === creditInferenceSteps.length;
+    return `<div class="credit-inference-view">
+      <section class="credit-knowledge-boundary"><header><span>攻击者知识边界</span><strong>真实公式读取 ${run?.formulaAccessCount ?? 0} 次</strong></header><div><article><b>60家参考企业</b><p>六个信用维度全部已知，并可读取对应产品输出。</p></article><article><b>40家目标企业</b><p>只知道五个非敏感维度和产品输出，近90天逾期率被遮蔽。</p></article><article class="is-blocked"><b>页面真实公式</b><p>只供演示观察者核对，不传入攻击训练函数。</p></article></div></section>
+      <section class="credit-learning-card ${currentStep >= 2 ? "is-ready" : ""}"><header><span>${product.id === "finance-index" ? "线性回归代理规则" : product.id === "city-grade" ? "有序等级代理规则" : "成对排序代理规则"}</span><strong>${run ? `${run.referenceCount} 条训练样本` : "等待训练"}</strong></header><p>${escapeHtml(creditLearnedRuleSummary(product, run))}</p></section>
+      <section class="credit-inference-table"><header><div><span>目标企业敏感属性反演</span><strong>${run ? `${run.targetCount} 家` : "尚未开始"}</strong></div><small>${product.id === "city-grade" ? "等级只约束区间，无法稳定恢复精确值" : "固定五个公开维度，搜索与产品输出最一致的逾期率"}</small></header>
+        <div class="credit-inference-row credit-inference-head"><span>企业</span><span>产品输出</span><span>攻击推断</span><span>模拟真值</span></div>
+        ${visibleResults.length ? visibleResults.map((result) => `<div class="credit-inference-row ${completed ? result.predictedMember ? "is-correct" : "is-error" : ""}"><span><b>${escapeHtml(result.target.name)}</b><small>${escapeHtml(result.target.id)}</small></span><span>${escapeHtml(product.id === "finance-index" ? `${Number(result.target.observedOutput).toFixed(1)}分` : product.id === "city-grade" ? `${result.target.observedOutput}级` : `第${result.target.observedOutput}名`)}</span><strong>${product.id === "city-grade" ? `${result.minimum.toFixed(1)}%—${result.maximum.toFixed(1)}%` : `${result.estimate.toFixed(1)}%`}</strong><em>${completed ? `${result.actual.toFixed(1)}%` : "评估阶段揭示"}</em></div>`).join("") : '<div class="membership-empty">学习代理规则后显示目标企业反演结果</div>'}
+      </section>
+      ${completed && run ? `<div class="credit-inference-summary"><article><span>产品输出读取</span><strong>${run.queryCount}</strong></article><article><span>目标企业</span><strong>${run.targetCount}</strong></article><article><span>${product.id === "city-grade" ? "区间覆盖率" : "平均绝对误差"}</span><strong>${product.id === "city-grade" ? `${(run.recall * 100).toFixed(1)}%` : `${run.meanAbsoluteError.toFixed(2)} 个百分点`}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>` : ""}
+    </div>`;
+  }
+
   function productRecoveryAttackVisual(product, step) {
     if (product.id === "city-existence") return membershipRecoveryAttackVisual(step);
     if (product.id === "content-voice") return faceHillClimbAttackVisual(product, step);
+    if (creditProductIds.has(product.id)) return creditInferenceAttackVisual(product, step);
     const config = recoveryAttackConfigs.get(product.id);
     if (!config) return renderVisual(current().activeSeries, product, 3);
     const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
@@ -1646,14 +2121,21 @@
   }
 
   function chatVisual(product, currentPhase) {
-    const source = product.id === "finance-graph"
-      ? { label: "企业关系图谱", exposed: "后台企业关系被累计恢复", items: ["远澜科技 → 海岸智造", "海岸智造 → 星桥能源", "国创资本 → 远澜科技"] }
-      : product.id === "city-rag"
-        ? { label: "政策检索语料库", exposed: "政策语料片段被累计恢复", items: ["梧桐计划 / 实施细则", "主管部门 / 职责条款", "申报条件 / 资格段落"] }
-        : { label: "多模态上下文", exposed: "跨模态线索被累计关联", items: ["海报画面特征", "旁白声学特征", "审核问题文本"] };
+    const response = ragResponseFor(product);
+    const retrieved = response?.retrieved ?? [];
+    const image = response?.imageId ? ragImagesById.get(response.imageId) : null;
+    const question = response?.question ?? product.inputValue;
+    const answer = response?.answer ?? product.outputValue;
+    const retrievalReady = currentPhase >= 3;
+    const isMultimodal = product.id === "content-multimodal";
     return `<div class="chat-product-view">
-      <div class="chat-thread"><div class="chat-system">${escapeHtml(product.name)}已连接</div>${currentPhase >= 1 ? `<div class="chat-message user"><span>用户</span><p>${escapeHtml(product.inputValue)}</p></div>` : ""}${currentPhase >= 2 && currentPhase < 3 ? '<div class="typing"><i></i><i></i><i></i></div>' : ""}${currentPhase >= 3 ? `<div class="chat-message bot"><span>${escapeHtml(product.name)}</span><p>${escapeHtml(product.outputValue)}</p></div>` : ""}</div>
-      <aside class="retrieval-drawer ${currentPhase >= 4 ? "exposed" : ""}"><span>后台知识源</span>${currentPhase >= 4 ? `<strong>${escapeHtml(source.exposed)}</strong><ul>${source.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : `<strong>${escapeHtml(source.label)}</strong><div class="locked-lines"><i></i><i></i><i></i></div>`}</aside>
+      <div class="chat-thread">
+        <div class="chat-system"><b>Qwen2.5-7B + RAG</b><span>${isMultimodal ? "CLIP 图片检索已连接" : "政策知识库已连接"}</span></div>
+        ${currentPhase >= 1 ? `<div class="chat-message user"><span>用户选择的问题</span>${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" />` : ""}<p>${escapeHtml(question)}</p></div>` : '<div class="chat-welcome"><strong>请选择下方一个问题</strong><span>本演示不接受自由输入，所有回答默认使用 RAG。</span></div>'}
+        ${currentPhase >= 2 && currentPhase < 3 ? `<div class="rag-running"><span>${isMultimodal ? "CLIP 正在匹配图片" : "BGE 正在检索知识片段"}</span><div class="typing"><i></i><i></i><i></i></div><small>检索完成后将上下文交给千问生成</small></div>` : ""}
+        ${currentPhase >= 3 ? `<div class="chat-message bot"><span>千问 · 基于检索结果</span><p>${escapeHtml(answer)}</p><small>生成耗时 ${escapeHtml(response?.generationSeconds ?? "—")} 秒 · 固定问题预生成结果</small></div>` : ""}
+      </div>
+      <aside class="retrieval-drawer ${currentPhase >= 4 ? "exposed" : ""}"><span>RAG 检索记录</span>${retrievalReady ? `<strong>命中 ${retrieved.length} 条依据</strong><ul>${retrieved.map((item) => `<li><b>${escapeHtml(item.id)}</b><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.source)}</small></li>`).join("")}</ul><p>${currentPhase >= 4 ? "攻击演示：重复调用可能累计暴露知识库结构。" : "正常回答仅显示允许公开的引用。"}</p>` : `<strong>${escapeHtml(ragChatData.database.engine)} 向量库 · ${ragChatData.database.documents} 条</strong><div class="locked-lines"><i></i><i></i><i></i></div><small>${escapeHtml(isMultimodal ? ragChatData.imageEmbeddingModel : ragChatData.textEmbeddingModel)}</small>`}</aside>
     </div>`;
   }
 
@@ -1662,6 +2144,33 @@
       <div class="graph-query"><span>${escapeHtml(product.inputLabel)}</span><strong>${escapeHtml(product.inputValue)}</strong></div>
       <div class="graph-canvas"><i class="graph-edge e1 ${currentPhase >= 2 ? "visible" : ""}"></i><i class="graph-edge e2 ${currentPhase >= 3 ? "visible" : ""}"></i><i class="graph-edge e3 sensitive ${currentPhase >= 4 ? "visible" : ""}"></i><i class="graph-edge e4 sensitive ${currentPhase >= 4 ? "visible" : ""}"></i><span class="graph-node n1">企业 A</span><span class="graph-node n2 ${currentPhase >= 2 ? "visible" : ""}">股东 B</span><span class="graph-node n3 ${currentPhase >= 3 ? "visible" : ""}">账户 C</span><span class="graph-node n4 sensitive ${currentPhase >= 4 ? "visible" : ""}">关联方 D</span><span class="graph-node n5 sensitive ${currentPhase >= 4 ? "visible" : ""}">隐藏路径</span></div>
       <div class="graph-result">${currentPhase >= 4 ? "攻击组合后恢复了未直接返回的关系路径" : currentPhase >= 3 ? escapeHtml(product.outputValue) : "正在展开公开关系…"}</div>
+    </div>`;
+  }
+
+  function selectedCreditRecord() {
+    const selectedId = String(structuredConditionValue("creditEnterprise")).split("｜").at(-1);
+    return creditRecordById.get(selectedId) ?? creditExampleRecord;
+  }
+
+  function creditProductVisual(product, currentPhase) {
+    const record = selectedCreditRecord();
+    const ready = currentPhase >= 3;
+    const exposed = currentPhase >= 4;
+    const gradeThresholds = enterpriseCreditStore.observerRule?.gradeThresholds ?? [35, 50, 65];
+    const deliveryRule = product.id === "finance-index"
+      ? "直接发布连续风险指数 R。"
+      : product.id === "city-grade"
+        ? `A：R＜${gradeThresholds[0]}；B：${gradeThresholds[0]}≤R＜${gradeThresholds[1]}；C：${gradeThresholds[1]}≤R＜${gradeThresholds[2]}；D：R≥${gradeThresholds[2]}。`
+        : enterpriseCreditStore.observerRule?.rankRule ?? "按风险指数从高到低排序。";
+    return `<div class="credit-product-view">
+      <header class="credit-dataset-header"><div><span>统一模拟数据集</span><strong>${enterpriseCreditStore.records.length} 家企业 · ${enterpriseCreditStore.schema.length} 个信用维度</strong></div><small>60家完整参考企业 + 40家敏感属性待推断企业</small></header>
+      <section class="credit-formula-card"><div><span>演示观察者可见的产品真实公式</span><b>攻击者未知 · 攻击代码不会读取</b></div><code>${escapeHtml(enterpriseCreditStore.observerRule?.formula ?? "")}</code><p>${escapeHtml(deliveryRule)}</p></section>
+      <section class="credit-enterprise-card"><header><div><span>当前企业</span><strong>${escapeHtml(record.name)}</strong></div><b>${escapeHtml(record.id)}</b></header><div class="credit-feature-grid">${enterpriseCreditStore.schema.map((field) => {
+        const sensitive = field.sensitive === true;
+        return `<article class="${sensitive ? "is-sensitive" : ""}"><span>${escapeHtml(field.label)}</span><strong>${sensitive ? exposed ? "已被攻击反演" : "受保护" : `${escapeHtml(record[field.key])}${escapeHtml(field.unit)}`}</strong><small>${sensitive ? "目标敏感维度" : "攻击者可知"}</small></article>`;
+      }).join("")}</div></section>
+      <div class="credit-output-card ${ready ? "is-ready" : ""}"><span>${escapeHtml(product.outputLabel)}</span><strong>${ready ? escapeHtml(creditOutputText(product.id, record)) : "等待读取"}</strong><small>${escapeHtml(product.outputDetail)}</small></div>
+      ${exposed ? '<div class="attack-overlay">参考企业的完整特征—输出对被用来学习代理规则，目标企业的逾期率开始显现。</div>' : ""}
     </div>`;
   }
 
@@ -1698,6 +2207,7 @@
     if (product.id === "content-voice") return residentFaceVerificationVisual(product, currentPhase);
     if (product.id === "content-speech") return speechModelVisual(product, currentPhase);
     if (product.id === "model-distillation") return distillationModelVisual(product, currentPhase);
+    if (creditProductIds.has(product.id)) return creditProductVisual(product, currentPhase);
     if (activeSeries.visual === "vision") return visionVisual(product, currentPhase);
     if (activeSeries.visual === "chat") return chatVisual(product, currentPhase);
     if (activeSeries.visual === "graph") return graphVisual(product, currentPhase);
@@ -1765,6 +2275,19 @@
         output: JSON.stringify({ method: processing.method, filtered_records: processing.poolSize, output_records: processing.rows.length, preview: processing.rows.slice(0, 3).map((item) => item.record) }, null, 2),
       };
     }
+    if (creditProductIds.has(product.id)) {
+      const record = selectedCreditRecord();
+      const productReturn = product.id === "finance-index"
+        ? `return { risk_index: round(risk, 1) };`
+        : product.id === "city-grade"
+          ? `const grade = risk < 35 ? "A" : risk < 50 ? "B" : risk < 65 ? "C" : "D";\nreturn { risk_grade: grade };`
+          : `const rank = cohort.sort((a, b) => b.risk - a.risk).findIndex(item => item.id === enterprise.id) + 1;\nreturn { risk_rank: rank, cohort_size: 100 };`;
+      return {
+        language: "产品内部 JAVASCRIPT / JSON",
+        code: `// 真实产品规则：仅供演示观察者核对\n// 攻击训练函数不读取本段代码或真实系数\nconst risk = clamp(\n  0.26 * enterprise.debtRatio\n  + 0.18 * enterprise.cashFlowStress\n  + 0.14 * enterprise.revenueVolatility\n  + 0.10 * enterprise.operatingAgeRisk\n  + 0.10 * enterprise.legalRisk\n  + 0.70 * enterprise.overdueRate,\n  0, 100\n);\n${productReturn}`,
+        output: JSON.stringify({ enterprise: record.id, product_output: creditOutputText(product.id, record), sensitive_feature_returned: false }, null, 2),
+      };
+    }
     if (activeSeries.visual === "gradient") return {
       language: "PYTORCH",
       code: `batch_x, batch_y = next(train_loader)\nlogits = model(batch_x)\nloss = criterion(logits, batch_y)\nloss.backward()\ngradient = model.classifier.weight.grad`,
@@ -1776,9 +2299,29 @@
       output: `{ paths: 3, entities: 7, status: "authorized" }`,
     };
     if (activeSeries.visual === "chat") return {
-      language: "HTTP / JSON",
-      code: `POST /v1/assistant/query\n{\n  "question": "${product.inputValue}",\n  "retrieve": true,\n  "top_k": 3\n}`,
-      output: `{ answer: "${product.outputValue}", citations: 3 }`,
+      language: "QWEN + RAG TRACE",
+      code: (() => {
+        const response = ragResponseFor(product);
+        return JSON.stringify({
+          question_id: response?.id,
+          question: response?.question,
+          image_id: response?.imageId ?? null,
+          database: ragChatData.database,
+          text_retriever: ragChatData.textEmbeddingModel,
+          image_retriever: response?.imageId ? ragChatData.imageEmbeddingModel : null,
+          generator: ragChatData.generationModel,
+          top_k: response?.retrieved?.length ?? 0,
+          rag: true,
+        }, null, 2);
+      })(),
+      output: (() => {
+        const response = ragResponseFor(product);
+        return JSON.stringify({
+          answer: response?.answer ?? product.outputValue,
+          citations: response?.retrieved?.map((item) => item.id) ?? [],
+          generation_seconds: response?.generationSeconds ?? null,
+        }, null, 2);
+      })(),
     };
     if (activeSeries.visual === "vision") return {
       language: "JAVASCRIPT",
@@ -1847,6 +2390,14 @@
         }).join("")}</div>
       </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
     }
+    if (creditProductIds.has(product.id)) {
+      const condition = structuredConditions[0];
+      const field = fields.get(condition.field) ?? schema[0];
+      return `<form class="product-control structured-query-control credit-product-control" data-product-form><div class="condition-builder">
+        <div class="condition-builder-heading"><span>选择同一模拟数据集中的企业</span><small>三个产品共用100家企业和同一组六维信用特征</small></div>
+        <div class="processing-setting-list"><label><span>${escapeHtml(field.label)}</span>${renderStructuredValueControl(condition, field, 0)}</label></div>
+      </div><div class="query-actions"><button type="button" class="secondary" data-reset-query>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></div></form>`;
+    }
     if (product.id === "finance-derived") {
       const filterSchema = schema.filter((field) => !residentProcessingSettingKeys.has(field.key));
       const filterConditions = structuredConditions.map((condition, index) => ({ condition, index })).filter(({ condition }) => !residentProcessingSettingKeys.has(condition.field));
@@ -1891,12 +2442,29 @@
   }
 
   function renderProductControl(product) {
+    if (ragProductIds.has(product.id)) {
+      const responses = ragResponsesByProduct.get(product.id) ?? [];
+      const selected = ragResponseFor(product);
+      const image = selected?.imageId ? ragImagesById.get(selected.imageId) : null;
+      return `<form class="product-control rag-chat-control ${product.id === "content-multimodal" ? "is-multimodal" : ""}" data-product-form>
+        <fieldset>
+          <legend>${product.id === "content-multimodal" ? "选择图片与对应问题" : "选择一个问题"}</legend>
+          <div class="rag-question-options">${responses.map((response) => {
+            const responseImage = response.imageId ? ragImagesById.get(response.imageId) : null;
+            return `<label class="${responseImage ? "has-image " : ""}${response.id === selected?.id ? "is-selected" : ""}">${responseImage ? `<img src="${escapeHtml(responseImage.path)}" alt="" />` : ""}<input type="radio" name="rag-question" value="${escapeHtml(response.id)}" data-rag-question ${response.id === selected?.id ? "checked" : ""} /><span>${escapeHtml(response.question)}</span></label>`;
+          }).join("")}</div>
+        </fieldset>
+        ${product.id === "content-multimodal" ? `<div class="rag-image-input"><span>图片输入</span>${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" /><strong>${escapeHtml(image.title)}</strong><small>选择问题时同步切换固定演示图片</small>` : "<strong>尚未选择图片</strong>"}</div>` : ""}
+        <div class="rag-submit"><small>默认链路：${escapeHtml(product.id === "content-multimodal" ? "CLIP + SQLite + Qwen" : "BGE + SQLite + Qwen")}</small><button type="submit" data-run-product ${responses.length ? "" : "disabled"}>${escapeHtml(product.callLabel)}</button></div>
+      </form>`;
+    }
     if (structuredConfig(product)) return renderStructuredProductControl(product);
     return `<form class="product-control" data-product-form><label><span>${escapeHtml(product.inputLabel)}</span><input type="text" value="${escapeHtml(product.inputValue)}" data-product-input aria-label="${escapeHtml(product.inputLabel)}" /></label><button type="button" class="secondary" data-reset-input>恢复示例</button><button type="submit" data-run-product>${escapeHtml(product.callLabel)}</button></form>`;
   }
 
   function attackProgressItems(product) {
     if (product.id === "content-voice") return faceHillClimbSteps;
+    if (creditProductIds.has(product.id)) return creditInferenceSteps;
     return seriesRecoveryProductIds.has(product.id) ? membershipRecoverySteps : product.attacks;
   }
 
@@ -1924,7 +2492,7 @@
     viewMode = "interface";
     inputValue = product.inputValue;
     const displayProduct = withCurrentInput(product);
-    const minimalFooter = Boolean(structuredConfig(product));
+    const minimalFooter = Boolean(structuredConfig(product) || ragProductIds.has(product.id));
     const progressItems = attackProgressItems(product);
     root.innerHTML = `
       <div class="series-switcher" aria-label="选择产品演示系列">${series.map((item, index) => `<button type="button" data-series="${index}" aria-pressed="${seriesIndex === index}" class="${seriesIndex === index ? "active" : ""}"><strong>${escapeHtml(item.name)}</strong></button>`).join("")}</div>
@@ -1949,7 +2517,7 @@
     const initialControl = root.querySelector("[data-product-form]");
     if (initialControl) initialControl.outerHTML = renderProductControl(product);
     const initialStatus = root.querySelector("[data-product-status]");
-    if (initialStatus) initialStatus.textContent = product.id === "city-existence" ? "请设置条件并运行产品" : "请编辑输入并运行产品";
+    if (initialStatus) initialStatus.textContent = ragProductIds.has(product.id) ? "请选择一个固定问题并运行" : product.id === "city-existence" ? "请设置条件并运行产品" : "请编辑输入并运行产品";
     updateProductPhase(0);
   }
 
@@ -2070,6 +2638,16 @@
         <div class="membership-result-stats"><article><span>连续接受步</span><strong>${run.acceptedTrajectory.length}</strong></article><article><span>拒绝探针</span><strong>${run.rejectedProbes.length}</strong></article><article><span>随机重启</span><strong>${run.restartCount}</strong></article><article><span>${(run.threshold * 100).toFixed(0)}% 认证阈值</span><strong>${run.authenticated ? "已越过" : "未越过"}</strong></article></div>`;
       return;
     }
+    if (creditProductIds.has(product.id)) {
+      const run = productRecoveryRun ??= runProductRecoveryAttack(product);
+      if (!run) return;
+      const primaryMetric = product.id === "city-grade" ? `${(run.recall * 100).toFixed(1)}%` : `${run.meanAbsoluteError.toFixed(2)} 个百分点`;
+      results.innerHTML = `
+        <header><div><span>敏感属性反演结果</span><h3>${escapeHtml(product.attacks[0].name)}</h3></div><strong>${primaryMetric}</strong></header>
+        <div class="membership-result-stats"><article><span>统一数据集</span><strong>${enterpriseCreditStore.records.length} 家</strong></article><article><span>完整参考企业</span><strong>${run.referenceCount}</strong></article><article><span>待推断企业</span><strong>${run.targetCount}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>
+        <div class="credit-result-note"><strong>${product.id === "city-grade" ? "等级反演结论" : "属性反演结论"}</strong><p>${escapeHtml(product.attacks[0].result)}</p></div>`;
+      return;
+    }
     if (seriesRecoveryProductIds.has(product.id)) {
       const config = recoveryAttackConfigs.get(product.id);
       const run = productRecoveryRun ??= runProductRecoveryAttack(product);
@@ -2161,6 +2739,15 @@
 
   root.addEventListener("change", (event) => {
     const target = event.target;
+    if (target instanceof HTMLInputElement && target.matches("[data-rag-question]")) {
+      const product = current().product;
+      if (!ragProductIds.has(product.id)) return;
+      selectedRagQuestionIds.set(product.id, target.value);
+      inputValue = ragResponseFor(product)?.question ?? product.inputValue;
+      refreshProductControl();
+      resetAfterControlEdit();
+      return;
+    }
     if (target instanceof HTMLInputElement && target.matches("[data-face-image-input]")) {
       const file = target.files?.[0];
       if (!file) return;
@@ -2218,9 +2805,11 @@
     if (!consumeProductUsage(product)) return;
     const input = form.querySelector("[data-product-input]");
     if (input instanceof HTMLInputElement) inputValue = input.value;
+    if (ragProductIds.has(product.id)) inputValue = ragResponseFor(product)?.question ?? product.inputValue;
     if (structuredConfig(product)) inputValue = formatStructuredConditions(product);
     scheduleProductRun();
   });
 
+  structuredConditions = defaultStructuredConditions(current().product);
   renderLab();
 })();
