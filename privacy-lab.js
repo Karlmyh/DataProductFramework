@@ -13,11 +13,6 @@
   const residentFields = new Map(residentStore.schema.map((field) => [field.key, field]));
   const enterpriseCreditStore = window.__ENTERPRISE_CREDIT_DATA__ ?? { name: "模拟企业信用数据集", schema: [], records: [], split: { reference: 0, target: 0 }, observerRule: {} };
   const ragChatData = window.__RAG_CHAT_DATA__ ?? {
-    mode: "Qwen + RAG",
-    generationModel: "Qwen/Qwen2.5-7B-Instruct",
-    textEmbeddingModel: "BAAI/bge-small-en-v1.5",
-    imageEmbeddingModel: "OpenAI CLIP ViT-B/32",
-    database: { engine: "SQLite", documents: 0, answers: 0 },
     images: [],
     responses: [],
   };
@@ -28,6 +23,14 @@
   ]);
   const ragImagesById = new Map(ragChatData.images.map((image) => [image.id, image]));
   const selectedRagQuestionIds = new Map(Array.from(ragResponsesByProduct, ([productId, responses]) => [productId, responses[0]?.id ?? ""]));
+  const ragEvidenceHypotheses = new Map([
+    ["Q-TEXT-WT", { claim: "申报对象需满足注册年限与信用条件，申报后经过区级形式审查、市级联合评审和公示。", anchors: ["登记注册满2年", "近12个月内无重大失信记录", "5个工作日", "公示3个工作日"] }],
+    ["Q-TEXT-ELD", { claim: "居家养老服务补贴同时考察年龄、居住时间、收入和家庭情况，申请时需提交身份、居住与收入证明。", anchors: ["60周岁", "连续居住满12个月", "月收入不超过4500元", "近3个月的收入证明"] }],
+    ["Q-TEXT-HOU", { claim: "住房租赁补贴按家庭人数增加且设月度上限，资格经街道和住房保障部门复核后由财政部门拨付。", anchors: ["每月补贴1200元", "增加300元", "最高不超过2100元", "财政部门按季度拨付"] }],
+    ["Q-IMAGE-FRAMEWORK", { claim: "数据产品安全衡量由产品表示、攻击匹配、统一衡量和风险聚合串联而成。", anchors: ["产品表示", "攻击匹配", "统一衡量", "风险聚合"] }],
+    ["Q-IMAGE-PORTRAIT", { claim: "居民人脸核验图片需要单独同意、加密、原图与模板分区保存，并设置最短留存期。", anchors: ["单独同意", "加密", "分区保存", "最短留存期限"] }],
+    ["Q-IMAGE-FACEGRID", { claim: "批量人脸库存在身份关联、模板泄露和越权导出风险，需要限制检索频率并审批导出操作。", anchors: ["批量身份关联", "模板泄露", "检索频率限制", "导出操作进行审批"] }],
+  ]);
   const creditProductIds = new Set(["finance-index", "city-grade", "content-rank"]);
   const creditFeatureKeys = enterpriseCreditStore.schema.map((field) => field.key);
   const creditPublicFeatureKeys = enterpriseCreditStore.schema.filter((field) => !field.sensitive).map((field) => field.key);
@@ -51,22 +54,37 @@
   const ragProductDefinitions = {
     "city-rag": {
       name: "政策知识问答助手",
-      tagline: "从虚构政策知识库检索依据，再由千问生成带引用的回答。",
+      tagline: "回答用户选择的政策问题。",
       inputLabel: "选择一个政策问题",
-      callLabel: "使用千问 + RAG 回答",
-      flow: ["BGE 向量检索", "组装授权上下文", "千问生成回答"],
-      outputLabel: "千问 + RAG 回答",
-      outputDetail: "回答由 QURM183 上的 Qwen2.5-7B-Instruct 根据 SQLite RAG 库检索结果生成。",
+      callLabel: "提交问题",
+      flow: ["接收问题", "生成回答", "返回结果"],
+      outputLabel: "回答",
+      outputDetail: "仅向用户展示回答正文。",
     },
     "content-multimodal": {
       name: "多模态知识问答助手",
-      tagline: "在同一问答界面中增加图片输入，以 CLIP 检索图片知识，再由千问生成带引用的回答。",
+      tagline: "在同一问答界面中增加图片输入。",
       inputLabel: "选择图片与问题",
-      callLabel: "使用多模态 RAG 回答",
-      flow: ["CLIP 图片检索", "检索关联知识", "千问生成回答"],
-      outputLabel: "千问 + 多模态 RAG 回答",
-      outputDetail: "图片由 CLIP ViT-B/32 编码检索，文本上下文交由 Qwen2.5-7B-Instruct 生成最终回答。",
+      callLabel: "提交图片与问题",
+      flow: ["接收图片与问题", "生成回答", "返回结果"],
+      outputLabel: "回答",
+      outputDetail: "仅向用户展示图片、问题和回答正文。",
     },
+  };
+  const ragTextInferenceAttack = {
+    id: "text-evidence-inference",
+    name: "回答依据推断",
+    brief: "只分析回答正文中的关键事实组合，判断是否使用了候选依据。",
+    result: "回答正文与候选依据的特征事实高度一致，判断使用了该依据。",
+    metric: "正文事实命中",
+    value: "4 / 4",
+    displayScore: 90,
+    evidence: "文本推断",
+    attackFamily: "依据推断",
+    attackObject: "知识使用隐私",
+    source: "回答正文语义特征",
+    protocol: "仅读取用户可见的回答文本；不读取引用、文档 ID 或检索记录",
+    limitation: "文本相似只能支持使用依据的推断，不等于直接读取内部知识库。",
   };
   Object.entries(ragProductDefinitions).forEach(([productId, definition]) => {
     const product = productsById[productId];
@@ -75,8 +93,10 @@
     Object.assign(product, {
       ...definition,
       inputValue: firstResponse?.question ?? product.inputValue,
-      outputValue: firstResponse?.answer ?? "RAG 构建结果尚未载入",
+      outputValue: publicRagAnswer(firstResponse?.answer ?? "回答尚未载入"),
+      attacks: [{ ...ragTextInferenceAttack }],
     });
+    candidatesByProduct[productId] = [{ id: ragTextInferenceAttack.id, name: ragTextInferenceAttack.name, applicable: true, executed: true, reason: "适用：攻击者可以读取完整回答正文并与候选依据做语义比较。" }];
   });
   const protectedResidentFieldKeys = new Set(["monthlyIncome", "subsidyStatus", "insurance"]);
   const qualificationPolicies = ["养老服务补贴", "住房租赁补贴", "医疗救助"];
@@ -714,6 +734,29 @@
     const responses = ragResponsesByProduct.get(product.id) ?? [];
     const selectedId = selectedRagQuestionIds.get(product.id);
     return responses.find((response) => response.id === selectedId) ?? responses[0] ?? null;
+  }
+
+  function publicRagAnswer(value) {
+    return String(value ?? "")
+      .replace(/\s*依据\s*[:：][\s\S]*$/u, "")
+      .trim();
+  }
+
+  function ragTextInferenceFor(product) {
+    const response = ragResponseFor(product);
+    const answer = publicRagAnswer(response?.answer ?? product.outputValue);
+    const hypothesis = ragEvidenceHypotheses.get(response?.id) ?? { claim: "候选依据与回答正文包含相同的关键事实。", anchors: [] };
+    const matches = hypothesis.anchors.filter((anchor) => answer.includes(anchor));
+    const threshold = Math.max(1, Math.ceil(hypothesis.anchors.length * .75));
+    const used = matches.length >= threshold;
+    return {
+      answer,
+      claim: hypothesis.claim,
+      matches,
+      total: hypothesis.anchors.length,
+      used,
+      conclusion: used ? "判断回答使用了该候选依据" : "现有正文特征不足以判断使用了该候选依据",
+    };
   }
 
   function productUsageLabel(product) {
@@ -1648,7 +1691,7 @@
       return {
         ...product,
         inputValue: response?.question ?? product.inputValue,
-        outputValue: response?.answer ?? "RAG 构建结果尚未载入",
+        outputValue: publicRagAnswer(response?.answer ?? "回答尚未载入"),
       };
     }
     if (!structuredConfig(product)) return { ...product, inputValue: inputValue.trim() || product.inputValue };
@@ -2120,20 +2163,16 @@
 
   function chatVisual(product, currentPhase) {
     const response = ragResponseFor(product);
-    const retrieved = response?.retrieved ?? [];
     const image = response?.imageId ? ragImagesById.get(response.imageId) : null;
     const question = response?.question ?? product.inputValue;
-    const answer = response?.answer ?? product.outputValue;
-    const retrievalReady = currentPhase >= 3;
-    const isMultimodal = product.id === "content-multimodal";
+    const inference = ragTextInferenceFor(product);
     return `<div class="chat-product-view">
       <div class="chat-thread">
-        <div class="chat-system"><b>Qwen2.5-7B + RAG</b><span>${isMultimodal ? "CLIP 图片检索已连接" : "政策知识库已连接"}</span></div>
-        ${currentPhase >= 1 ? `<div class="chat-message user"><span>用户选择的问题</span>${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" />` : ""}<p>${escapeHtml(question)}</p></div>` : '<div class="chat-welcome"><strong>请选择下方一个问题</strong><span>本演示不接受自由输入，所有回答默认使用 RAG。</span></div>'}
-        ${currentPhase >= 2 && currentPhase < 3 ? `<div class="rag-running"><span>${isMultimodal ? "CLIP 正在匹配图片" : "BGE 正在检索知识片段"}</span><div class="typing"><i></i><i></i><i></i></div><small>检索完成后将上下文交给千问生成</small></div>` : ""}
-        ${currentPhase >= 3 ? `<div class="chat-message bot"><span>千问 · 基于检索结果</span><p>${escapeHtml(answer)}</p><small>生成耗时 ${escapeHtml(response?.generationSeconds ?? "—")} 秒 · 固定问题预生成结果</small></div>` : ""}
+        ${currentPhase >= 1 ? `<div class="chat-message user">${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" />` : ""}<p>${escapeHtml(question)}</p></div>` : '<div class="chat-welcome"><strong>请选择一个问题</strong></div>'}
+        ${currentPhase >= 2 && currentPhase < 3 ? '<div class="typing" aria-label="正在生成回答"><i></i><i></i><i></i></div>' : ""}
+        ${currentPhase >= 3 ? `<div class="chat-message bot"><p>${escapeHtml(inference.answer)}</p></div>` : ""}
       </div>
-      <aside class="retrieval-drawer ${currentPhase >= 4 ? "exposed" : ""}"><span>RAG 检索记录</span>${retrievalReady ? `<strong>命中 ${retrieved.length} 条依据</strong><ul>${retrieved.map((item) => `<li><b>${escapeHtml(item.id)}</b><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.source)}</small></li>`).join("")}</ul><p>${currentPhase >= 4 ? "攻击演示：重复调用可能累计暴露知识库结构。" : "正常回答仅显示允许公开的引用。"}</p>` : `<strong>${escapeHtml(ragChatData.database.engine)} 向量库 · ${ragChatData.database.documents} 条</strong><div class="locked-lines"><i></i><i></i><i></i></div><small>${escapeHtml(isMultimodal ? ragChatData.imageEmbeddingModel : ragChatData.textEmbeddingModel)}</small>`}</aside>
+      ${currentPhase >= 4 ? `<aside class="text-inference-panel"><h3>回答依据推断</h3><p><b>候选依据</b>${escapeHtml(inference.claim)}</p><div class="inference-match-list">${inference.matches.map((match) => `<span>正文命中“${escapeHtml(match)}”</span>`).join("")}</div><strong>攻击结果：${escapeHtml(inference.conclusion)}（${inference.matches.length}/${inference.total}）</strong></aside>` : ""}
     </div>`;
   }
 
@@ -2300,27 +2339,17 @@
       output: `{ paths: 3, entities: 7, status: "authorized" }`,
     };
     if (activeSeries.visual === "chat") return {
-      language: "QWEN + RAG TRACE",
+      language: "请求 / 回答",
       code: (() => {
         const response = ragResponseFor(product);
         return JSON.stringify({
-          question_id: response?.id,
           question: response?.question,
-          image_id: response?.imageId ?? null,
-          database: ragChatData.database,
-          text_retriever: ragChatData.textEmbeddingModel,
-          image_retriever: response?.imageId ? ragChatData.imageEmbeddingModel : null,
-          generator: ragChatData.generationModel,
-          top_k: response?.retrieved?.length ?? 0,
-          rag: true,
+          image_attached: Boolean(response?.imageId),
         }, null, 2);
       })(),
       output: (() => {
-        const response = ragResponseFor(product);
         return JSON.stringify({
-          answer: response?.answer ?? product.outputValue,
-          citations: response?.retrieved?.map((item) => item.id) ?? [],
-          generation_seconds: response?.generationSeconds ?? null,
+          answer: ragTextInferenceFor(product).answer,
         }, null, 2);
       })(),
     };
@@ -2454,8 +2483,8 @@
             return `<label class="${responseImage ? "has-image " : ""}${response.id === selected?.id ? "is-selected" : ""}">${responseImage ? `<img src="${escapeHtml(responseImage.path)}" alt="" />` : ""}<input type="radio" name="rag-question" value="${escapeHtml(response.id)}" data-rag-question ${response.id === selected?.id ? "checked" : ""} /><span>${escapeHtml(response.question)}</span></label>`;
           }).join("")}</div>
         </fieldset>
-        ${product.id === "content-multimodal" ? `<div class="rag-image-input"><span>图片输入</span>${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" /><strong>${escapeHtml(image.title)}</strong><small>选择问题时同步切换固定演示图片</small>` : "<strong>尚未选择图片</strong>"}</div>` : ""}
-        <div class="rag-submit"><small>默认链路：${escapeHtml(product.id === "content-multimodal" ? "CLIP + SQLite + Qwen" : "BGE + SQLite + Qwen")}</small><button type="submit" data-run-product ${responses.length ? "" : "disabled"}>${escapeHtml(product.callLabel)}</button></div>
+        ${product.id === "content-multimodal" ? `<div class="rag-image-input">${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" /><strong>${escapeHtml(image.title)}</strong>` : "<strong>尚未选择图片</strong>"}</div>` : ""}
+        <div class="rag-submit"><button type="submit" data-run-product ${responses.length ? "" : "disabled"}>${escapeHtml(product.callLabel)}</button></div>
       </form>`;
     }
     if (structuredConfig(product)) return renderStructuredProductControl(product);
@@ -2577,7 +2606,13 @@
     const value = root.querySelector("[data-risk-value]");
     const bar = root.querySelector("[data-risk-bar]");
     const evidence = root.querySelector("[data-evidence-list]");
-    if (seriesRecoveryProductIds.has(product.id)) {
+    if (ragProductIds.has(product.id)) {
+      const inference = ragTextInferenceFor(product);
+      if (title) title.textContent = attackStep === 0 ? "准备分析回答正文" : "正在执行：回答依据推断";
+      if (evidence) evidence.innerHTML = attackStep === 0
+        ? "<li>等待读取用户可见的回答正文</li>"
+        : `<li>仅从回答正文命中 ${inference.matches.length}/${inference.total} 个候选事实特征；${escapeHtml(inference.conclusion)}。</li>`;
+    } else if (seriesRecoveryProductIds.has(product.id)) {
       if (title) title.textContent = attackStep === 0 ? "准备居民数据库成员恢复" : progressItems[Math.min(attackStep, progressItems.length) - 1].title;
       if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item, index) => {
         if (membershipRecoveryRun && index === 1) return `<li>代码实际调用 ${membershipRecoveryRun.queryCount} 次：缓存命中 ${membershipRecoveryRun.cacheHits} 次，新执行 ${membershipRecoveryRun.cacheMisses} 次。</li>`;
@@ -2645,6 +2680,13 @@
       results.innerHTML = `
         <header><div><h3>${escapeHtml(product.attacks[0].name)}</h3></div><strong>${primaryMetric}</strong></header>
         <div class="membership-result-stats"><article><span>统一数据集</span><strong>${enterpriseCreditStore.records.length} 家</strong></article><article><span>完整参考企业</span><strong>${run.referenceCount}</strong></article><article><span>待推断企业</span><strong>${run.targetCount}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>`;
+      return;
+    }
+    if (ragProductIds.has(product.id)) {
+      const inference = ragTextInferenceFor(product);
+      results.innerHTML = `
+        <header><div><h3>回答依据推断</h3></div><strong>${inference.matches.length} / ${inference.total}</strong></header>
+        <div class="text-inference-result"><p><b>候选依据</b>${escapeHtml(inference.claim)}</p><p><b>正文特征</b>${inference.matches.length ? inference.matches.map((match) => `“${escapeHtml(match)}”`).join("、") : "未命中足够的特征"}</p><strong>攻击结果：${escapeHtml(inference.conclusion)}</strong></div>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {
