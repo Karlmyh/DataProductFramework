@@ -203,6 +203,7 @@ test("uses one fixed-question chatbot and text-only evidence inference for 03070
   const ragData = context.window.__RAG_CHAT_DATA__;
   assert.equal(ragData.schemaVersion, 2);
   assert.equal(ragData.responses.length, 6);
+  for (const image of ragData.images) await access(new URL(image.path, pagesRoot));
   assert.deepEqual([...new Set(ragData.responses.map((response) => response.productCode))], ["030701", "030705"]);
   for (const response of ragData.responses) {
     assert.ok(response.answer.length > 20);
