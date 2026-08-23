@@ -79,7 +79,7 @@
     attackFamily: "成员推断",
     attackObject: "语料成员隐私",
     source: "QURM183 受控候选集实测",
-    protocol: "成员/非成员各半；每候选对象2次查询；仅回答正文打分；标签仅用于计算 ROC-AUC",
+    protocol: "攻击查询数受模型调用上限约束；每候选对象1次查询；仅回答正文打分；同时含成员与非成员时才计算 ROC-AUC",
     limitation: "结果来自受控的合成候选集，不代表一般生产环境的攻击效果。",
   };
   Object.entries(ragProductDefinitions).forEach(([productId, definition]) => {
@@ -765,8 +765,8 @@
       .trim();
   }
 
-  function ragMembershipResultFor(product) {
-    return ragMembershipByProductCode.get(product.category) ?? {
+  function ragMembershipResultFor(product, queryCount = null) {
+    const fullResult = ragMembershipByProductCode.get(product.category) ?? {
       productCode: product.category,
       candidateCount: 0,
       memberCount: 0,
@@ -778,7 +778,26 @@
       meanMemberScore: 0,
       meanNonmemberScore: 0,
       scoreSource: "chatbot_answer_text_only",
+      budgetResults: [],
     };
+    if (queryCount === null) return fullResult;
+    const normalizedQueryCount = Math.max(0, Math.min(10, Math.floor(Number(queryCount) || 0)));
+    const budgetResult = fullResult.budgetResults?.find((result) => result.queryCount === normalizedQueryCount);
+    return budgetResult ? { ...fullResult, ...budgetResult } : {
+      ...fullResult,
+      candidateCount: 0,
+      memberCount: 0,
+      nonmemberCount: 0,
+      queryCount: normalizedQueryCount,
+      rocAuc: null,
+      accuracyAtHalf: null,
+      meanMemberScore: null,
+      meanNonmemberScore: null,
+    };
+  }
+
+  function formatRagMetric(value, decimals = 3) {
+    return value === null || value === undefined || !Number.isFinite(Number(value)) ? "不可计算" : Number(value).toFixed(decimals);
   }
 
   function productUsageLabel(product) {
@@ -2213,14 +2232,15 @@
     const image = response?.imageId ? ragImagesById.get(response.imageId) : null;
     const question = response?.question ?? product.inputValue;
     const answer = publicRagAnswer(response?.answer ?? product.outputValue);
-    const benchmark = ragMembershipResultFor(product);
+    const benchmark = ragMembershipResultFor(product, productUsageCount(product));
+    const aucText = formatRagMetric(benchmark.rocAuc);
     return `<div class="chat-product-view">
       <div class="chat-thread">
         ${currentPhase >= 1 ? `<div class="chat-message user">${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" />` : ""}<p>${escapeHtml(question)}</p></div>` : '<div class="chat-welcome"><strong>请选择一个问题</strong></div>'}
         ${currentPhase >= 2 && currentPhase < 3 ? '<div class="typing" aria-label="正在生成回答"><i></i><i></i><i></i></div>' : ""}
         ${currentPhase >= 3 ? `<div class="chat-message bot"><p>${escapeHtml(answer)}</p></div>` : ""}
       </div>
-      ${currentPhase >= 4 ? `<aside class="rag-membership-panel"><h3>RAG 语料成员推断</h3><p>对 ${benchmark.candidateCount} 个候选对象逐一重复查询，仅由 Chatbot 回答正文计算成员分数。</p><div class="rag-membership-flow"><span>候选对象</span><i>→</i><span>重复查询</span><i>→</i><span>正文打分</span><i>→</i><span>ROC-AUC</span></div><strong>受控候选集实测：ROC-AUC ${Number(benchmark.rocAuc).toFixed(3)}</strong></aside>` : ""}
+      ${currentPhase >= 4 ? `<aside class="rag-membership-panel"><h3>RAG 语料成员推断</h3><p>对 ${benchmark.candidateCount} 个候选对象逐一查询，仅由 Chatbot 回答正文计算成员分数。</p><div class="rag-membership-flow"><span>候选对象</span><i>→</i><span>受限查询</span><i>→</i><span>正文打分</span><i>→</i><span>ROC-AUC</span></div><strong>ROC-AUC ${escapeHtml(aucText)}</strong></aside>` : ""}
     </div>`;
   }
 
@@ -2676,11 +2696,16 @@
     const bar = root.querySelector("[data-risk-bar]");
     const evidence = root.querySelector("[data-evidence-list]");
     if (ragProductIds.has(product.id)) {
-      const benchmark = ragMembershipResultFor(product);
+      const attackRun = productRecoveryRun;
+      const attackQueryCount = attackRun?.queryCount ?? productUsageCount(product);
+      const benchmark = ragMembershipResultFor(product, attackQueryCount);
+      const aucText = formatRagMetric(benchmark.rocAuc);
+      const callLimit = productUsageLimit(product);
+      const normalCallCount = Math.max(0, callLimit - (attackRun?.queryBudget ?? productUsageCount(product)));
       if (title) title.textContent = attackStep === 0 ? "准备语料成员推断" : "正在执行：RAG 语料成员推断";
       if (evidence) evidence.innerHTML = attackStep === 0
-        ? "<li>等待对候选数据集执行重复查询</li>"
-        : `<li>已完成 ${benchmark.queryCount} 次查询；仅从 Chatbot 回答正文计算候选成员分数，ROC-AUC=${Number(benchmark.rocAuc).toFixed(3)}。</li>`;
+        ? `<li>模型调用上限 ${callLimit} 次；正常问答已用 ${normalCallCount} 次，剩余次数用于攻击查询。</li>`
+        : `<li>模型调用上限 ${callLimit} 次；实际攻击查询 ${benchmark.queryCount} 次；ROC-AUC ${escapeHtml(aucText)}。</li>`;
     } else if (seriesRecoveryProductIds.has(product.id)) {
       if (title) title.textContent = attackStep === 0 ? "准备居民数据库成员恢复" : progressItems[Math.min(attackStep, progressItems.length) - 1].title;
       if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item, index) => {
@@ -2752,19 +2777,25 @@
       return;
     }
     if (ragProductIds.has(product.id)) {
-      const benchmark = ragMembershipResultFor(product);
+      const attackRun = productRecoveryRun ?? runProductRecoveryAttack(product);
+      const attackQueryCount = attackRun?.queryCount ?? 0;
+      const benchmark = ragMembershipResultFor(product, attackQueryCount);
+      const callLimit = productUsageLimit(product);
+      const normalCallCount = Math.max(0, callLimit - (attackRun?.queryBudget ?? 0));
+      const aucText = formatRagMetric(benchmark.rocAuc);
+      const accuracyText = formatRagMetric(benchmark.accuracyAtHalf == null ? null : Number(benchmark.accuracyAtHalf) * 100, 1);
       results.innerHTML = `
-        <header><div><h3>RAG 语料成员推断</h3></div><strong>AUC ${Number(benchmark.rocAuc).toFixed(3)}</strong></header>
+        <header><div><h3>RAG 语料成员推断</h3></div><strong>AUC ${escapeHtml(aucText)}</strong></header>
         <div class="rag-membership-summary" aria-label="RAG 语料成员推断效果指标">
-          <article><span>候选对象</span><strong>${benchmark.candidateCount}</strong></article>
-          <article><span>成员 / 非成员</span><strong>${benchmark.memberCount} / ${benchmark.nonmemberCount}</strong></article>
-          <article><span>查询次数</span><strong>${benchmark.queryCount}</strong></article>
-          <article><span>ROC-AUC</span><strong>${Number(benchmark.rocAuc).toFixed(3)}</strong></article>
+          <article><span>模型调用上限</span><strong>${callLimit}</strong></article>
+          <article><span>正常问答调用</span><strong>${normalCallCount}</strong></article>
+          <article><span>实际攻击查询</span><strong>${benchmark.queryCount}</strong></article>
+          <article><span>ROC-AUC</span><strong>${escapeHtml(aucText)}</strong></article>
         </div>
         <div class="rag-membership-score-gap">
-          <article><span>成员平均分</span><strong>${Number(benchmark.meanMemberScore).toFixed(3)}</strong></article>
-          <article><span>非成员平均分</span><strong>${Number(benchmark.meanNonmemberScore).toFixed(3)}</strong></article>
-          <article><span>0.5 阈值准确率</span><strong>${(Number(benchmark.accuracyAtHalf) * 100).toFixed(1)}%</strong></article>
+          <article><span>候选对象</span><strong>${benchmark.candidateCount}</strong></article>
+          <article><span>成员 / 非成员</span><strong>${benchmark.memberCount} / ${benchmark.nonmemberCount}</strong></article>
+          <article><span>0.5 阈值准确率</span><strong>${accuracyText === "不可计算" ? accuracyText : `${accuracyText}%`}</strong></article>
         </div>`;
       return;
     }
