@@ -26,25 +26,34 @@
         </nav>
         <span class="category-code">攻击面 · 030503</span>
         <h1>集合参照排名与相对位置<br />攻击页面</h1>
-        <p class="lead">依据当期集合或参照分布交付名次、百分位、分位层级或其他相对位置。</p>
+        <p class="lead">在与030501相同的100家模拟企业和6个信用维度上，按风险指数发布风险名次与百分位。</p>
       </header>
 
       <section class="detail-section">
         <h2>攻击面判定</h2>
         <div class="facts-grid">
-          <div class="fact"><span>核心交付</span><p>依据当期集合或参照分布交付名次、百分位、分位层级或其他相对位置。</p></div>
-          <div class="fact"><span>主要暴露</span><p>排名与前 K 名结果会泄露次序、群体分布、入选边界及集合成员变化。</p></div>
+          <div class="fact"><span>核心交付</span><p>按风险指数从高到低发布100家企业的风险名次；第1名风险最高。</p></div>
+          <div class="fact"><span>主要暴露</span><p>相对次序仍能约束隐藏逾期率，使攻击者从排名关系中学习风险方向。</p></div>
           <div class="fact"><span>分类边界</span><p>结果依赖比较集合；固定标准或阈值分级归入 030502。</p></div>
         </div>
       </section>
 
+      <section class="detail-section">
+        <h2>统一模拟数据与真实排序规则</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>底层数据</span><p>与030501完全相同的100家企业、6个信用维度和风险指数公式。</p></div>
+          <div class="fact"><span>排序规则</span><p>按风险指数R从高到低排序；第1名风险最高，同时发布风险百分位。</p></div>
+          <div class="fact"><span>攻击者知识</span><p>60家参考企业六维全知且知道公开名次；40家目标企业只知道前五维和名次。</p></div>
+        </div>
+        <p>攻击代码不会读取真实公式，而是从参考企业之间的名次先后关系学习成对排序方向；随后搜索能让目标企业落在其公开名次附近的逾期率。排名只保留相对顺序，因此反演通常比连续指数更不精确。</p>
+      </section>
+
       <section class="detail-section detail-columns">
         <div><h2>四级产品分支</h2><ol class="numbered-list"><li>名次、顺序与 Top-K</li><li>百分位、分位位置与分位分层</li><li>成对关系与偏序位置</li><li>支配关系与效率前沿位置</li></ol></div>
-        <div><h2>主要攻击</h2><ol class="attack-list">
-                <li><span>01</span><strong>Top-K 成员探测</strong></li>
-                <li><span>02</span><strong>排序翻转分析</strong></li>
-                <li><span>03</span><strong>分位边界恢复</strong></li>
-                <li><span>04</span><strong>参照集合推断</strong></li></ol></div>
+        <div><h2>当前互动攻击</h2><ol class="attack-list">
+                <li><span>01</span><strong>成对排序代理规则学习</strong></li>
+                <li><span>02</span><strong>排名约束下的逾期率反演</strong></li>
+                <li><span>03</span><strong>反演误差与参照集合敏感性评估</strong></li></ol></div>
       </section>
 
       <section class="detail-section">
