@@ -43,12 +43,12 @@ test("renders the measurement framework and updated product taxonomy", async () 
   assert.doesNotMatch(html, /codex-preview|Building your site|Starter Project/i);
 });
 
-test("server-renders all four multi-product demos and aggregation language", async () => {
+test("server-renders all three multi-product demos and aggregation language", async () => {
   const html = await (await render()).text();
-  for (const suite of ["金融数据协作中心", "城市公共服务平台", "智能内容服务台", "模型攻击实测实验室"]) {
+  for (const suite of ["金融数据协作中心", "城市公共服务平台", "智能内容服务台"]) {
     assert.match(html, new RegExp(suite));
   }
-  assert.match(html, /19/);
+  assert.match(html, /17/);
   assert.match(html, /匹配到的全部攻击/);
   assert.match(html, /主结论 = max/);
   assert.match(html, /完整结果向量/);
@@ -108,5 +108,5 @@ test("source keeps the product-switch interaction and accessible state", async (
   assert.match(data, /Top-5 68%/);
   assert.match(data, /PSNR 20\.56 dB/);
   assert.doesNotMatch(lab, /average \* 0\.4 \+ maximum \* 0\.6/);
-  assert.equal((data.match(/id: "(finance|city|content|experiment)-/g) ?? []).length, 19);
+  assert.equal((data.match(/id: "(finance|city|content)-/g) ?? []).length, 17);
 });

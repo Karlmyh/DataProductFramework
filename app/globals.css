@@ -156,7 +156,7 @@ h1 {
 
 .lab-section { padding-left: 22px; padding-right: 22px; border: 2px solid var(--line); background: var(--paper-bright); box-shadow: 12px 12px 0 var(--line); }
 .lab-heading { margin-bottom: 30px; }
-.suite-switcher { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); }
+.suite-switcher { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); }
 .suite-switcher button { min-height: 96px; padding: 15px 18px; border: 0; background: transparent; text-align: left; cursor: pointer; }
 .suite-switcher button + button { border-left: 1px solid var(--line); }
 .suite-switcher button:hover { background: var(--wash); }

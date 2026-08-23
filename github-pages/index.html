@@ -221,6 +221,7 @@
         });
       })();
     </script>
+    <script src="model-attack-demo-data.js?v=model-attack-evidence-1"></script>
     <script>
       (() => {
         const demoCategory = new URLSearchParams(window.location.search).get("demo");
@@ -239,7 +240,7 @@
             id: `category-${demoCategory}`,
             code: "",
             name: "分类互动演示",
-            visual: demoCategory.startsWith("0301") || demoCategory.startsWith("0304") ? "data" : "attribute",
+            visual: demoCategory === "030702" ? "vision" : demoCategory === "030901" ? "gradient" : demoCategory.startsWith("0301") || demoCategory.startsWith("0304") ? "data" : "attribute",
             productIds: hiddenProductIds
           });
         }
