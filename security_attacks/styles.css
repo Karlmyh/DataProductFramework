@@ -559,7 +559,6 @@ th { font-weight: 700; }
 .rag-membership-summary strong, .rag-membership-score-gap strong { font-size: 22px; line-height: 1; }
 .rag-membership-summary article:last-child strong { color: #9c2e22; }
 .rag-membership-score-gap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--ink); border-top: 0; background: var(--soft); }
-.rag-membership-note { margin: 0; padding: 12px 16px; color: var(--muted); border: 1px solid var(--ink); border-top: 0; background: var(--paper); font-size: 10px; line-height: 1.6; }
 
 .graph-product-view { padding: 14px; }
 .graph-query { display: flex; justify-content: space-between; gap: 16px; padding: 9px 11px; border: 1px solid var(--ink); background: var(--paper); font-size: 10px; }

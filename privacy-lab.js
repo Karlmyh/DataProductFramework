@@ -2741,8 +2741,7 @@
           <article><span>成员平均分</span><strong>${Number(benchmark.meanMemberScore).toFixed(3)}</strong></article>
           <article><span>非成员平均分</span><strong>${Number(benchmark.meanNonmemberScore).toFixed(3)}</strong></article>
           <article><span>0.5 阈值准确率</span><strong>${(Number(benchmark.accuracyAtHalf) * 100).toFixed(1)}%</strong></article>
-        </div>
-        <p class="rag-membership-note">受控合成候选集实测；攻击分数只由 Chatbot 回答正文计算，检索结果、相似度和文档 ID 不参与打分。</p>`;
+        </div>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {
