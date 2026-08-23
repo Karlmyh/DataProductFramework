@@ -37,7 +37,7 @@ const showcaseSeries = [
   { id: "chat", code: "S3", name: "检索增强生成与智能问答", visual: "chat", productIds: ["city-rag", "content-multimodal"] },
   { id: "graph", code: "S4", name: "知识图谱与关系查询产品", visual: "graph", productIds: ["finance-graph"] },
   { id: "attribute", code: "S5", name: "指标发布与属性推断产品", visual: "attribute", productIds: ["finance-index", "city-grade", "content-rank", "finance-model"] },
-  { id: "gradient", code: "S6", name: "梯度与训练更新交付产品", visual: "gradient", productIds: ["finance-gradient", "city-gradient"] },
+  { id: "gradient", code: "S6", name: "梯度与训练更新交付产品", visual: "gradient", productIds: ["finance-gradient"] },
 ];
 
 function escapeHtml(value: string) {

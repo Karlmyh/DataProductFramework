@@ -13,9 +13,9 @@ type GradientFaceConfig = {
 };
 
 const gradientFaceConfigs: Record<number, GradientFaceConfig> = {
-  100: { src: "/demo-assets/model-attack/idlg-lfw-batch16.png", width: 2160, size: 178, xs: [49, 557, 1064, 1570], originalY: 95, reconstructedY: 314 },
-  500: { src: "/demo-assets/model-attack/idlg-lfw-batch8.png", width: 2160, size: 178, xs: [49, 557, 1064, 1570], originalY: 95, reconstructedY: 314 },
-  1000: { src: "/demo-assets/model-attack/idlg-lfw-batch4.png", width: 1080, size: 182, xs: [52, 316, 581, 845], originalY: 102, reconstructedY: 335 },
+  100: { src: "/demo-assets/model-attack/gradvit-face-results.png", width: 1611, size: 196, xs: [4, 800], originalY: 8, reconstructedY: 236 },
+  500: { src: "/demo-assets/model-attack/gradvit-face-results.png", width: 1611, size: 196, xs: [4, 402, 800, 1197], originalY: 8, reconstructedY: 236 },
+  1000: { src: "/demo-assets/model-attack/gradvit-face-results.png", width: 1611, size: 196, xs: [4, 203, 402, 601, 800, 998, 1197, 1396], originalY: 8, reconstructedY: 236 },
 };
 
 function GradientFaceCrop({ config, x, y, alt }: { config: GradientFaceConfig; x: number; y: number; alt: string }) {
@@ -38,6 +38,7 @@ export default function DemoLab() {
   const product = suite.products[productIndex];
   const isGradientProduct = product.id === "finance-gradient";
   const gradientFaceConfig = gradientFaceConfigs[gradientCalls];
+  const gradientGridStyle = { "--gradient-columns": Math.min(4, gradientFaceConfig.xs.length) } as CSSProperties;
   const candidates = candidateAttacks[product.id];
   const applicableCount = candidates.filter((candidate) => candidate.applicable).length;
   const executedCount = candidates.filter((candidate) => candidate.executed).length;
@@ -232,8 +233,8 @@ export default function DemoLab() {
       {isGradientProduct ? (
         <div className="attack-results gradient-only-results visible" aria-live="polite">
           <div className="gradient-face-comparison">
-            <section><h3>真实人脸</h3><div className="gradient-face-grid">{gradientFaceConfig.xs.map((x, index) => <GradientFaceCrop key={`real-${x}`} config={gradientFaceConfig} x={x} y={gradientFaceConfig.originalY} alt={`真实人脸 ${index + 1}`} />)}</div></section>
-            <section><h3>梯度反演结果</h3><div className="gradient-face-grid">{gradientFaceConfig.xs.map((x, index) => <GradientFaceCrop key={`reconstructed-${x}`} config={gradientFaceConfig} x={x} y={gradientFaceConfig.reconstructedY} alt={`梯度反演人脸 ${index + 1}`} />)}</div></section>
+            <section><h3>真实人脸</h3><div className="gradient-face-grid" style={gradientGridStyle}>{gradientFaceConfig.xs.map((x, index) => <GradientFaceCrop key={`real-${x}`} config={gradientFaceConfig} x={x} y={gradientFaceConfig.originalY} alt={`真实人脸 ${index + 1}`} />)}</div></section>
+            <section><h3>梯度反演结果</h3><div className="gradient-face-grid" style={gradientGridStyle}>{gradientFaceConfig.xs.map((x, index) => <GradientFaceCrop key={`reconstructed-${x}`} config={gradientFaceConfig} x={x} y={gradientFaceConfig.reconstructedY} alt={`梯度反演人脸 ${index + 1}`} />)}</div></section>
           </div>
         </div>
       ) : (

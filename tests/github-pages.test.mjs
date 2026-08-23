@@ -25,8 +25,8 @@ test("embeds all guided product series and their candidate attack registries", a
     readFile(new URL("privacy-lab.js", pagesRoot), "utf8"),
   ]);
   assert.equal(demoSuites.length, 3);
-  assert.equal(demoSuites.flatMap((suite) => suite.products).length, 17);
-  assert.equal(Object.keys(candidateAttacks).length, 17);
+  assert.equal(demoSuites.flatMap((suite) => suite.products).length, 16);
+  assert.equal(Object.keys(candidateAttacks).length, 16);
   for (const series of ["行业数据库与核验产品", "视觉理解与身份核验模型", "检索增强生成与智能问答", "知识图谱与关系查询产品", "指标发布与属性推断产品", "梯度与训练更新交付产品"]) {
     assert.match(html, new RegExp(series));
   }
@@ -63,6 +63,20 @@ test("uses GitHub Pages-relative assets and includes social metadata", async () 
   assert.doesNotMatch(html, /chatgpt\.site/);
   assert.doesNotMatch(html, /href="\/attacks\//);
   assert.doesNotMatch(css, /@import\s+"tailwindcss"/);
+});
+
+test("uses high-resolution GradViT face recovery and removes the protected traffic gradient demo", async () => {
+  const [modelData, labScript, css] = await Promise.all([
+    readFile(new URL("model-attack-demo-data.js", pagesRoot), "utf8"),
+    readFile(new URL("privacy-lab.js", pagesRoot), "utf8"),
+    readFile(new URL("security_attacks/styles.css", pagesRoot), "utf8"),
+  ]);
+  await access(new URL("demo-assets/model-attack/gradvit-face-results.png", pagesRoot));
+  assert.match(modelData, /delete data\.productsById\["city-gradient"\]/);
+  assert.match(labScript, /gradvit-face-results\.png/);
+  assert.match(labScript, /xs: \[4, 203, 402, 601, 800, 998, 1197, 1396\]/);
+  assert.doesNotMatch(labScript, /idlg-lfw-batch(?:4|8|16)\.png/);
+  assert.match(css, /--gradient-columns/);
 });
 
 test("renders face hill climbing as a continuous accepted path", async () => {

@@ -232,7 +232,7 @@ h1 {
 .gradient-face-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding: 24px; background: var(--paper-bright); }
 .gradient-face-comparison section { min-width: 0; }
 .gradient-face-comparison h3 { margin: 0 0 14px; font-size: 18px; }
-.gradient-face-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gradient-face-grid { display: grid; grid-template-columns: repeat(var(--gradient-columns, 4), minmax(0, 112px)); justify-content: start; gap: 10px; }
 .gradient-face-crop { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--ink); background: #111; }
 .gradient-face-crop img { position: absolute; width: var(--crop-width); max-width: none; height: auto; left: var(--crop-left); top: var(--crop-top); }
 
@@ -429,6 +429,8 @@ h1 {
   .lab-section { width: calc(100% + 14px); margin-left: -7px; padding-left: 12px; padding-right: 12px; box-shadow: 6px 6px 0 var(--line); }
   .suite-context { grid-template-columns: 1fr; gap: 4px; }
   .product-summary, .results-head { align-items: flex-start; flex-direction: column; }
+  .gradient-face-comparison { grid-template-columns: 1fr; }
+  .gradient-face-grid { grid-template-columns: repeat(2, minmax(0, 112px)); }
   .attack-loading { grid-template-columns: 1fr; }
   .flow-track { padding-left: 4px; padding-right: 4px; }
   .aggregate-panel { grid-template-columns: 1fr; padding: 18px; }

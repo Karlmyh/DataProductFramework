@@ -376,7 +376,7 @@ th { font-weight: 700; }
 .gradient-face-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding: 24px; background: var(--paper); }
 .gradient-face-comparison section { min-width: 0; }
 .gradient-face-comparison h3 { margin: 0 0 14px; font-size: 18px; }
-.gradient-face-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gradient-face-grid { display: grid; grid-template-columns: repeat(var(--gradient-columns, 4), minmax(0, 112px)); justify-content: start; gap: 10px; }
 .gradient-face-crop { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--ink); background: #111; }
 .gradient-face-crop img { position: absolute; width: var(--crop-width); max-width: none; height: auto; left: var(--crop-left); top: var(--crop-top); }
 .membership-recovery-view { padding: 14px; }
@@ -765,6 +765,8 @@ th { font-weight: 700; }
   .membership-query-track > header { grid-template-columns: auto 1fr; }
   .membership-dataset-compare, .membership-result-stats { grid-template-columns: 1fr; }
   .membership-result-stats.five-columns { grid-template-columns: 1fr; }
+  .gradient-face-comparison { grid-template-columns: 1fr; }
+  .gradient-face-grid { grid-template-columns: repeat(2, minmax(0, 112px)); }
   .face-oracle-boundary { grid-template-columns: 1fr; }
   .face-oracle-boundary i { display: none; }
   .face-rejected-list, .face-final-result { grid-template-columns: 1fr; }

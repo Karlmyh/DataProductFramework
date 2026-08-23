@@ -635,7 +635,7 @@
   const membershipRecoverySavedRuns = new Map();
   const seriesRecoveryProductIds = new Set([
     "city-existence", "content-library", "finance-graph", "finance-graph-query", "finance-aggregate", "finance-derived", "city-verify", "content-voice", "finance-verify",
-    "finance-index", "city-grade", "content-rank", "city-rag", "content-vision", "content-speech", "finance-model", "content-multimodal", "model-distillation", "finance-gradient", "city-gradient",
+    "finance-index", "city-grade", "content-rank", "city-rag", "content-vision", "content-speech", "finance-model", "content-multimodal", "model-distillation", "finance-gradient",
   ]);
   const graphCompanies = ["远澜科技", "海岸智造", "星桥能源", "海岳控股", "国创资本", "蓝港产业基金", "新源储能", "城际数科", "东浦制造", "安禾服务"];
   const graphRelations = ["控制关系", "股权关系", "项目关系"];
@@ -756,7 +756,6 @@
     ["content-multimodal", { queriesPerTarget: 1, groundTruthLabel: "多模态模型真实上下文集", recoveredLabel: "攻击恢复的跨模态上下文", truthMetricLabel: "真实上下文", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复上下文", falseMetricLabel: "错误关联", targets: ragMembershipTargets("content-multimodal") }],
     ["model-distillation", { queriesPerTarget: 4, groundTruthLabel: "教师模型真实响应集", recoveredLabel: "从学生模型恢复的教师行为", truthMetricLabel: "教师真实行为", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复行为", falseMetricLabel: "错误行为", targets: syntheticTargetSet("DST", ["客户分类 · 教师标签 A", "客户分类 · 教师标签 B", "风险识别 · 教师置信度高", "风险识别 · 教师置信度低"]) }],
     ["finance-gradient", { queriesPerTarget: 6, groundTruthLabel: "梯度批次真实训练样本", recoveredLabel: "梯度反演恢复的训练样本", truthMetricLabel: "真实训练样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误样本", targets: syntheticTargetSet("FG", ["企业现金流序列 · 违约标签 1", "企业负债序列 · 违约标签 0", "企业授信序列 · 风险标签高", "企业还款序列 · 风险标签低"]) }],
-    ["city-gradient", { queriesPerTarget: 6, groundTruthLabel: "客流梯度真实训练样本", recoveredLabel: "梯度反演恢复的客流样本", truthMetricLabel: "真实客流样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误样本", targets: syntheticTargetSet("CG", ["中心站 · 早高峰客流", "滨江站 · 晚高峰客流", "会展站 · 活动时段客流", "机场站 · 节假日客流"]) }],
   ]);
   const productRecoverySavedRuns = new Map();
   let membershipRecoveryRun = null;
@@ -2048,34 +2047,34 @@
     const limit = productUsageLimit(product);
     const configs = {
       100: {
-        src: "demo-assets/model-attack/idlg-lfw-batch16.png",
-        width: 2160,
-        size: 178,
-        xs: [49, 557, 1064, 1570],
-        originalY: 95,
-        reconstructedY: 314,
+        src: "demo-assets/model-attack/gradvit-face-results.png",
+        width: 1611,
+        size: 196,
+        xs: [4, 800],
+        originalY: 8,
+        reconstructedY: 236,
       },
       500: {
-        src: "demo-assets/model-attack/idlg-lfw-batch8.png",
-        width: 2160,
-        size: 178,
-        xs: [49, 557, 1064, 1570],
-        originalY: 95,
-        reconstructedY: 314,
+        src: "demo-assets/model-attack/gradvit-face-results.png",
+        width: 1611,
+        size: 196,
+        xs: [4, 402, 800, 1197],
+        originalY: 8,
+        reconstructedY: 236,
       },
       1000: {
-        src: "demo-assets/model-attack/idlg-lfw-batch4.png",
-        width: 1080,
-        size: 182,
-        xs: [52, 316, 581, 845],
-        originalY: 102,
-        reconstructedY: 335,
+        src: "demo-assets/model-attack/gradvit-face-results.png",
+        width: 1611,
+        size: 196,
+        xs: [4, 203, 402, 601, 800, 998, 1197, 1396],
+        originalY: 8,
+        reconstructedY: 236,
       },
     };
     const config = configs[limit] ?? configs[100];
     return `<div class="gradient-face-comparison">
-      <section><h3>真实人脸</h3><div class="gradient-face-grid">${config.xs.map((x, index) => gradientFaceCrop(config, x, config.originalY, `真实人脸 ${index + 1}`)).join("")}</div></section>
-      <section><h3>梯度反演结果</h3><div class="gradient-face-grid">${config.xs.map((x, index) => gradientFaceCrop(config, x, config.reconstructedY, `梯度反演人脸 ${index + 1}`)).join("")}</div></section>
+      <section><h3>真实人脸</h3><div class="gradient-face-grid" style="--gradient-columns:${Math.min(4, config.xs.length)}">${config.xs.map((x, index) => gradientFaceCrop(config, x, config.originalY, `真实人脸 ${index + 1}`)).join("")}</div></section>
+      <section><h3>梯度反演结果</h3><div class="gradient-face-grid" style="--gradient-columns:${Math.min(4, config.xs.length)}">${config.xs.map((x, index) => gradientFaceCrop(config, x, config.reconstructedY, `梯度反演人脸 ${index + 1}`)).join("")}</div></section>
     </div>`;
   }
 
