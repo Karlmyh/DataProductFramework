@@ -23,14 +23,8 @@
   ]);
   const ragImagesById = new Map(ragChatData.images.map((image) => [image.id, image]));
   const selectedRagQuestionIds = new Map(Array.from(ragResponsesByProduct, ([productId, responses]) => [productId, responses[0]?.id ?? ""]));
-  const ragEvidenceHypotheses = new Map([
-    ["Q-TEXT-WT", { claim: "申报对象需满足注册年限与信用条件，申报后经过区级形式审查、市级联合评审和公示。", anchors: ["登记注册满2年", "近12个月内无重大失信记录", "5个工作日", "公示3个工作日"] }],
-    ["Q-TEXT-ELD", { claim: "居家养老服务补贴同时考察年龄、居住时间、收入和家庭情况，申请时需提交身份、居住与收入证明。", anchors: ["60周岁", "连续居住满12个月", "月收入不超过4500元", "近3个月的收入证明"] }],
-    ["Q-TEXT-HOU", { claim: "住房租赁补贴按家庭人数增加且设月度上限，资格经街道和住房保障部门复核后由财政部门拨付。", anchors: ["每月补贴1200元", "增加300元", "最高不超过2100元", "财政部门按季度拨付"] }],
-    ["Q-IMAGE-FRAMEWORK", { claim: "数据产品安全衡量由产品表示、攻击匹配、统一衡量和风险聚合串联而成。", anchors: ["产品表示", "攻击匹配", "统一衡量", "风险聚合"] }],
-    ["Q-IMAGE-PORTRAIT", { claim: "居民人脸核验图片需要单独同意、加密、原图与模板分区保存，并设置最短留存期。", anchors: ["单独同意", "加密", "分区保存", "最短留存期限"] }],
-    ["Q-IMAGE-FACEGRID", { claim: "批量人脸库存在身份关联、模板泄露和越权导出风险，需要限制检索频率并审批导出操作。", anchors: ["批量身份关联", "模板泄露", "检索频率限制", "导出操作进行审批"] }],
-  ]);
+  const ragMembershipData = window.__RAG_MEMBERSHIP_RESULTS__ ?? { results: [] };
+  const ragMembershipByProductCode = new Map(ragMembershipData.results.map((result) => [result.productCode, result]));
   const creditProductIds = new Set(["finance-index", "city-grade", "content-rank", "finance-model"]);
   const creditFeatureKeys = enterpriseCreditStore.schema.map((field) => field.key);
   const creditPublicFeatureKeys = enterpriseCreditStore.schema.filter((field) => !field.sensitive).map((field) => field.key);
@@ -75,32 +69,31 @@
       outputDetail: "仅向用户展示图片、问题和回答正文。",
     },
   };
-  const ragTextInferenceAttack = {
-    id: "text-evidence-inference",
-    name: "回答依据推断",
-    brief: "只分析回答正文中的关键事实组合，判断是否使用了候选依据。",
-    result: "回答正文与候选依据的特征事实高度一致，判断使用了该依据。",
-    metric: "正文事实命中",
-    value: "4 / 4",
-    displayScore: 90,
-    evidence: "文本推断",
-    attackFamily: "依据推断",
-    attackObject: "知识使用隐私",
-    source: "回答正文语义特征",
-    protocol: "仅读取用户可见的回答文本；不读取引用、文档 ID 或检索记录",
-    limitation: "文本相似只能支持使用依据的推断，不等于直接读取内部知识库。",
+  const ragCorpusMembershipAttack = {
+    id: "rag-corpus-membership",
+    name: "RAG 语料成员推断",
+    brief: "对候选数据集中的每个对象重复查询 Chatbot，仅由回答正文计算成员分数。",
+    result: "候选成员与非成员的回答分数可分，以 ROC-AUC 衡量攻击效果。",
+    metric: "ROC-AUC",
+    evidence: "受控候选集实测",
+    attackFamily: "成员推断",
+    attackObject: "语料成员隐私",
+    source: "QURM183 受控候选集实测",
+    protocol: "成员/非成员各半；每候选对象2次查询；仅回答正文打分；标签仅用于计算 ROC-AUC",
+    limitation: "结果来自受控的合成候选集，不代表一般生产环境的攻击效果。",
   };
   Object.entries(ragProductDefinitions).forEach(([productId, definition]) => {
     const product = productsById[productId];
     const firstResponse = ragResponsesByProduct.get(productId)?.[0];
     if (!product) return;
+    const benchmark = ragMembershipByProductCode.get(product.category) ?? { rocAuc: 0 };
     Object.assign(product, {
       ...definition,
       inputValue: firstResponse?.question ?? product.inputValue,
       outputValue: publicRagAnswer(firstResponse?.answer ?? "回答尚未载入"),
-      attacks: [{ ...ragTextInferenceAttack }],
+      attacks: [{ ...ragCorpusMembershipAttack, value: Number(benchmark.rocAuc).toFixed(3), displayScore: Math.round(Number(benchmark.rocAuc) * 100) }],
     });
-    candidatesByProduct[productId] = [{ id: ragTextInferenceAttack.id, name: ragTextInferenceAttack.name, applicable: true, executed: true, reason: "适用：攻击者可以读取完整回答正文并与候选依据做语义比较。" }];
+    candidatesByProduct[productId] = [{ id: ragCorpusMembershipAttack.id, name: ragCorpusMembershipAttack.name, applicable: true, executed: true, reason: "适用：攻击者可对已知候选对象重复查询，并仅从 Chatbot 回答正文计算成员分数。" }];
   });
   const protectedResidentFieldKeys = new Set(["monthlyIncome", "subsidyStatus", "insurance"]);
   const qualificationPolicies = ["养老服务补贴", "住房租赁补贴", "医疗救助"];
@@ -770,22 +763,19 @@
       .trim();
   }
 
-  function ragTextInferenceFor(product) {
-    const response = ragResponseFor(product);
-    const answer = publicRagAnswer(response?.answer ?? product.outputValue);
-    const hypothesis = ragEvidenceHypotheses.get(response?.id) ?? { claim: "候选依据与回答正文包含相同的关键事实。", anchors: [] };
-    const matches = hypothesis.anchors.filter((anchor) => answer.includes(anchor));
-    const threshold = Math.max(1, Math.ceil(hypothesis.anchors.length * .75));
-    const used = matches.length >= threshold;
-    const hitRate = hypothesis.anchors.length ? Math.round(matches.length / hypothesis.anchors.length * 100) : 0;
-    return {
-      answer,
-      claim: hypothesis.claim,
-      matches,
-      total: hypothesis.anchors.length,
-      hitRate,
-      used,
-      conclusion: used ? "判断回答使用了该候选依据" : "现有正文特征不足以判断使用了该候选依据",
+  function ragMembershipResultFor(product) {
+    return ragMembershipByProductCode.get(product.category) ?? {
+      productCode: product.category,
+      candidateCount: 0,
+      memberCount: 0,
+      nonmemberCount: 0,
+      queryCount: 0,
+      queriesPerCandidate: 0,
+      rocAuc: 0,
+      accuracyAtHalf: 0,
+      meanMemberScore: 0,
+      meanNonmemberScore: 0,
+      scoreSource: "chatbot_answer_text_only",
     };
   }
 
@@ -2211,14 +2201,15 @@
     const response = ragResponseFor(product);
     const image = response?.imageId ? ragImagesById.get(response.imageId) : null;
     const question = response?.question ?? product.inputValue;
-    const inference = ragTextInferenceFor(product);
+    const answer = publicRagAnswer(response?.answer ?? product.outputValue);
+    const benchmark = ragMembershipResultFor(product);
     return `<div class="chat-product-view">
       <div class="chat-thread">
         ${currentPhase >= 1 ? `<div class="chat-message user">${image ? `<img src="${escapeHtml(image.path)}" alt="${escapeHtml(image.title)}" />` : ""}<p>${escapeHtml(question)}</p></div>` : '<div class="chat-welcome"><strong>请选择一个问题</strong></div>'}
         ${currentPhase >= 2 && currentPhase < 3 ? '<div class="typing" aria-label="正在生成回答"><i></i><i></i><i></i></div>' : ""}
-        ${currentPhase >= 3 ? `<div class="chat-message bot"><p>${escapeHtml(inference.answer)}</p></div>` : ""}
+        ${currentPhase >= 3 ? `<div class="chat-message bot"><p>${escapeHtml(answer)}</p></div>` : ""}
       </div>
-      ${currentPhase >= 4 ? `<aside class="text-inference-panel"><h3>回答依据推断</h3><p><b>候选依据</b>${escapeHtml(inference.claim)}</p><div class="inference-match-list">${inference.matches.map((match) => `<span>正文命中“${escapeHtml(match)}”</span>`).join("")}</div><strong>攻击结果：${escapeHtml(inference.conclusion)}（${inference.matches.length}/${inference.total}）</strong></aside>` : ""}
+      ${currentPhase >= 4 ? `<aside class="rag-membership-panel"><h3>RAG 语料成员推断</h3><p>对 ${benchmark.candidateCount} 个候选对象逐一重复查询，仅由 Chatbot 回答正文计算成员分数。</p><div class="rag-membership-flow"><span>候选对象</span><i>→</i><span>重复查询</span><i>→</i><span>正文打分</span><i>→</i><span>ROC-AUC</span></div><strong>受控候选集实测：ROC-AUC ${Number(benchmark.rocAuc).toFixed(3)}</strong></aside>` : ""}
     </div>`;
   }
 
@@ -2399,8 +2390,9 @@
         }, null, 2);
       })(),
       output: (() => {
+        const response = ragResponseFor(product);
         return JSON.stringify({
-          answer: ragTextInferenceFor(product).answer,
+          answer: publicRagAnswer(response?.answer ?? product.outputValue),
         }, null, 2);
       })(),
     };
@@ -2658,11 +2650,11 @@
     const bar = root.querySelector("[data-risk-bar]");
     const evidence = root.querySelector("[data-evidence-list]");
     if (ragProductIds.has(product.id)) {
-      const inference = ragTextInferenceFor(product);
-      if (title) title.textContent = attackStep === 0 ? "准备分析回答正文" : "正在执行：回答依据推断";
+      const benchmark = ragMembershipResultFor(product);
+      if (title) title.textContent = attackStep === 0 ? "准备语料成员推断" : "正在执行：RAG 语料成员推断";
       if (evidence) evidence.innerHTML = attackStep === 0
-        ? "<li>等待读取用户可见的回答正文</li>"
-        : `<li>仅从回答正文命中 ${inference.matches.length}/${inference.total} 个候选事实特征；${escapeHtml(inference.conclusion)}。</li>`;
+        ? "<li>等待对候选数据集执行重复查询</li>"
+        : `<li>已完成 ${benchmark.queryCount} 次查询；仅从 Chatbot 回答正文计算候选成员分数，ROC-AUC=${Number(benchmark.rocAuc).toFixed(3)}。</li>`;
     } else if (seriesRecoveryProductIds.has(product.id)) {
       if (title) title.textContent = attackStep === 0 ? "准备居民数据库成员恢复" : progressItems[Math.min(attackStep, progressItems.length) - 1].title;
       if (evidence) evidence.innerHTML = attackStep === 0 ? "<li>等待成员恢复攻击开始</li>" : progressItems.slice(0, attackStep).map((item, index) => {
@@ -2734,17 +2726,21 @@
       return;
     }
     if (ragProductIds.has(product.id)) {
-      const inference = ragTextInferenceFor(product);
+      const benchmark = ragMembershipResultFor(product);
       results.innerHTML = `
-        <header><div><h3>回答依据推断</h3></div><strong>${inference.matches.length} / ${inference.total}</strong></header>
-        <div class="text-inference-result"><p><b>候选依据</b>${escapeHtml(inference.claim)}</p><strong>攻击结果：${escapeHtml(inference.conclusion)}</strong></div>
-        <div class="rag-inference-summary" aria-label="回答依据推断效果指标">
-          <article><span>候选特征</span><strong>${inference.total}</strong></article>
-          <article><span>命中特征</span><strong>${inference.matches.length}</strong></article>
-          <article><span>正文命中率</span><strong>${inference.hitRate}%</strong></article>
-          <article><span>推断结论</span><strong>${inference.used ? "已使用" : "未确认"}</strong></article>
+        <header><div><h3>RAG 语料成员推断</h3></div><strong>AUC ${Number(benchmark.rocAuc).toFixed(3)}</strong></header>
+        <div class="rag-membership-summary" aria-label="RAG 语料成员推断效果指标">
+          <article><span>候选对象</span><strong>${benchmark.candidateCount}</strong></article>
+          <article><span>成员 / 非成员</span><strong>${benchmark.memberCount} / ${benchmark.nonmemberCount}</strong></article>
+          <article><span>查询次数</span><strong>${benchmark.queryCount}</strong></article>
+          <article><span>ROC-AUC</span><strong>${Number(benchmark.rocAuc).toFixed(3)}</strong></article>
         </div>
-        <div class="rag-inference-keywords"><b>命中关键词</b><div>${inference.matches.length ? inference.matches.map((match) => `<span>${escapeHtml(match)}</span>`).join("") : "<span>无</span>"}</div></div>`;
+        <div class="rag-membership-score-gap">
+          <article><span>成员平均分</span><strong>${Number(benchmark.meanMemberScore).toFixed(3)}</strong></article>
+          <article><span>非成员平均分</span><strong>${Number(benchmark.meanNonmemberScore).toFixed(3)}</strong></article>
+          <article><span>0.5 阈值准确率</span><strong>${(Number(benchmark.accuracyAtHalf) * 100).toFixed(1)}%</strong></article>
+        </div>
+        <p class="rag-membership-note">受控合成候选集实测；攻击分数只由 Chatbot 回答正文计算，检索结果、相似度和文档 ID 不参与打分。</p>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {

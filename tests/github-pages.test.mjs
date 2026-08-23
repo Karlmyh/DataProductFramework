@@ -168,25 +168,29 @@ test("uses one 100-company six-feature credit dataset for 030501 through 030503 
   assert.ok(runs["finance-model"].meanAbsoluteError < 0.2);
 });
 
-test("uses one fixed-question chatbot and text-only evidence inference for 030701 and 030705", async () => {
-  const [html, ragScript, labScript, buildScript, textCorpus, imageCorpus] = await Promise.all([
+test("uses one chatbot UI and measures answer-only RAG corpus membership with ROC-AUC", async () => {
+  const [html, ragScript, membershipScript, labScript, buildScript, membershipRunner, benchmarkBuilder, textCorpus, imageCorpus] = await Promise.all([
     readFile(new URL("index.html", pagesRoot), "utf8"),
     readFile(new URL("rag-chat-data.js", pagesRoot), "utf8"),
+    readFile(new URL("rag-membership-results.js", pagesRoot), "utf8"),
     readFile(new URL("privacy-lab.js", pagesRoot), "utf8"),
     readFile(new URL("../scripts/rag_chat_demo/build_rag_demo.py", pagesRoot), "utf8"),
+    readFile(new URL("../scripts/rag_chat_demo/run_membership_inference.py", pagesRoot), "utf8"),
+    readFile(new URL("../scripts/rag_chat_demo/prepare_membership_benchmark.py", pagesRoot), "utf8"),
     readFile(new URL("../scripts/rag_chat_demo/data/text_documents.jsonl", pagesRoot), "utf8"),
     readFile(new URL("../scripts/rag_chat_demo/data/image_documents.jsonl", pagesRoot), "utf8"),
   ]);
-  assert.ok(html.indexOf("rag-chat-data.js") < html.indexOf("privacy-lab.js"));
+  assert.ok(html.indexOf("rag-chat-data.js") < html.indexOf("rag-membership-results.js"));
+  assert.ok(html.indexOf("rag-membership-results.js") < html.indexOf("privacy-lab.js"));
   assert.match(html, /chatSeries\) chatSeries\.productIds = \["city-rag", "content-multimodal"\]/);
   assert.doesNotMatch(html, /chatSeries\.productIds = \["city-rag", "finance-graph"/);
   assert.match(labScript, /data-rag-question/);
   assert.match(labScript, /rag-image-input/);
-  assert.match(labScript, /ragTextInferenceFor/);
-  assert.match(labScript, /仅读取用户可见的回答文本/);
-  assert.match(labScript, /rag-inference-summary/);
-  assert.match(labScript, /正文命中率/);
-  assert.match(labScript, /命中关键词/);
+  assert.match(labScript, /ragMembershipResultFor/);
+  assert.match(labScript, /rag-membership-summary/);
+  assert.match(labScript, /ROC-AUC/);
+  assert.match(labScript, /候选对象/);
+  assert.doesNotMatch(labScript, /4 \/ 4|正文命中率|命中关键词|ragTextInferenceFor/);
   for (const hiddenCopy of ["Qwen2.5-7B + RAG", "默认链路", "政策知识库已连接", "基于检索结果", "生成耗时", "固定问题预生成结果", "RAG 检索记录"]) {
     assert.equal(labScript.includes(hiddenCopy), false);
   }
@@ -194,15 +198,32 @@ test("uses one fixed-question chatbot and text-only evidence inference for 03070
   assert.match(buildScript, /Qwen\/Qwen2\.5-7B-Instruct/);
   assert.match(buildScript, /BAAI\/bge-small-en-v1\.5/);
   assert.match(buildScript, /不得输出资料编号、文件名、来源、引用或检索过程/);
+  assert.match(membershipRunner, /roc_auc_score/);
+  assert.match(membershipRunner, /def answer_score/);
+  assert.match(membershipRunner, /chatbot_answer_text_only/);
+  assert.match(membershipRunner, /CREATE TABLE rag_documents/);
+  assert.match(benchmarkBuilder, /TEXT_COUNT = 40/);
+  assert.match(benchmarkBuilder, /IMAGE_COUNT = 24/);
   assert.equal(textCorpus.trim().split("\n").length, 9);
   assert.equal(imageCorpus.trim().split("\n").length, 3);
 
   const context = { window: {} };
   vm.createContext(context);
   vm.runInContext(ragScript, context);
+  vm.runInContext(membershipScript, context);
   const ragData = context.window.__RAG_CHAT_DATA__;
+  const membershipResults = context.window.__RAG_MEMBERSHIP_RESULTS__;
   assert.equal(ragData.schemaVersion, 2);
   assert.equal(ragData.responses.length, 6);
+  assert.equal(membershipResults.schemaVersion, 1);
+  assert.deepEqual(
+    Array.from(membershipResults.results, (result) => [result.productCode, result.candidateCount, result.memberCount, result.nonmemberCount, result.queryCount]),
+    [["030701", 40, 20, 20, 80], ["030705", 24, 12, 12, 48]],
+  );
+  for (const result of membershipResults.results) {
+    assert.ok(result.rocAuc >= 0.5 && result.rocAuc <= 1);
+    assert.equal(result.scoreSource, "chatbot_answer_text_only");
+  }
   for (const image of ragData.images) await access(new URL(image.path, pagesRoot));
   assert.deepEqual([...new Set(ragData.responses.map((response) => response.productCode))], ["030701", "030705"]);
   for (const response of ragData.responses) {

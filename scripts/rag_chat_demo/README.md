@@ -9,9 +9,27 @@ This directory contains the reproducible, offline build pipeline for the fixed-q
 
 The public page receives only the fixed questions, generated answer text, and the three demo images. Retrieval records, document identifiers, model metadata, timings, the SQLite database, and raw embeddings remain private build artifacts. The browser-side attack therefore works only from answer text and never reads retrieval traces.
 
+## RAG corpus membership benchmark
+
+The membership benchmark creates a separate, real SQLite RAG database and a balanced candidate dataset. Only member candidates are inserted into `rag_documents`; every candidate is then queried twice through Qwen2.5-7B-Instruct. The attack score is computed from the generated Chatbot answer text only. Membership labels are never used by retrieval, generation, or scoring and are read only when computing ROC-AUC.
+
+- `prepare_membership_benchmark.py`: creates 40 fictional text candidates (20 members) and 24 synthetic image candidates (12 members).
+- `encode_membership_images.py`: encodes all image candidates with offline CLIP ViT-B/32.
+- `run_membership_inference.py`: builds SQLite, runs text/image RAG, scores 128 generated answers, and exports ROC-AUC summaries.
+- `run_membership_qurm183.sh`: reproducible QURM183 entrypoint with explicit benchmark and GPU safety gates.
+
+The controlled QURM183 run with seed `20260823` produced ROC-AUC `1.000` for both 030701 (80 queries) and 030705 (48 queries). This is a deliberately separable synthetic benchmark, not an estimate of general production-system risk.
+
 On QURM183, run the fixed-corpus build on a checked idle GPU with:
 
 ```bash
 RAG_CHAT_DEMO_FIXED_CORPUS=1 CUDA_VISIBLE_DEVICES=5 \
   bash scripts/rag_chat_demo/run_qurm183.sh /home/samsung/rag-chat-demo-0307-20260823
+```
+
+Run the membership benchmark in its own isolated directory with:
+
+```bash
+RAG_MEMBERSHIP_FIXED_BENCHMARK=1 CUDA_VISIBLE_DEVICES=5 \
+  bash scripts/rag_chat_demo/run_membership_qurm183.sh /home/samsung/rag-membership-inference-20260823
 ```
