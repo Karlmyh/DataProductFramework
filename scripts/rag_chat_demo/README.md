@@ -11,6 +11,14 @@ The public page receives only the fixed questions, generated answer text, and th
 
 The two public RAG chatbot products expose the same low-budget call-limit choices: `2`, `5`, and `10`. Other product demos keep their existing limits.
 
+The public metric follows the selected model-call limit. A normal Chatbot answer consumes one call; the membership attack uses only the remaining calls. Budget metrics are recomputed from the first real Qwen answer for each deterministically interleaved member/nonmember candidate. ROC-AUC is reported only when the observed attack set contains both classes.
+
+| Model-call limit | Normal answer | Attack queries | Member / nonmember | ROC-AUC |
+| ---: | ---: | ---: | ---: | ---: |
+| 2 | 1 | 1 | 1 / 0 | not computable |
+| 5 | 1 | 4 | 2 / 2 | 1.000 |
+| 10 | 1 | 9 | 5 / 4 | 1.000 |
+
 ## RAG corpus membership benchmark
 
 The membership benchmark creates a separate, real SQLite RAG database and a balanced candidate dataset. Only member candidates are inserted into `rag_documents`; every candidate is then queried twice through Qwen2.5-7B-Instruct. The attack score is computed from the generated Chatbot answer text only. Membership labels are never used by retrieval, generation, or scoring and are read only when computing ROC-AUC.

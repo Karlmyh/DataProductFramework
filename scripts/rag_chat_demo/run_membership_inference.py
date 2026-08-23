@@ -109,6 +109,44 @@ def generate_answers(model, tokenizer, prompts: list[str], batch_size: int, max_
     return [answer.strip() for answer in answers]
 
 
+def summarize_budgets(rows: list[dict], product_code: str, max_budget: int = 10) -> list[dict]:
+    first_response_by_candidate = {}
+    selected = sorted(
+        (row for row in rows if row["productCode"] == product_code),
+        key=lambda row: (row["candidateId"], row["queryIndex"]),
+    )
+    for row in selected:
+        first_response_by_candidate.setdefault(row["candidateId"], row)
+    members = [row for row in first_response_by_candidate.values() if row["label"] == 1]
+    nonmembers = [row for row in first_response_by_candidate.values() if row["label"] == 0]
+    ordered = []
+    for index in range(max(len(members), len(nonmembers))):
+        if index < len(members):
+            ordered.append(members[index])
+        if index < len(nonmembers):
+            ordered.append(nonmembers[index])
+
+    summaries = []
+    for query_count in range(max_budget + 1):
+        budget_rows = ordered[:query_count]
+        labels = [row["label"] for row in budget_rows]
+        scores = [row["score"] for row in budget_rows]
+        predictions = [int(score >= 0.5) for score in scores]
+        member_scores = [row["score"] for row in budget_rows if row["label"] == 1]
+        nonmember_scores = [row["score"] for row in budget_rows if row["label"] == 0]
+        summaries.append({
+            "queryCount": len(budget_rows),
+            "candidateCount": len(budget_rows),
+            "memberCount": sum(labels),
+            "nonmemberCount": len(labels) - sum(labels),
+            "rocAuc": round(float(roc_auc_score(labels, scores)), 4) if len(set(labels)) == 2 else None,
+            "accuracyAtHalf": round(float(accuracy_score(labels, predictions)), 4) if labels else None,
+            "meanMemberScore": round(float(np.mean(member_scores)), 4) if member_scores else None,
+            "meanNonmemberScore": round(float(np.mean(nonmember_scores)), 4) if nonmember_scores else None,
+        })
+    return summaries
+
+
 def summarize(rows: list[dict], product_code: str) -> dict:
     selected = [row for row in rows if row["productCode"] == product_code]
     grouped: dict[str, list[dict]] = defaultdict(list)
@@ -138,6 +176,7 @@ def summarize(rows: list[dict], product_code: str) -> dict:
         "meanMemberScore": round(float(np.mean(member_scores)), 4),
         "meanNonmemberScore": round(float(np.mean(nonmember_scores)), 4),
         "scoreSource": "chatbot_answer_text_only",
+        "budgetResults": summarize_budgets(rows, product_code),
     }
 
 
@@ -228,7 +267,11 @@ def main() -> int:
     args.public_js.parent.mkdir(parents=True, exist_ok=True)
     args.results.write_text(json.dumps(result_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     args.responses.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in output_rows) + "\n", encoding="utf-8")
-    public_payload = {"schemaVersion": 1, "results": summaries}
+    public_payload = {
+        "schemaVersion": 2,
+        "selectionProtocol": "one generated answer per candidate; member and nonmember candidates alternate by candidate id",
+        "results": summaries,
+    }
     args.public_js.write_text(
         "window.__RAG_MEMBERSHIP_RESULTS__=" + json.dumps(public_payload, ensure_ascii=False, separators=(",", ":")) + ";\n",
         encoding="utf-8",

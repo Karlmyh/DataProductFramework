@@ -187,8 +187,12 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   assert.match(labScript, /data-rag-question/);
   assert.match(labScript, /rag-image-input/);
   assert.match(labScript, /ragMembershipResultFor/);
+  assert.match(labScript, /formatRagMetric/);
   assert.match(labScript, /rag-membership-summary/);
   assert.match(labScript, /ROC-AUC/);
+  assert.match(labScript, /模型调用上限/);
+  assert.match(labScript, /实际攻击查询/);
+  assert.match(labScript, /不可计算/);
   assert.match(labScript, /候选对象/);
   assert.match(labScript, /ragProductUsageLimitOptions = \[2, 5, 10\]/);
   assert.match(labScript, /productUsageLimitOptionsFor\(product\)\.map/);
@@ -204,6 +208,7 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   assert.match(buildScript, /不得输出资料编号、文件名、来源、引用或检索过程/);
   assert.match(membershipRunner, /roc_auc_score/);
   assert.match(membershipRunner, /def answer_score/);
+  assert.match(membershipRunner, /def summarize_budgets/);
   assert.match(membershipRunner, /chatbot_answer_text_only/);
   assert.match(membershipRunner, /CREATE TABLE rag_documents/);
   assert.match(benchmarkBuilder, /TEXT_COUNT = 40/);
@@ -219,7 +224,7 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   const membershipResults = context.window.__RAG_MEMBERSHIP_RESULTS__;
   assert.equal(ragData.schemaVersion, 2);
   assert.equal(ragData.responses.length, 6);
-  assert.equal(membershipResults.schemaVersion, 1);
+  assert.equal(membershipResults.schemaVersion, 2);
   assert.deepEqual(
     Array.from(membershipResults.results, (result) => [result.productCode, result.candidateCount, result.memberCount, result.nonmemberCount, result.queryCount]),
     [["030701", 40, 20, 20, 80], ["030705", 24, 12, 12, 48]],
@@ -227,6 +232,13 @@ test("uses one chatbot UI and measures answer-only RAG corpus membership with RO
   for (const result of membershipResults.results) {
     assert.ok(result.rocAuc >= 0.5 && result.rocAuc <= 1);
     assert.equal(result.scoreSource, "chatbot_answer_text_only");
+    assert.equal(result.budgetResults.length, 11);
+    const oneQuery = result.budgetResults.find((row) => row.queryCount === 1);
+    const fourQueries = result.budgetResults.find((row) => row.queryCount === 4);
+    const nineQueries = result.budgetResults.find((row) => row.queryCount === 9);
+    assert.deepEqual([oneQuery.memberCount, oneQuery.nonmemberCount, oneQuery.rocAuc], [1, 0, null]);
+    assert.deepEqual([fourQueries.memberCount, fourQueries.nonmemberCount, fourQueries.rocAuc], [2, 2, 1]);
+    assert.deepEqual([nineQueries.memberCount, nineQueries.nonmemberCount, nineQueries.rocAuc], [5, 4, 1]);
   }
   for (const image of ragData.images) await access(new URL(image.path, pagesRoot));
   assert.deepEqual([...new Set(ragData.responses.map((response) => response.productCode))], ["030701", "030705"]);
