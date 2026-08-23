@@ -127,6 +127,14 @@ export default function DemoLab() {
         <div className="call-console">
           <div className="request-card">
             <span className="console-label">01 / INPUT · {product.inputLabel}</span>
+            {product.previewImage && (
+              <img
+                className="product-input-image"
+                src={product.previewImage.src}
+                alt={product.previewImage.alt}
+                loading="lazy"
+              />
+            )}
             <strong>{product.inputValue}</strong>
             <button type="button" onClick={rerun}>
               <span aria-hidden="true">▶</span> {product.callLabel}
@@ -149,6 +157,30 @@ export default function DemoLab() {
             <p>{product.outputDetail}</p>
           </div>
         </div>
+
+        {product.showcase && (
+          <section className={phase >= 3 ? "experiment-showcase visible" : "experiment-showcase"} aria-label={`${product.name}实验图像证据`}>
+            <header>
+              <span>{product.showcase.eyebrow}</span>
+              <h4>{product.showcase.title}</h4>
+              <p>{product.showcase.description}</p>
+            </header>
+            <div className="experiment-showcase-grid">
+              {product.showcase.items.map((item) => (
+                <figure key={item.src}>
+                  <div className="experiment-image-frame">
+                    <img src={item.src} alt={item.alt} loading="lazy" />
+                  </div>
+                  <figcaption>
+                    <span>{item.label}</span>
+                    <strong>{item.metric}</strong>
+                    <p>{item.note}</p>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       <div className={phase >= 4 ? "attack-results visible" : "attack-results"} aria-live="polite">

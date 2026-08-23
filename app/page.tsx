@@ -1,4 +1,5 @@
 import DemoLab from "./demo-lab";
+import { demoSuites } from "./demo-data";
 import { groups, series } from "./data";
 import type { CSSProperties } from "react";
 
@@ -35,6 +36,7 @@ const frameworkSteps = [
 
 export default function Home() {
   const categoryCount = groups.reduce((sum, group) => sum + group.categories.length, 0);
+  const productCount = demoSuites.reduce((sum, suite) => sum + suite.products.length, 0);
 
   return (
     <main>
@@ -147,10 +149,10 @@ export default function Home() {
           </div>
         </div>
         <div className="evidence-summary">
-          <div><strong>3</strong><span>现有实测系列</span></div>
+          <div><strong>{series.length + 1}</strong><span>现有实测系列</span></div>
           <div><strong>5</strong><span>更新后二级类别</span></div>
-          <div><strong>3</strong><span>多类别场景 Demo</span></div>
-          <div><strong>17</strong><span>可切换产品</span></div>
+          <div><strong>{demoSuites.length}</strong><span>多类别场景 Demo</span></div>
+          <div><strong>{productCount}</strong><span>可切换产品</span></div>
         </div>
         <div className="series-list">
           {series.map((item) => (

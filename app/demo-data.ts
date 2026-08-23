@@ -38,6 +38,22 @@ export type DemoProduct = {
   outputLabel: string;
   outputValue: string;
   outputDetail: string;
+  previewImage?: {
+    src: string;
+    alt: string;
+  };
+  showcase?: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    items: Array<{
+      src: string;
+      alt: string;
+      label: string;
+      metric: string;
+      note: string;
+    }>;
+  };
   attacks: DemoAttack[];
 };
 
@@ -110,6 +126,12 @@ const attackSemantics: Record<string, Pick<DemoAttack, "attackFamily" | "attackO
   "mm-injection": { attackFamily: "提示操纵", attackObject: "模型能力" },
   "cross-link": { attackFamily: "关联攻击", attackObject: "身份隐私" },
   memorize: { attackFamily: "样本提取", attackObject: "数据重构" },
+  "image-mia-rf": { attackFamily: "成员推断", attackObject: "成员隐私" },
+  revealer: { attackFamily: "模型反演", attackObject: "数据重构" },
+  plgmi: { attackFamily: "模型反演", attackObject: "数据重构" },
+  gradinv: { attackFamily: "梯度反演", attackObject: "数据重构" },
+  idlg: { attackFamily: "标签推断", attackObject: "标签隐私" },
+  sme: { attackFamily: "更新反演", attackObject: "数据重构" },
 };
 
 const evidenceTrace: Record<string, Pick<DemoAttack, "source" | "protocol" | "limitation">> = {
@@ -142,6 +164,36 @@ const evidenceTrace: Record<string, Pick<DemoAttack, "source" | "protocol" | "li
     source: "first_batch_attack_demo · 030402 identity",
     protocol: "CASIA-FaceV5；量化相似度；查询预算 512",
     limitation: "结果限于人脸核验协议与对应辅助子空间。",
+  },
+  "image-mia-rf": {
+    source: "模型类攻击包 / RF 白盒成员推断实验",
+    protocol: "CelebA Male 二分类；Random Forest 目标模型；训练成员与非成员白盒区分",
+    limitation: "AUC 只对应当前数据划分、目标属性与白盒特征，不代表所有图片模型。",
+  },
+  revealer: {
+    source: "模型类攻击包 / 图片数据重建攻击展示3种.html · Revealer",
+    protocol: "CelebA Identity；100 个身份；2000/215 训练/测试图像；100 个最终样本、250 个候选",
+    limitation: "当前结果使用可获得模型结构与参数的设置；不能外推为纯 API 黑盒效果。",
+  },
+  plgmi: {
+    source: "模型类攻击包 / 图片数据重建攻击展示3种.html · PLGMI",
+    protocol: "CelebA；VGG16；2000 个训练样本；250 个重建样本",
+    limitation: "PSNR 反映像素失真，不等同于身份可识别率；与其他方法需统一协议后再比较。",
+  },
+  gradinv: {
+    source: "模型类攻击包 / GradInversion 实验对比",
+    protocol: "ImageNet；ResNet-50；batch=1；由单轮共享梯度重建输入与标签集合",
+    limitation: "标签集合恢复稳定，但图像主要达到类别级结构；PSNR 仅 8.99 dB，不应表述为像素级精确恢复。",
+  },
+  idlg: {
+    source: "模型类攻击包 / iDLG Adam 完整实验与批量实验",
+    protocol: "无池化 CNN + Adam 适配；MNIST/CIFAR-100/LFW；batch=1 结果用于本 Demo",
+    limitation: "适配网络与优化器带来接近完美的数值，不能与原论文或不同网络设置直接横比。",
+  },
+  sme: {
+    source: "模型类攻击包 / SME CIFAR-100 多步更新反演",
+    protocol: "CIFAR-100；N=50、batch=10、20 个本地 epoch、lr=0.004；由模型更新反演",
+    limitation: "该结果依赖已知训练配置与受控客户端更新；真实联邦部署中的聚合、裁剪和噪声会改变风险。",
   },
 };
 
@@ -510,6 +562,114 @@ export const demoSuites: DemoSuite[] = [
       },
     ],
   },
+  {
+    id: "model-attack-evidence",
+    code: "DEMO 04",
+    name: "模型攻击实测实验室",
+    description: "把模型类攻击包中的固定实验结果接入框架：比较图片预测模型与联邦训练更新两种交付物的正常输出、适用攻击和重建证据。",
+    products: [
+      {
+        id: "experiment-image-prediction",
+        category: "030702",
+        family: "模型",
+        name: "人脸身份图片预测模型",
+        tagline: "输入一张新的人脸图像，固定分类模型返回身份标签；攻击者再利用模型输出或白盒信息探测训练成员并重建身份原型。",
+        template: "model",
+        inputLabel: "待预测图片",
+        inputValue: "CelebA · identity_00015.jpg",
+        callLabel: "运行图片预测",
+        flow: ["标准化人脸图像", "固定分类模型推理", "返回身份标签"],
+        outputLabel: "预测结果",
+        outputValue: "Identity 15 · Top-1",
+        outputDetail: "正常产品只返回当前图片的身份预测；下方攻击结果与图片均来自已带入的模型类攻击实验包。",
+        previewImage: {
+          src: "/demo-assets/model-attack/face-input-00015.jpg",
+          alt: "CelebA 身份 15 的输入人脸样例",
+        },
+        showcase: {
+          eyebrow: "MODEL INVERSION EVIDENCE",
+          title: "图片预测之后，模型仍可能暴露训练成员与身份原型",
+          description: "同一产品边界下保留原始指标与真实重建图；不同方法的访问权限和实验协议并不完全相同，因此不做方法排名。",
+          items: [
+            {
+              src: "/demo-assets/model-attack/face-reconstruction-00015.jpg",
+              alt: "InvAlignment 对身份 15 的重建人脸",
+              label: "InvAlignment · 单身份重建",
+              metric: "Identity 15",
+              note: "黑盒 softmax 后验训练解码器得到的身份原型。",
+            },
+            {
+              src: "/demo-assets/model-attack/invalignment-comparison.png",
+              alt: "InvAlignment 二十组原图和重建图对比",
+              label: "InvAlignment · 原图 / 重建对照",
+              metric: "20 组身份",
+              note: "左列为原图，右列为重建结果；可见身份级结构但细节明显模糊。",
+            },
+            {
+              src: "/demo-assets/model-attack/revealer-contact-sheet.png",
+              alt: "Revealer 五十个身份类别的重建联系表",
+              label: "Revealer · 50 类总览",
+              metric: "Top-5 68%",
+              note: "100 个身份评估中的 50 类可视化总览；Top-1 为 28%。",
+            },
+          ],
+        },
+        attacks: [
+          a("image-mia-rf", "图片训练成员推断", "读取目标 Random Forest 的白盒特征，区分一张人脸是否出现在训练集中。", "CelebA Male 目标模型准确率 77.0%；成员推断 AUC 为 0.6393。", "ROC-AUC", "0.6393", 64, "已有实测"),
+          a("revealer", "身份原型重建", "利用身份分类模型结构与参数生成候选人脸，并由评估模型匹配身份。", "100 个身份上的 Top-1 命中 28%，Top-5 命中 68%；FID 为 98.95。", "Top-5 身份命中", "68%", 68, "已有实测"),
+          a("plgmi", "生成式模型反演", "用身份分类模型信号约束生成器，恢复训练身份的代表性图像。", "250 个 CelebA 重建样本的 PSNR 为 12.38 dB，SSIM 为 0.189。", "重建 PSNR", "12.38 dB", 62, "已有实测"),
+        ],
+      },
+      {
+        id: "experiment-gradient-update",
+        category: "030901",
+        family: "梯度",
+        name: "联邦图像训练更新交付",
+        tagline: "客户端完成本地训练后交付梯度或多步参数增量；接收方不需要原始图片，也可能从更新信号中恢复标签和视觉内容。",
+        template: "model",
+        inputLabel: "本地训练批次",
+        inputValue: "图像批次 · B=1 / 本地更新 E=20",
+        callLabel: "生成并交付更新",
+        flow: ["本地前向与反向传播", "导出梯度或参数增量", "服务器接收并聚合"],
+        outputLabel: "训练交付结果",
+        outputValue: "UPDATE #020 · 已接收",
+        outputDetail: "Demo 同时覆盖单轮共享梯度和多步模型更新，分别对应 GradInversion、iDLG 与 SME 的固定实验结果。",
+        showcase: {
+          eyebrow: "GRADIENT & UPDATE EVIDENCE",
+          title: "不交付原图，也可能从训练信号看到原图轮廓",
+          description: "三张图分别对应单轮梯度、标签泄露适配与多步更新反演；批量大小、网络结构和防御条件会显著改变风险。",
+          items: [
+            {
+              src: "/demo-assets/model-attack/gradinv-batch1.png",
+              alt: "GradInversion ImageNet batch 1 原图与重建图",
+              label: "GradInversion · ImageNet B=1",
+              metric: "FeatCos 0.901",
+              note: "标签集合恢复 100%，PSNR 8.99 dB；主要保留类别级结构。",
+            },
+            {
+              src: "/demo-assets/model-attack/idlg-lfw-batch1.png",
+              alt: "iDLG LFW batch 1 原图与重建图",
+              label: "iDLG · LFW B=1",
+              metric: "标签 100%",
+              note: "适配无池化 CNN + Adam；高数值不可与原论文设置直接比较。",
+            },
+            {
+              src: "/demo-assets/model-attack/sme-cifar100.png",
+              alt: "SME CIFAR-100 多步模型更新反演对比",
+              label: "SME · CIFAR-100 E=20",
+              metric: "PSNR 20.56 dB",
+              note: "相对多步 IG 基线 13.85 dB 提升 6.70 dB。",
+            },
+          ],
+        },
+        attacks: [
+          a("gradinv", "单轮梯度图像重建", "优化虚拟图片，使其产生与客户端共享梯度一致的更新信号。", "ImageNet / ResNet-50 / B=1 下标签集合恢复 100%，特征余弦为 0.901，PSNR 为 8.99 dB。", "特征余弦", "0.901", 90, "已有实测"),
+          a("idlg", "梯度标签泄露", "从最后一层梯度符号确定标签，再联合优化输入图像。", "适配实验的 MNIST、CIFAR-100 与 LFW 标签恢复率均为 100%；B=1 重建良好率为 100%。", "标签恢复率", "100%", 100, "已有实测"),
+          a("sme", "多步模型更新反演", "从连续本地训练后的参数增量估计隐式梯度，再反演训练批次。", "CIFAR-100 上 SME PSNR 为 20.56 dB，高于多步 IG 基线 13.85 dB。", "PSNR 提升", "+6.70 dB", 82, "已有实测"),
+        ],
+      },
+    ],
+  },
 ];
 
 const excludedAttacks: Record<string, { name: string; reason: string }> = {
@@ -530,6 +690,8 @@ const excludedAttacks: Record<string, { name: string; reason: string }> = {
   "content-rank": { name: "固定阈值规则提取", reason: "Top-20 取决于当期集合，不使用稳定绝对阈值。" },
   "content-vision": { name: "白盒模型反演", reason: "API 不交付模型参数，只返回标签和置信度。" },
   "content-multimodal": { name: "工具劫持", reason: "产品没有执行工具或外部写操作的能力。" },
+  "experiment-image-prediction": { name: "模型能力复制", reason: "当前实验包没有统一查询预算下的替代模型训练协议，因此本 Demo 不执行模型抽取。" },
+  "experiment-gradient-update": { name: "恶意更新后门", reason: "当前角色只接收并评估既有更新，不能向训练流程写入恶意参数。" },
 };
 
 /**
