@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="覆盖行业数据库、检索增强生成、指标发布与梯度产品的互动式隐私攻击演示和统一风险衡量。" />
     <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/" />
-    <link rel="stylesheet" href="security_attacks/styles.css?v=rag-query-budgets-31" />
+    <link rel="stylesheet" href="security_attacks/styles.css?v=main-model-series-32" />
     <title>数据产品安全衡量框架</title>
     <meta property="og:title" content="数据产品安全衡量框架" />
     <meta property="og:description" content="四类核心数据产品 · 互动调用演示 · 多攻击结果聚合" />
@@ -95,13 +95,18 @@
       (() => {
         const data = window.__PRIVACY_LAB_DATA__;
         const databaseSeries = data.series.find((item) => item.id === "data");
+        const visionSeries = data.series.find((item) => item.id === "vision");
         const chatSeries = data.series.find((item) => item.id === "chat");
         if (databaseSeries) {
           databaseSeries.name = "行业数据库产品";
           databaseSeries.productIds = databaseSeries.productIds.filter((id) => !["finance-graph", "city-verify", "content-voice", "finance-verify"].includes(id));
         }
+        if (visionSeries) {
+          visionSeries.name = "图片预测模型产品";
+          visionSeries.productIds = ["content-vision"];
+        }
         if (chatSeries) chatSeries.productIds = ["city-rag", "content-multimodal"];
-        data.series = data.series.filter((item) => !["graph", "vision"].includes(item.id));
+        data.series = data.series.filter((item) => item.id !== "graph");
 
         const graphAssistant = data.productsById["finance-graph"];
         const graphQueryProduct = JSON.parse(JSON.stringify(graphAssistant));
