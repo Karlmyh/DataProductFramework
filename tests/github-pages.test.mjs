@@ -64,6 +64,41 @@ test("uses GitHub Pages-relative assets and includes social metadata", async () 
   assert.doesNotMatch(css, /@import\s+"tailwindcss"/);
 });
 
+test("renders face hill climbing as a continuous accepted path", async () => {
+  const [script, css] = await Promise.all([
+    readFile(new URL("privacy-lab.js", pagesRoot), "utf8"),
+    readFile(new URL("security_attacks/styles.css", pagesRoot), "utf8"),
+  ]);
+  assert.match(script, /连续人脸爬山/);
+  assert.match(script, /acceptedTrajectory/);
+  assert.match(script, /rejectedProbes/);
+  assert.match(script, /相似度只用于演示路径，不对外暴露/);
+  assert.match(script, /新起点会另起一行并用断点标记/);
+  assert.doesNotMatch(script, /实际评估 \$\{run\.queryCount\}\/\$\{run\.librarySize\} 张合成人脸/);
+  assert.match(css, /\.face-trajectory/);
+  assert.match(css, /\.face-rejected-list/);
+  assert.match(css, /\.face-oracle-boundary/);
+});
+
+test("focuses the main demo while preserving standalone verification and vision products", async () => {
+  const [html, script, relationshipPage] = await Promise.all([
+    readFile(new URL("index.html", pagesRoot), "utf8"),
+    readFile(new URL("privacy-lab.js", pagesRoot), "utf8"),
+    readFile(new URL("security_attacks/030403.html", pagesRoot), "utf8"),
+  ]);
+  const seriesAdjustment = html.slice(html.indexOf("const databaseSeries"), html.indexOf("const graphAssistant"));
+  assert.match(seriesAdjustment, /\["graph", "vision"\]\.includes\(item\.id\)/);
+  assert.doesNotMatch(seriesAdjustment, /visionSeries|id: "verification"/);
+  assert.match(html, /\?demo=030402/);
+  assert.match(html, /\?demo=030403/);
+  assert.match(html, /\?demo=030702/);
+  assert.match(script, /values: \["有放回重采样", "无放回子采样", "合成数据"\]/);
+  assert.doesNotMatch(script, /Bootstrap|Subsampling|Synthetic Data/);
+  assert.match(script, /若每次核验都要求证明控制企业或账户中的一方，则该攻击不成立/);
+  assert.match(relationshipPage, /分别掌握企业标识候选集和账户标识候选集/);
+  assert.match(relationshipPage, /要求证明对企业或账户一方的控制权，这种关系枚举攻击就不成立/);
+});
+
 test("keeps intentionally retired evidence pages offline and links to Git history", async () => {
   const detail = await readFile(new URL("security_attacks/030101.html", pagesRoot), "utf8");
   assert.match(detail, /github\.com\/Karlmyh\/DataProductFramework\/tree\/9394efed/);

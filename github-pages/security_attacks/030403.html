@@ -41,10 +41,20 @@
       <section class="detail-section detail-columns">
         <div><h2>四级产品分支</h2><ol class="numbered-list"><li>权威登记关系核验</li><li>合同、证照与授权关系核验</li><li>账户、设备、交易与行为关系核验</li><li>多源关联与关系推定核验</li></ol></div>
         <div><h2>主要攻击</h2><ol class="attack-list">
-                <li><span>01</span><strong>关系枚举</strong></li>
+                <li><span>01</span><strong>关系枚举（有条件成立）</strong></li>
                 <li><span>02</span><strong>账户与设备绑定探测</strong></li>
                 <li><span>03</span><strong>控制关系图重建</strong></li>
                 <li><span>04</span><strong>多源关联推断</strong></li></ol></div>
+      </section>
+
+      <section class="detail-section">
+        <h2>账户归属核验如何形成攻击</h2>
+        <div class="facts-grid">
+          <div class="fact"><span>攻击者已知</span><p>分别掌握企业标识候选集和账户标识候选集，但不知道企业与账户之间的对应关系。</p></div>
+          <div class="fact"><span>攻击者操作</span><p>把两组候选任意配对并重复查询，利用稳定的“是／否”响应筛出成立的组合。</p></div>
+          <div class="fact"><span>攻击所得</span><p>将单次核验结果拼成原本未公开的企业—账户映射，进一步重建控制或交易关系。</p></div>
+        </div>
+        <p class="lead">适用边界：接口必须允许任意配对试探，且缺少授权校验、严格限频或异常检测。若每次核验都要求证明对企业或账户一方的控制权，这种关系枚举攻击就不成立。</p>
       </section>
 
       <section class="detail-section">
