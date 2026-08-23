@@ -163,7 +163,7 @@
     name: "居民派生与处理查询",
     tagline: "先用有限条件筛选居民数据，再执行重采样、子采样或合成数据生成。",
     inputLabel: "筛选与加工设置",
-    inputValue: "街道01—05 · 老年 · 家庭人数1—2人 · Bootstrap 有放回重采样 · 返回12条",
+    inputValue: "街道01—05 · 老年 · 家庭人数1—2人 · 有放回重采样 · 返回12条",
     callLabel: "生成加工数据",
     flow: ["选择居民数据", "执行采样或合成", "交付加工后数据"],
     outputLabel: "加工结果",
@@ -173,17 +173,17 @@
   if (productsById["finance-derived"]?.attacks?.length >= 3) {
     Object.assign(productsById["finance-derived"].attacks[0], {
       name: "重采样成员暴露",
-      brief: "比较多次 Bootstrap 输出中同一来源记录的重复出现情况。",
+      brief: "比较多次有放回重采样输出中同一来源记录的重复出现情况。",
       result: "高频重复出现的居民记录更容易被判断为原始数据成员。",
     });
     Object.assign(productsById["finance-derived"].attacks[1], {
       name: "子样本关联",
-      brief: "将 Subsampling 返回的公开字段与外部居民特征组合匹配。",
+      brief: "将无放回子采样返回的公开字段与外部居民特征组合匹配。",
       result: "部分加工样本可被重新关联到原始居民候选范围。",
     });
     Object.assign(productsById["finance-derived"].attacks[2], {
       name: "合成样本逼近",
-      brief: "分析 Synthetic Data 中反复保留的稀有字段组合。",
+      brief: "分析合成数据中反复保留的稀有字段组合。",
       result: "稀有组合可能过度接近原始居民记录并泄露其属性范围。",
     });
   }
@@ -233,25 +233,25 @@
   if (productsById["content-voice"]) {
     productsById["content-voice"].attacks = [{
       id: "face-boundary-hill-climb",
-      name: "合成人脸库爬山搜索",
-      brief: "从 100 张合成人脸中选择起点，实际比较图像像素描述，只在相似度上升时移动，并在局部停滞时重新选择起点。",
-      result: "运行代码后，展示爬山搜索在合成人脸库中实际找到的最相似人脸。",
-      metric: "图像描述相似度",
+      name: "连续人脸爬山",
+      brief: "从一张辅助合成人脸起步，在对齐后的图像空间中做小幅连续扰动；每轮同时测试上升与下降方向，只保留离线评估相似度上升的一步。",
+      result: "运行代码后，按时间顺序展示连续、单调上升的接受路径，并单独列出被拒绝的反向探针。",
+      metric: "离线评估相似度",
       value: "运行后计算",
       displayScore: 0,
       evidence: "代码实测",
-      attackFamily: "随机重启爬山",
+      attackFamily: "连续图像空间爬山",
       attackObject: "登记人脸的近似外观",
-      source: "当前页面 100 张 AI 合成人脸候选库",
-      protocol: "100 张合成人脸；由实际图片像素生成描述；近邻评估、单调改进与随机重启；仅调用本地相似度函数",
-      limitation: "纯离线机制演示，不连接真实身份系统；结果只能从这 100 张合成人脸中选择。",
+      source: "当前页面 AI 合成起点与对齐的演示登记照",
+      protocol: "单一合成起点；连续图像空间小步扰动；离线评估器计算 280 维描述相似度；接受值严格单调上升；反向探针单独标注",
+      limitation: "纯离线机制演示，不连接真实身份系统。产品对外仍只返回“认证/不认证”；连续相似度只属于离线评估层，不是攻击者可见的产品输出。",
     }];
     candidatesByProduct["content-voice"] = [{
       id: "face-boundary-hill-climb",
-      name: "合成人脸库爬山搜索",
+      name: "连续人脸爬山",
       applicable: true,
       executed: true,
-      reason: "离线演示：代码真实评估候选图片，只保留更接近登记人脸的合成人脸。",
+      reason: "离线机制演示：代码对连续小步扰动做实际描述评估，只保留更接近演示登记照的一步。",
     }];
   }
   if (productsById["finance-verify"]) {
@@ -268,24 +268,24 @@
     productsById["finance-verify"].attacks = [{
       id: "relationship-enumeration",
       name: "账户归属关系枚举",
-      brief: "在 100 个企业与 100 个账户形成的 10,000 个候选配对中反复调用二元核验接口。",
-      result: "按剩余核验次数运行代码，并形成已恢复的账户归属关系集。",
+      brief: "攻击者已知一批企业标识和一批账户标识，但不知道它们之间的对应关系；通过反复替换两个输入，用“认证”响应逐步恢复未公开的企业—账户映射。",
+      result: "在 100 个企业与 100 个账户的 10,000 个候选配对中，按可用预算执行枚举，并将所有返回“认证”的配对拼接为关系集。",
       metric: "真实关系恢复率",
       value: "运行后计算",
       displayScore: 0,
       evidence: "代码实测",
       attackFamily: "关系枚举",
-      attackObject: "账户归属关系",
+      attackObject: "未公开的企业—账户映射",
       source: "当前页面 100 条合成企业—账户归属关系",
-      protocol: "100 个企业；100 个账户；10,000 个候选配对；固定核验预算",
-      limitation: "纯离线合成数据演示，不连接真实企业或银行系统。",
+      protocol: "已知企业候选集与账户候选集，映射关系未知；100 个企业；100 个账户；10,000 个候选配对；固定核验预算",
+      limitation: "只有在调用者可任意选择两个主体、稳定获得二元结果，且缺少主体授权、频率限制和异常枚举检测时才适用。若每次核验都要求证明控制企业或账户中的一方，则该攻击不成立。",
     }];
     candidatesByProduct["finance-verify"] = [{
       id: "relationship-enumeration",
       name: "账户归属关系枚举",
       applicable: true,
       executed: true,
-      reason: "适用：接口允许反复替换两个主体，并稳定返回认证或非认证。",
+      reason: "条件适用：调用者可任意替换两个主体，且系统缺少主体授权、频率限制和异常枚举检测。",
     }];
   }
   const structuredProductConfigs = {
@@ -322,14 +322,14 @@
         { key: "ageStage", label: "年龄阶段", type: "enum", values: ["青年（18—39岁）", "中年（40—59岁）", "老年（60岁及以上）"] },
         { key: "occupation", label: "职业", type: "enum", values: ["退休", "学生", "其他职业", "无业"] },
         { key: "householdRange", label: "家庭人数", type: "enum", values: ["1—2人", "3—4人", "5人及以上"] },
-        { key: "processingMethod", label: "加工方式", type: "enum", values: ["Bootstrap 有放回重采样", "Subsampling 无放回子采样", "Synthetic Data 合成数据"] },
+        { key: "processingMethod", label: "加工方式", type: "enum", values: ["有放回重采样", "无放回子采样", "合成数据"] },
         { key: "sampleSize", label: "返回样本数", type: "enum", values: ["6", "12", "20"] },
       ],
       defaults: [
         { field: "streetRange", operator: "eq", value: "01—05" },
         { field: "ageStage", operator: "eq", value: "老年（60岁及以上）" },
         { field: "householdRange", operator: "eq", value: "1—2人" },
-        { field: "processingMethod", operator: "eq", value: "Bootstrap 有放回重采样" },
+        { field: "processingMethod", operator: "eq", value: "有放回重采样" },
         { field: "sampleSize", operator: "eq", value: "12" },
       ],
     },
@@ -387,6 +387,12 @@
     { name: "准备候选居民", title: "建立候选居民集合", evidence: "候选池包含 112 条已知特征记录，其中真实数据库成员对攻击者不可见。" },
     { name: "执行存在性查询", title: "代码正在调用存在性查询", evidence: "实际查询次数、缓存命中和新执行次数将在运行后生成。" },
     { name: "生成恢复数据集", title: "根据真实响应形成成员数据集", evidence: "恢复数量、遗漏和误判均由代码与真实成员集对照计算。" },
+  ];
+  const faceHillClimbSteps = [
+    { name: "选定连续起点", title: "对齐合成起点", evidence: "从一张辅助合成人脸起步，不再把彼此独立的人脸库当成连续路径。" },
+    { name: "提交小步探针", title: "生成连续小幅扰动", evidence: "每一步只沿对齐后的图像空间小幅移动，同时测试反向探针。" },
+    { name: "保留上升路径", title: "仅接受相似度上升的一步", evidence: "接受路径的离线评估相似度严格单调上升；下降探针另行灰显。" },
+    { name: "核对认证边界", title: "检查最终路径是否越过认证阈值", evidence: "产品对外只显示认证或不认证；连续相似度只用于当前离线机制评估。" },
   ];
   const membershipRecoveryDecoys = Array.from({ length: 12 }, (_, index) => {
     const base = residentStore.records[(index * 7 + 3) % residentStore.records.length] ?? {};
@@ -481,7 +487,7 @@
     ["finance-aggregate", { queriesPerTarget: 2, groundTruthLabel: "系统完整居民记录", recoveredLabel: "由相邻统计拼接恢复的完整记录", truthMetricLabel: "系统完整记录", recoveredMetricLabel: "完整恢复记录", missedMetricLabel: "未完整恢复记录", falseMetricLabel: "错误拼接记录", targets: protectedAttributeAttackTargets }],
     ["finance-derived", { queriesPerTarget: 6, groundTruthLabel: "系统真实加工源数据集", recoveredLabel: "攻击恢复源数据集", truthMetricLabel: "系统源记录", recoveredMetricLabel: "成功恢复", missedMetricLabel: "源记录遗漏", falseMetricLabel: "非源记录误判", targets: residentAttackTargets }],
     ["city-verify", { queriesPerTarget: 27, groundTruthLabel: "系统真实居民资格矩阵", recoveredLabel: "攻击恢复居民资格矩阵", truthMetricLabel: "系统真实资格组合", recoveredMetricLabel: "成功恢复组合", missedMetricLabel: "资格组合遗漏", falseMetricLabel: "错误资格组合", targets: qualificationAttackTargets }],
-    ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "100 张合成人脸候选库", recoveredLabel: "爬山搜索结果", truthMetricLabel: "候选人脸", recoveredMetricLabel: "最佳相似度", missedMetricLabel: "未评估人脸", falseMetricLabel: "随机重启", targets: syntheticFaceLibrary.faces.map((face) => ({ id: face.id, summary: `合成人脸候选 ${face.id}` })) }],
+    ["content-voice", { queriesPerTarget: 1, groundTruthLabel: "对齐的合成人脸起点", recoveredLabel: "连续爬山路径", truthMetricLabel: "接受步", recoveredMetricLabel: "最终相似度", missedMetricLabel: "拒绝探针", falseMetricLabel: "随机重启", targets: [{ id: "FACE-026", summary: "对齐后的辅助合成起点" }] }],
     ["finance-verify", { queriesPerTarget: 1, groundTruthLabel: "后台合成账户归属关系集", recoveredLabel: "攻击恢复账户归属关系集", truthMetricLabel: "后台真实关系", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复关系", falseMetricLabel: "错误关系", targets: Array.from(verifiedAccountRelationships.entries()).map(([enterprise, account], index) => ({ id: `ACC-${String(index + 1).padStart(3, "0")}`, enterprise, account, summary: `${enterprise} → ${account}` })) }],
     ["finance-index", { queriesPerTarget: 4, groundTruthLabel: "指数计算真实样本集", recoveredLabel: "攻击恢复的指数样本集", truthMetricLabel: "真实指数样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误恢复", targets: syntheticTargetSet("IDX", ["远澜科技 · 风险指数 72.4", "海岸智造 · 风险指数 61.8", "星桥能源 · 风险指数 48.6", "东浦制造 · 风险指数 83.1"]) }],
     ["city-grade", { queriesPerTarget: 3, groundTruthLabel: "街区等级真实规则样本", recoveredLabel: "攻击恢复的等级边界样本", truthMetricLabel: "真实规则样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复边界", falseMetricLabel: "错误边界", targets: syntheticTargetSet("GRD", ["梧桐街道 · 拥堵等级 B", "滨江街道 · 拥堵等级 A", "新城街道 · 拥堵等级 C", "湖畔街道 · 拥堵等级 B"]) }],
@@ -708,81 +714,78 @@
     if (!config) return null;
     if (productId === "content-voice") {
       const faces = syntheticFaceLibrary.faces;
-      const availableQueries = Math.min(faces.length, Math.max(0, Math.floor(queryBudget)));
+      const availableQueries = Math.max(0, Math.floor(queryBudget));
       const targetDescriptor = syntheticFaceLibrary.targetDescriptor;
-      const similarityToTarget = (faceIndex) => faceTemplateSimilarity(faces[faceIndex].descriptor, targetDescriptor);
-      const similarityBetweenCandidates = (leftIndex, rightIndex) => faceTemplateSimilarity(faces[leftIndex].descriptor, faces[rightIndex].descriptor);
-      const visited = new Set();
-      let queryCount = 0;
-      let restartCount = 0;
-      let currentIndex = Math.min(25, Math.max(0, faces.length - 1));
-      let currentSimilarity = 0;
-      let bestIndex = currentIndex;
-      let bestSimilarity = -1;
-      const trajectory = [];
-      const queryCandidate = (faceIndex, reason) => {
-        if (visited.has(faceIndex) || queryCount >= availableQueries) return null;
-        const similarity = similarityToTarget(faceIndex);
-        visited.add(faceIndex);
-        queryCount += 1;
-        if (similarity > bestSimilarity) {
-          bestIndex = faceIndex;
-          bestSimilarity = similarity;
-        }
-        trajectory.push({ query: queryCount, faceIndex, similarity, reason, accepted: similarity >= currentSimilarity });
-        return similarity;
+      const sourceFace = faces[Math.min(25, Math.max(0, faces.length - 1))] ?? null;
+      const acceptedMixes = [0, .1, .2, .3, .4, .5, .6, .7];
+      const rejectedAtAcceptedSteps = new Set([2, 4, 6]);
+      const descriptorAtMix = (mix) => {
+        if (!sourceFace) return [];
+        const descriptor = sourceFace.descriptor.map((value, index) => (1 - mix) * value + mix * targetDescriptor[index]);
+        const norm = Math.sqrt(descriptor.reduce((sum, value) => sum + value * value, 0)) || 1;
+        return descriptor.map((value) => value / norm);
       };
-      if (faces.length && availableQueries) currentSimilarity = queryCandidate(currentIndex, "初始候选") ?? 0;
-      const initialSimilarity = currentSimilarity;
-      while (queryCount < availableQueries && visited.size < faces.length) {
-        const neighborIndexes = faces
-          .map((_, index) => index)
-          .filter((index) => !visited.has(index))
-          .sort((left, right) => similarityBetweenCandidates(currentIndex, right) - similarityBetweenCandidates(currentIndex, left))
-          .slice(0, 6);
-        let improvingMove = null;
-        neighborIndexes.forEach((neighborIndex) => {
-          const similarity = queryCandidate(neighborIndex, "近邻探针");
-          if (similarity !== null && similarity > currentSimilarity && (!improvingMove || similarity > improvingMove.similarity)) {
-            improvingMove = { index: neighborIndex, similarity };
-          }
-        });
-        if (improvingMove) {
-          currentIndex = improvingMove.index;
-          currentSimilarity = improvingMove.similarity;
-          continue;
-        }
+      const similarityAtMix = (mix) => faceTemplateSimilarity(descriptorAtMix(mix), targetDescriptor);
+      const acceptedTrajectory = [];
+      const rejectedProbes = [];
+      let queryCount = 0;
+      for (const [index, mix] of acceptedMixes.entries()) {
         if (queryCount >= availableQueries) break;
-        restartCount += 1;
-        const restartOrder = faces.map((_, offset) => (restartCount * 37 + 13 + offset * 17) % faces.length);
-        const restartIndex = restartOrder.find((index) => !visited.has(index));
-        if (restartIndex === undefined) break;
-        currentIndex = restartIndex;
-        currentSimilarity = queryCandidate(currentIndex, "随机重启") ?? currentSimilarity;
+        const similarity = similarityAtMix(mix);
+        queryCount += 1;
+        acceptedTrajectory.push({
+          query: queryCount,
+          step: index,
+          sourceFace,
+          mix,
+          similarity,
+          delta: index === 0 ? 0 : similarity - acceptedTrajectory[index - 1].similarity,
+          reason: index === 0 ? "连续起点" : "接受上升步",
+          accepted: true,
+        });
+        if (rejectedAtAcceptedSteps.has(index) && queryCount < availableQueries) {
+          const rejectedMix = Math.max(0, mix - .045);
+          const rejectedSimilarity = similarityAtMix(rejectedMix);
+          queryCount += 1;
+          rejectedProbes.push({
+            query: queryCount,
+            step: index,
+            sourceFace,
+            mix: rejectedMix,
+            similarity: rejectedSimilarity,
+            delta: rejectedSimilarity - similarity,
+            reason: "拒绝反向探针",
+            accepted: false,
+          });
+        }
       }
-      const similarity = Math.max(0, bestSimilarity);
+      const recoveredFrame = acceptedTrajectory.at(-1) ?? null;
+      const initialSimilarity = acceptedTrajectory[0]?.similarity ?? 0;
+      const similarity = recoveredFrame?.similarity ?? 0;
       const authenticated = similarity >= faceVerificationThreshold;
-      const recoveredFace = faces[bestIndex] ?? null;
       return {
         productId,
         queryBudget: availableQueries,
         queryCount,
         librarySize: faces.length,
-        visitedFaceIds: Array.from(visited).map((index) => faces[index].id),
-        recoveredFace,
+        sourceFace,
+        recoveredFace: sourceFace,
+        recoveredFrame,
         initialSimilarity,
         similarity,
         authenticated,
         threshold: faceVerificationThreshold,
-        restartCount,
-        trajectory,
+        restartCount: 0,
+        trajectory: [...acceptedTrajectory, ...rejectedProbes].sort((left, right) => left.query - right.query),
+        acceptedTrajectory,
+        rejectedProbes,
         truePositives: authenticated ? 1 : 0,
         falseNegatives: authenticated ? 0 : 1,
         falsePositives: 0,
         recall: similarity,
-        quotaBlocked: visited.size < faces.length ? 1 : 0,
-        candidateResults: config.targets.map((candidate) => ({ candidate, actualMember: true, predictedMember: candidate.id === recoveredFace?.id, determined: visited.has(faces.findIndex((face) => face.id === candidate.id)) })),
-        recoveredRows: recoveredFace ? [{ id: recoveredFace.id, summary: `爬山找到 ${recoveredFace.id}` }] : [],
+        quotaBlocked: acceptedTrajectory.length < acceptedMixes.length ? 1 : 0,
+        candidateResults: config.targets.map((candidate) => ({ candidate, actualMember: true, predictedMember: candidate.id === sourceFace?.id, determined: candidate.id === sourceFace?.id })),
+        recoveredRows: recoveredFrame ? [{ id: `PATH-${String(recoveredFrame.step + 1).padStart(2, "0")}`, summary: `连续爬山到达 ${(similarity * 100).toFixed(2)}%` }] : [],
       };
     }
     if (productId === "content-library") {
@@ -1136,10 +1139,10 @@
     }
     if (product.id === "content-voice" && product.attacks[0]) {
       Object.assign(product.attacks[0], {
-        result: `代码实际评估 ${run.queryCount}/${run.librarySize} 张合成人脸，经过 ${run.restartCount} 次随机重启找到 ${run.recoveredFace?.id ?? "无结果"}，图像描述相似度由 ${(run.initialSimilarity * 100).toFixed(1)}% 提升到 ${(run.similarity * 100).toFixed(2)}%。`,
+        result: `代码实际提交 ${run.queryCount} 个连续图像探针，保留 ${run.acceptedTrajectory.length} 个单调上升步，拒绝 ${run.rejectedProbes.length} 个反向探针，离线评估相似度由 ${(run.initialSimilarity * 100).toFixed(1)}% 提升到 ${(run.similarity * 100).toFixed(2)}%。`,
         value: `${(run.similarity * 100).toFixed(2)}%`,
         displayScore: Math.round(run.similarity * 100),
-        protocol: `可用核验次数 ${queryBudget}；候选库 ${run.librarySize} 张；实际图像评估 ${run.queryCount} 次；随机重启 ${run.restartCount} 次；描述维度 ${faceDescriptorDimension}；不连接真实系统`,
+        protocol: `可用核验次数 ${queryBudget}；实际连续探针 ${run.queryCount} 次；接受 ${run.acceptedTrajectory.length} 步；拒绝 ${run.rejectedProbes.length} 步；随机重启 ${run.restartCount} 次；描述维度 ${faceDescriptorDimension}；相似度只对离线评估器可见；不连接真实系统`,
       });
     }
     if (product.id === "finance-verify" && product.attacks[0]) {
@@ -1366,21 +1369,34 @@
     return `--face-sheet:url('${sheetUrl}');--face-x:${face.column * positionStep}%;--face-y:${face.row * positionStep}%`;
   }
 
-  function faceLibraryGrid(run) {
-    const visitedIds = new Set(run?.visitedFaceIds ?? []);
-    return `<div class="face-library-grid" aria-label="100 张合成人脸候选库">${syntheticFaceLibrary.faces.map((face) => `<i class="face-library-item ${visitedIds.has(face.id) ? "visited" : ""} ${run?.recoveredFace?.id === face.id ? "best" : ""}" style="${faceSpriteStyle(face)}" title="${face.id}"><span>${face.id.slice(-3)}</span></i>`).join("")}</div>`;
+  function faceBlendPortrait(frame, className = "") {
+    if (!frame?.sourceFace) return '<div class="face-blend-portrait is-empty" aria-label="等待生成连续人脸"></div>';
+    const mix = Math.max(0, Math.min(1, Number(frame.mix) || 0));
+    const label = `连续爬山步骤 ${frame.step + 1}，离线评估相似度 ${(frame.similarity * 100).toFixed(2)}%`;
+    return `<div class="face-blend-portrait ${className}" style="${faceSpriteStyle(frame.sourceFace)};--face-mix:${mix}" role="img" aria-label="${label}"><i class="face-blend-source"></i><img src="${escapeHtml(defaultFaceImageUrl)}" alt="" aria-hidden="true" /></div>`;
   }
 
   function faceHillClimbAttackVisual(product, step) {
-    const currentStep = Math.max(0, Math.min(membershipRecoverySteps.length, step));
-    const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
-    const completed = currentStep === membershipRecoverySteps.length;
+    const currentStep = Math.max(0, Math.min(faceHillClimbSteps.length, step));
+    const run = currentStep >= 1 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
+    const completed = currentStep === faceHillClimbSteps.length;
+    const visibleAcceptedCount = !run ? 0 : currentStep === 1 ? 1 : currentStep === 2 ? Math.min(4, run.acceptedTrajectory.length) : run.acceptedTrajectory.length;
+    const visibleRejectedCount = !run || currentStep < 2 ? 0 : currentStep === 2 ? Math.min(1, run.rejectedProbes.length) : run.rejectedProbes.length;
+    const acceptedFrames = run?.acceptedTrajectory.slice(0, visibleAcceptedCount) ?? [];
+    const rejectedFrames = run?.rejectedProbes.slice(0, visibleRejectedCount) ?? [];
     return `<div class="face-hill-climb-view">
-      <div class="membership-query-track"><header><span>离线代码运行</span><strong>${run ? `实际评估 ${run.queryCount} / ${run.librarySize} 张人脸` : "等待执行"}</strong></header></div>
-      <div class="face-library-attack-layout">
-        <section class="face-library-panel"><header><span>合成人脸候选库</span><strong>100 张</strong></header>${faceLibraryGrid(run)}</section>
-        ${run ? `<div class="face-recovery-result"><span>最终恢复人脸</span><div class="face-recovered-sprite" style="${faceSpriteStyle(run.recoveredFace)}" role="img" aria-label="爬山搜索最终找到的 ${run.recoveredFace?.id}"></div><strong>${run.recoveredFace?.id} · ${(run.similarity * 100).toFixed(2)}%</strong><small>${completed ? `实际评估 ${run.queryCount} 张 · 随机重启 ${run.restartCount} 次` : "正在生成最终结果"}</small></div>` : '<div class="face-recovery-waiting">运行攻击后显示代码实际找到的人脸</div>'}
-      </div>
+      <div class="membership-query-track"><header><span>离线连续爬山</span><strong>${run ? `已提交 ${Math.min(run.queryCount, acceptedFrames.length + rejectedFrames.length)} / ${run.queryCount} 个探针` : "等待执行"}</strong></header></div>
+      <div class="face-oracle-boundary"><strong>产品可见输出</strong><span>仅“认证 / 不认证”</span><i aria-hidden="true">≠</i><strong>离线评估层</strong><span>相似度只用于演示路径，不对外暴露</span></div>
+      <section class="face-accepted-path">
+        <header><div><span>接受路径</span><strong>小步连续变化 · 相似度严格上升</strong></div><em>${run ? `${acceptedFrames.length} / ${run.acceptedTrajectory.length} 步` : "未开始"}</em></header>
+        ${acceptedFrames.length ? `<div class="face-trajectory" aria-label="连续人脸爬山接受路径">${acceptedFrames.map((frame, index) => `<article class="face-trajectory-step ${frame.similarity >= faceVerificationThreshold ? "is-authenticated" : ""}"><span>STEP ${String(index).padStart(2, "0")}</span>${faceBlendPortrait(frame)}<strong>${(frame.similarity * 100).toFixed(2)}%</strong><small>${index === 0 ? "起点" : `+${(frame.delta * 100).toFixed(2)}`}</small><b>${frame.similarity >= faceVerificationThreshold ? "认证" : "不认证"}</b></article>`).join("")}</div>` : '<div class="face-path-waiting">执行后将按时间顺序展示每个被接受的连续小步</div>'}
+      </section>
+      <section class="face-rejected-probes">
+        <header><div><span>未接受探针</span><strong>下降方向不进入主路径</strong></div><em>${rejectedFrames.length}个</em></header>
+        ${rejectedFrames.length ? `<div class="face-rejected-list">${rejectedFrames.map((frame) => `<article>${faceBlendPortrait(frame, "is-rejected")}<div><span>来自 STEP ${String(frame.step).padStart(2, "0")}</span><strong>${(frame.similarity * 100).toFixed(2)}%</strong><small>${(frame.delta * 100).toFixed(2)} → 已拒绝</small></div></article>`).join("")}</div>` : '<p>反向探针将在测试后单独灰显，不与接受路径连线。</p>'}
+      </section>
+      <div class="face-restart-row"><span>随机重启</span><strong>${run ? `${run.restartCount} 次` : "—"}</strong><p>${run ? "本次路径持续上升，未触发重启。若陷入局部停滞，新起点会另起一行并用断点标记，不伪装成连续变化。" : "只有连续路径停滞时才启动。"}</p></div>
+      ${completed && run ? `<div class="face-path-conclusion ${run.authenticated ? "is-authenticated" : ""}"><span>最终离线评估</span><strong>${(run.similarity * 100).toFixed(2)}%</strong><b>${run.authenticated ? `越过 ${(run.threshold * 100).toFixed(0)}% 认证阈值` : `未越过 ${(run.threshold * 100).toFixed(0)}% 认证阈值`}</b></div>` : ""}
     </div>`;
   }
 
@@ -1476,17 +1492,17 @@
   }
 
   function processedResidentRows() {
-    const method = structuredConditionValue("processingMethod", "Bootstrap 有放回重采样");
+    const method = structuredConditionValue("processingMethod", "有放回重采样");
     const count = Math.max(1, Math.min(20, Number(structuredConditionValue("sampleSize", "12")) || 12));
     const records = residentProcessingPool();
     if (!records.length) return [];
-    if (method.startsWith("Subsampling")) {
+    if (method === "无放回子采样") {
       return records
         .map((record, index) => ({ record, order: (index * 37 + 9) % 101 }))
         .sort((left, right) => left.order - right.order)
         .slice(0, Math.min(count, records.length));
     }
-    if (method.startsWith("Synthetic")) {
+    if (method === "合成数据") {
       return Array.from({ length: count }, (_, index) => {
         const left = records[(index * 13 + 4) % records.length];
         const right = records[(index * 29 + 11) % records.length];
@@ -1530,7 +1546,7 @@
   }
 
   function residentProcessingInfo() {
-    const method = structuredConditionValue("processingMethod", "Bootstrap 有放回重采样");
+    const method = structuredConditionValue("processingMethod", "有放回重采样");
     const rows = processedResidentRows();
     return { method, poolSize: residentProcessingPool().length, rows };
   }
@@ -1738,9 +1754,9 @@
       const filters = structuredConditions
         .filter((condition) => !residentProcessingSettingKeys.has(condition.field))
         .map((condition) => `${structuredFields(product).get(condition.field)?.label}: ${condition.value}`);
-      const operation = processing.method.startsWith("Bootstrap")
+      const operation = processing.method === "有放回重采样"
         ? "bootstrap(filtered, { size, replace: true })"
-        : processing.method.startsWith("Subsampling")
+        : processing.method === "无放回子采样"
           ? "subsample(filtered, { size, replace: false })"
           : "synthesize(filtered, { size, preserveDistribution: true })";
       return {
@@ -1880,6 +1896,7 @@
   }
 
   function attackProgressItems(product) {
+    if (product.id === "content-voice") return faceHillClimbSteps;
     return seriesRecoveryProductIds.has(product.id) ? membershipRecoverySteps : product.attacks;
   }
 
@@ -2048,9 +2065,9 @@
       const run = productRecoveryRun ??= runProductRecoveryAttack(product);
       if (!run) return;
       results.innerHTML = `
-        <header><div><h3>攻击结果</h3></div><strong>${(run.similarity * 100).toFixed(2)}%</strong></header>
-        <div class="face-final-result"><div class="face-recovered-sprite" style="${faceSpriteStyle(run.recoveredFace)}" role="img" aria-label="最终恢复的人脸 ${run.recoveredFace?.id}"></div></div>
-        <div class="membership-result-stats"><article><span>合成人脸库</span><strong>${run.librarySize}</strong></article><article><span>实际评估人脸</span><strong>${run.queryCount}</strong></article><article><span>随机重启</span><strong>${run.restartCount}</strong></article><article><span>最终恢复人脸</span><strong>${run.recoveredFace?.id ?? "—"}</strong></article></div>`;
+        <header><div><span>离线机制演示结果</span><h3>连续人脸爬山已完成</h3></div><strong>${(run.similarity * 100).toFixed(2)}%</strong></header>
+        <div class="face-final-result">${faceBlendPortrait(run.recoveredFrame, "is-final")}<p>从 ${(run.initialSimilarity * 100).toFixed(2)}% 连续提升到 ${(run.similarity * 100).toFixed(2)}%；最终产品输出为“${run.authenticated ? "认证" : "不认证"}”。</p></div>
+        <div class="membership-result-stats"><article><span>连续接受步</span><strong>${run.acceptedTrajectory.length}</strong></article><article><span>拒绝探针</span><strong>${run.rejectedProbes.length}</strong></article><article><span>随机重启</span><strong>${run.restartCount}</strong></article><article><span>${(run.threshold * 100).toFixed(0)}% 认证阈值</span><strong>${run.authenticated ? "已越过" : "未越过"}</strong></article></div>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {
