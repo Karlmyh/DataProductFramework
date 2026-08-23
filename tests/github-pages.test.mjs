@@ -100,20 +100,23 @@ test("focuses the main demo while preserving standalone verification and vision 
   assert.match(relationshipPage, /要求证明对企业或账户一方的控制权，这种关系枚举攻击就不成立/);
 });
 
-test("uses one 100-company six-feature credit dataset for 030501 through 030503", async () => {
-  const [html, dataScript, labScript, indexPage, gradePage, rankPage] = await Promise.all([
+test("uses one 100-company six-feature credit dataset for 030501 through 030503 and 030704", async () => {
+  const [html, dataScript, labScript, indexPage, gradePage, rankPage, modelPage] = await Promise.all([
     readFile(new URL("index.html", pagesRoot), "utf8"),
     readFile(new URL("enterprise-credit-data.js", pagesRoot), "utf8"),
     readFile(new URL("privacy-lab.js", pagesRoot), "utf8"),
     readFile(new URL("security_attacks/030501.html", pagesRoot), "utf8"),
     readFile(new URL("security_attacks/030502.html", pagesRoot), "utf8"),
     readFile(new URL("security_attacks/030503.html", pagesRoot), "utf8"),
+    readFile(new URL("security_attacks/030704.html", pagesRoot), "utf8"),
   ]);
   assert.match(html, /enterprise-credit-data\.js/);
   assert.ok(html.indexOf("enterprise-credit-data.js") < html.indexOf("privacy-lab.js"));
   assert.match(dataScript, /length: 100/);
   assert.match(dataScript, /近90天逾期率/);
   assert.match(dataScript, /0\.26×资产负债率/);
+  assert.match(dataScript, /defaultProbability/);
+  assert.match(dataScript, /P\(未来90天违约\) = sigmoid/);
   assert.match(labScript, /formulaAccessCount: 0/);
   assert.match(labScript, /60家参考企业六维全知/);
   assert.match(labScript, /40家目标企业只暴露五个非敏感维度/);
@@ -130,9 +133,14 @@ test("uses one 100-company six-feature credit dataset for 030501 through 030503"
   assert.doesNotMatch(labScript, /credit-learning-card/);
   assert.doesNotMatch(labScript, /目标企业敏感属性反演/);
   assert.doesNotMatch(labScript, /成对排序代理规则/);
+  assert.doesNotMatch(labScript, /credit-knowledge-line/);
+  assert.match(labScript, /平均区间长度/);
+  assert.match(labScript, /"finance-index", "city-grade", "content-rank", "finance-model"/);
   assert.match(indexPage, /未知评分公式学习/);
   assert.match(gradePage, /逾期率兼容区间反演/);
   assert.match(rankPage, /成对排序代理规则学习/);
+  assert.match(modelPage, /企业违约预测 API/);
+  assert.match(modelPage, /近90天逾期率反演/);
 
   const payloadMatch = html.match(/<script>window\.__PRIVACY_LAB_DATA__=(.*?);<\/script>/s);
   assert.ok(payloadMatch);
@@ -141,7 +149,7 @@ test("uses one 100-company six-feature credit dataset for 030501 through 030503"
   context.window.__PRIVACY_LAB_DATA__ = JSON.parse(payloadMatch[1]);
   vm.runInContext(dataScript, context);
   const marker = "  recoveryAttackConfigs.forEach((_, productId) => productUsageLimitOptions.forEach((budget) => productRecoverySavedRuns.set(`${productId}:${budget}`, simulateProductRecoveryBudget(productId, budget))));";
-  const instrumented = labScript.replace(marker, `${marker}\n  globalThis.__creditRuns = Object.fromEntries(["finance-index", "city-grade", "content-rank"].map((id) => [id, simulateProductRecoveryBudget(id, 100)]));\n  return;`);
+  const instrumented = labScript.replace(marker, `${marker}\n  globalThis.__creditRuns = Object.fromEntries(["finance-index", "city-grade", "content-rank", "finance-model"].map((id) => [id, simulateProductRecoveryBudget(id, 100)]));\n  return;`);
   assert.notEqual(instrumented, labScript);
   vm.runInContext(instrumented, context);
   const runs = context.__creditRuns;
@@ -157,6 +165,7 @@ test("uses one 100-company six-feature credit dataset for 030501 through 030503"
   assert.ok(new Set(runs["city-grade"].candidateResults.map((row) => row.publicContribution.toFixed(4))).size >= 20);
   assert.ok(runs["content-rank"].meanAbsoluteError < 4);
   assert.ok(runs["content-rank"].meanIntervalWidth > 0);
+  assert.ok(runs["finance-model"].meanAbsoluteError < 0.2);
 });
 
 test("uses one fixed-question chatbot and text-only evidence inference for 030701 and 030705", async () => {

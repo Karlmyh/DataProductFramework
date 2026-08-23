@@ -31,7 +31,7 @@
     ["Q-IMAGE-PORTRAIT", { claim: "居民人脸核验图片需要单独同意、加密、原图与模板分区保存，并设置最短留存期。", anchors: ["单独同意", "加密", "分区保存", "最短留存期限"] }],
     ["Q-IMAGE-FACEGRID", { claim: "批量人脸库存在身份关联、模板泄露和越权导出风险，需要限制检索频率并审批导出操作。", anchors: ["批量身份关联", "模板泄露", "检索频率限制", "导出操作进行审批"] }],
   ]);
-  const creditProductIds = new Set(["finance-index", "city-grade", "content-rank"]);
+  const creditProductIds = new Set(["finance-index", "city-grade", "content-rank", "finance-model"]);
   const creditFeatureKeys = enterpriseCreditStore.schema.map((field) => field.key);
   const creditPublicFeatureKeys = enterpriseCreditStore.schema.filter((field) => !field.sensitive).map((field) => field.key);
   const creditSensitiveFeatureKey = enterpriseCreditStore.schema.find((field) => field.sensitive)?.key ?? "overdueRate";
@@ -45,12 +45,16 @@
     ? record.riskIndex
     : productId === "city-grade"
       ? record.grade
-      : record.riskRank;
+      : productId === "content-rank"
+        ? record.riskRank
+        : record.defaultProbability;
   const creditOutputText = (productId, record) => productId === "finance-index"
     ? `${Number(record.riskIndex).toFixed(1)} / 100`
     : productId === "city-grade"
       ? `${record.grade} 级`
-      : `风险第 ${record.riskRank} 名 · ${record.riskPercentile} 百分位`;
+      : productId === "content-rank"
+        ? `风险第 ${record.riskRank} 名 · ${record.riskPercentile} 百分位`
+        : `${(Number(record.defaultProbability) * 100).toFixed(1)}% · ${record.defaultRiskLabel}`;
   const ragProductDefinitions = {
     "city-rag": {
       name: "政策知识问答助手",
@@ -448,6 +452,30 @@
         limitation: "排名只保留相对顺序，参照集合变化会降低反演稳定性，精度通常弱于连续指数。",
       },
     },
+    "finance-model": {
+      name: "企业违约预测 API",
+      tagline: "输入单家企业的六维信用信息，返回未来90天违约概率。",
+      inputLabel: "待预测企业",
+      callLabel: "预测90天违约",
+      flow: ["读取单家企业信用记录", "执行违约概率模型", "返回概率与风险标签"],
+      outputLabel: "未来90天违约概率",
+      outputDetail: "近90天逾期率参与模型预测，但不在 API 响应中直接返回。",
+      attack: {
+        id: "default-api-sensitive-inference",
+        name: "预测规则学习与逾期率反演",
+        brief: "攻击者用60家完整参考企业的六维特征和 API 概率响应学习预测规则，再结合40家目标企业的五个公开维度与概率响应反推近90天逾期率。",
+        result: "运行攻击代码后，对40家目标企业生成逾期率估计并与模拟真值对照。",
+        metric: "逾期率平均绝对误差",
+        value: "运行后计算",
+        displayScore: 0,
+        evidence: "代码实测",
+        attackFamily: "预测规则学习与属性反演",
+        attackObject: "近90天逾期率",
+        source: "与030501—030503相同的100家模拟企业信用数据",
+        protocol: "60家参考企业六维全知；40家目标企业仅五维公开；只读取 API 概率响应学习代理预测规则",
+        limitation: "依赖 API 返回足够精细的概率，且参考企业与目标企业使用同一稳定预测规则。",
+      },
+    },
   };
   Object.entries(creditProductDefinitions).forEach(([productId, definition]) => {
     const product = productsById[productId];
@@ -590,7 +618,7 @@
   const creditInferenceSteps = [
     { name: "划分攻击者知识", title: "建立参考集与目标集", evidence: "60家参考企业六维特征全知；40家目标企业只暴露五个非敏感维度和产品输出。" },
     { name: "学习未知规则", title: "只用参考样本训练代理规则", evidence: "攻击代码不读取页面展示的真实公式，只从参考企业的特征—输出对中学习。" },
-    { name: "反演敏感维度", title: "搜索近90天逾期率", evidence: "固定目标企业五个公开维度，寻找与公开指数、等级或排名最一致的逾期率。" },
+    { name: "反演敏感维度", title: "搜索近90天逾期率", evidence: "固定目标企业五个公开维度，寻找与公开指数、等级、排名或违约概率最一致的逾期率。" },
     { name: "对照模拟真值", title: "计算反演误差", evidence: "真实逾期率只在最后用于离线评估，不进入攻击者训练输入。" },
   ];
   const faceHillClimbSteps = [
@@ -704,7 +732,7 @@
     ["city-rag", { queriesPerTarget: 4, groundTruthLabel: "Chatbot 后台政策语料", recoveredLabel: "从回答恢复的政策语料", truthMetricLabel: "后台真实片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: syntheticTargetSet("POL", ["梧桐计划 · 申报资格条款", "养老补贴 · 收入门槛条款", "住房保障 · 家庭人数条款", "就业扶持 · 职业状态条款"]) }],
     ["content-vision", { queriesPerTarget: 5, groundTruthLabel: "视觉模型真实训练片段", recoveredLabel: "攻击恢复的训练片段特征", truthMetricLabel: "真实训练片段", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复片段", falseMetricLabel: "错误片段", targets: syntheticTargetSet("VIS", ["户外运动 · 跑步场景", "道路交通 · 骑行场景", "室内活动 · 健身场景", "公共空间 · 人群场景"]) }],
     ["content-speech", { queriesPerTarget: 5, groundTruthLabel: "语音模型真实训练语音", recoveredLabel: "攻击恢复的语音与说话人特征", truthMetricLabel: "真实训练语音", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复语音", falseMetricLabel: "错误语音", targets: syntheticTargetSet("SPK", ["说话人 A · 公共服务咨询", "说话人 B · 交通信息播报", "说话人 C · 政策问答语音", "说话人 D · 日常对话语音"]) }],
-    ["finance-model", { queriesPerTarget: 4, groundTruthLabel: "预测模型真实行为样本", recoveredLabel: "攻击恢复的模型行为样本", truthMetricLabel: "真实行为样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复行为", falseMetricLabel: "错误行为", targets: syntheticTargetSet("MOD", ["现金流下降 · 高风险 0.81", "负债率稳定 · 中风险 0.54", "盈利增长 · 低风险 0.19", "逾期增加 · 高风险 0.88"]) }],
+    ["finance-model", { queriesPerTarget: 1, groundTruthLabel: "40家目标企业真实逾期率", recoveredLabel: "由违约概率反演的逾期率", truthMetricLabel: "目标企业", recoveredMetricLabel: "误差≤1个百分点", missedMetricLabel: "误差>1个百分点", falseMetricLabel: "错误推断", targets: creditAttackTargets }],
     ["content-multimodal", { queriesPerTarget: 5, groundTruthLabel: "多模态模型真实上下文集", recoveredLabel: "攻击恢复的跨模态上下文", truthMetricLabel: "真实上下文", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复上下文", falseMetricLabel: "错误关联", targets: syntheticTargetSet("MM", ["海报画面 · 活动旁白 · 审核问题", "商品图片 · 宣传音频 · 合规问题", "街景视频 · 环境声音 · 场景问题", "人物照片 · 访谈语音 · 身份问题"]) }],
     ["model-distillation", { queriesPerTarget: 4, groundTruthLabel: "教师模型真实响应集", recoveredLabel: "从学生模型恢复的教师行为", truthMetricLabel: "教师真实行为", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复行为", falseMetricLabel: "错误行为", targets: syntheticTargetSet("DST", ["客户分类 · 教师标签 A", "客户分类 · 教师标签 B", "风险识别 · 教师置信度高", "风险识别 · 教师置信度低"]) }],
     ["finance-gradient", { queriesPerTarget: 6, groundTruthLabel: "梯度批次真实训练样本", recoveredLabel: "梯度反演恢复的训练样本", truthMetricLabel: "真实训练样本", recoveredMetricLabel: "成功恢复", missedMetricLabel: "未恢复样本", falseMetricLabel: "错误样本", targets: syntheticTargetSet("FG", ["企业现金流序列 · 违约标签 1", "企业负债序列 · 违约标签 0", "企业授信序列 · 风险标签高", "企业还款序列 · 风险标签低"]) }],
@@ -1007,6 +1035,11 @@
     return Math.max(0, Math.min(30, normalized * creditFeatureScales[creditSensitiveFeatureKey]));
   }
 
+  function creditLogit(probability) {
+    const bounded = Math.max(0.0001, Math.min(0.9999, Number(probability)));
+    return Math.log(bounded / (1 - bounded));
+  }
+
   function fitCreditPairwiseDirection(records, orderForRecord) {
     const weights = Array(creditFeatureKeys.length).fill(0);
     const examples = records.map((record) => ({ record, vector: normalizedCreditVector(record), order: Number(orderForRecord(record)) }));
@@ -1090,7 +1123,18 @@
     const groundTruth = new Map(creditTargetRecords.map((record) => [record.id, record[creditSensitiveFeatureKey]]));
     let learnedModel;
     let inferredRows = [];
-    if (productId === "finance-index") {
+    if (productId === "finance-model") {
+      const weights = fitCreditLinearModel(references, (record) => creditLogit(record.defaultProbability));
+      learnedModel = {
+        type: "logit-linear-regression",
+        weights,
+        rawCoefficients: Object.fromEntries(creditFeatureKeys.map((key, index) => [key, weights[index + 1] / creditFeatureScales[key]])),
+      };
+      inferredRows = targets.map((target) => {
+        const estimate = inverseCreditLinear(weights, target, creditLogit(target.observedOutput));
+        return { target, estimate, minimum: estimate, maximum: estimate };
+      });
+    } else if (productId === "finance-index") {
       const weights = fitCreditLinearModel(references, (record) => record.riskIndex);
       learnedModel = {
         type: "linear-regression",
@@ -1125,7 +1169,7 @@
         return { target, estimate, minimum: compatible[0] ?? estimate, maximum: compatible.at(-1) ?? estimate };
       });
     }
-    const tolerance = productId === "finance-index" ? 1 : productId === "content-rank" ? 4 : null;
+    const tolerance = productId === "finance-index" || productId === "finance-model" ? 1 : productId === "content-rank" ? 4 : null;
     const candidateResults = inferredRows.map((row) => {
       const actual = Number(groundTruth.get(row.target.id));
       const error = Math.abs(row.estimate - actual);
@@ -1632,7 +1676,9 @@
         ? `攻击代码用 ${run.referenceCount} 家完整参考企业拟合未知连续评分规则，再对 ${run.targetCount} 家目标企业反演逾期率；平均绝对误差 ${run.meanAbsoluteError.toFixed(2)} 个百分点。`
         : product.id === "city-grade"
           ? `攻击代码从 ${run.referenceCount} 家完整参考企业学习有序等级规则，为 ${run.targetCount} 家目标企业生成平均宽度 ${run.meanIntervalWidth.toFixed(2)} 个百分点的逾期率区间，真实值覆盖率 ${(run.recall * 100).toFixed(1)}%。`
-          : `攻击代码用 ${run.referenceCount} 家完整参考企业学习成对排序方向，再由公开名次反演 ${run.targetCount} 家目标企业的逾期率；平均绝对误差 ${run.meanAbsoluteError.toFixed(2)} 个百分点。`;
+          : product.id === "content-rank"
+            ? `攻击代码用 ${run.referenceCount} 家完整参考企业学习成对排序方向，再由公开名次反演 ${run.targetCount} 家目标企业的逾期率；平均绝对误差 ${run.meanAbsoluteError.toFixed(2)} 个百分点。`
+            : `攻击代码用 ${run.referenceCount} 家完整参考企业拟合违约概率代理模型，再由 API 概率响应反演 ${run.targetCount} 家目标企业的近90天逾期率；平均绝对误差 ${run.meanAbsoluteError.toFixed(2)} 个百分点。`;
       Object.assign(product.attacks[0], {
         result: resultText,
         value: metricValue,
@@ -1904,12 +1950,10 @@
     const run = currentStep >= 2 ? (productRecoveryRun ??= runProductRecoveryAttack(product)) : null;
     const visibleResults = run ? run.candidateResults.slice(0, currentStep >= 4 ? 12 : currentStep >= 3 ? 8 : 0) : [];
     const completed = currentStep === creditInferenceSteps.length;
-    const publicOutput = product.id === "finance-index" ? "风险指数" : product.id === "city-grade" ? "风险等级" : "风险名次";
     return `<div class="credit-inference-view">
-      <p class="credit-knowledge-line">攻击者利用60家参考企业的六维特征和公开${publicOutput}学习代理公式，再将40家目标企业的五个公开特征代入，并结合各自的公开${publicOutput}反推近90天逾期率；攻击代码不读取页面公式。</p>
       <section class="credit-inference-table">
         <div class="credit-inference-row credit-inference-head"><span>企业</span><span>产品输出</span><span>攻击推断</span><span>模拟真值</span></div>
-        ${visibleResults.length ? visibleResults.map((result) => `<div class="credit-inference-row ${completed ? result.predictedMember ? "is-correct" : "is-error" : ""}"><span><b>${escapeHtml(result.target.name)}</b><small>${escapeHtml(result.target.id)}</small></span><span>${escapeHtml(product.id === "finance-index" ? `${Number(result.target.observedOutput).toFixed(1)}分` : product.id === "city-grade" ? `${result.target.observedOutput}级` : `第${result.target.observedOutput}名`)}</span><strong>${product.id === "finance-index" ? `${result.estimate.toFixed(1)}%` : `${result.minimum.toFixed(1)}%—${result.maximum.toFixed(1)}%`}</strong><em>${completed ? `${result.actual.toFixed(1)}%` : "—"}</em></div>`).join("") : '<div class="membership-empty">等待执行</div>'}
+        ${visibleResults.length ? visibleResults.map((result) => `<div class="credit-inference-row ${completed ? result.predictedMember ? "is-correct" : "is-error" : ""}"><span><b>${escapeHtml(result.target.name)}</b><small>${escapeHtml(result.target.id)}</small></span><span>${escapeHtml(product.id === "finance-index" ? `${Number(result.target.observedOutput).toFixed(1)}分` : product.id === "city-grade" ? `${result.target.observedOutput}级` : product.id === "content-rank" ? `第${result.target.observedOutput}名` : `${(Number(result.target.observedOutput) * 100).toFixed(1)}%`)}</span><strong>${product.id === "city-grade" || product.id === "content-rank" ? `${result.minimum.toFixed(1)}%—${result.maximum.toFixed(1)}%` : `${result.estimate.toFixed(1)}%`}</strong><em>${completed ? `${result.actual.toFixed(1)}%` : "—"}</em></div>`).join("") : '<div class="membership-empty">等待执行</div>'}
       </section>
       ${completed && run ? `<div class="credit-inference-summary"><article><span>产品输出读取</span><strong>${run.queryCount}</strong></article><article><span>目标企业</span><strong>${run.targetCount}</strong></article><article><span>${product.id === "city-grade" ? "区间覆盖率" : "平均绝对误差"}</span><strong>${product.id === "city-grade" ? `${(run.recall * 100).toFixed(1)}%` : `${run.meanAbsoluteError.toFixed(2)} 个百分点`}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>` : ""}
     </div>`;
@@ -2190,7 +2234,9 @@
   }
 
   function creditFormulaStrip(product) {
-    const formula = enterpriseCreditStore.observerRule?.formula ?? "";
+    const formula = product.id === "finance-model"
+      ? enterpriseCreditStore.observerRule?.defaultFormula ?? ""
+      : enterpriseCreditStore.observerRule?.formula ?? "";
     const gradeThresholds = enterpriseCreditStore.observerRule?.gradeThresholds ?? [35, 50, 65];
     const productRule = product.id === "city-grade"
       ? `等级：A（R＜${gradeThresholds[0]}）· B（${gradeThresholds[0]}≤R＜${gradeThresholds[1]}）· C（${gradeThresholds[1]}≤R＜${gradeThresholds[2]}）· D（R≥${gradeThresholds[2]}）`
@@ -2317,14 +2363,17 @@
     }
     if (creditProductIds.has(product.id)) {
       const record = selectedCreditRecord();
-      const productReturn = product.id === "finance-index"
-        ? `return { risk_index: round(risk, 1) };`
-        : product.id === "city-grade"
-          ? `const grade = risk < 35 ? "A" : risk < 50 ? "B" : risk < 65 ? "C" : "D";\nreturn { risk_grade: grade };`
-          : `const rank = cohort.sort((a, b) => b.risk - a.risk).findIndex(item => item.id === enterprise.id) + 1;\nreturn { risk_rank: rank, cohort_size: 100 };`;
+      const riskCode = `const risk = clamp(\n  0.26 * enterprise.debtRatio\n  + 0.18 * enterprise.cashFlowStress\n  + 0.14 * enterprise.revenueVolatility\n  + 0.10 * enterprise.operatingAgeRisk\n  + 0.10 * enterprise.legalRisk\n  + 0.70 * enterprise.overdueRate,\n  0, 100\n);`;
+      const productRuleCode = product.id === "finance-model"
+        ? `const logit = -4.20\n  + 1.70 * enterprise.debtRatio / 100\n  + 1.25 * enterprise.cashFlowStress / 100\n  + 0.95 * enterprise.revenueVolatility / 100\n  + 0.55 * enterprise.operatingAgeRisk / 100\n  + 0.65 * enterprise.legalRisk / 100\n  + 2.10 * enterprise.overdueRate / 30;\nconst probability = 1 / (1 + Math.exp(-logit));\nreturn { default_probability_90d: round(probability, 4) };`
+        : product.id === "finance-index"
+          ? `${riskCode}\nreturn { risk_index: round(risk, 1) };`
+          : product.id === "city-grade"
+            ? `${riskCode}\nconst grade = risk < 35 ? "A" : risk < 50 ? "B" : risk < 65 ? "C" : "D";\nreturn { risk_grade: grade };`
+            : `${riskCode}\nconst rank = cohort.sort((a, b) => b.risk - a.risk).findIndex(item => item.id === enterprise.id) + 1;\nreturn { risk_rank: rank, cohort_size: 100 };`;
       return {
         language: "产品内部 JAVASCRIPT / JSON",
-        code: `// 真实产品规则：仅供演示观察者核对\n// 攻击训练函数不读取本段代码或真实系数\nconst risk = clamp(\n  0.26 * enterprise.debtRatio\n  + 0.18 * enterprise.cashFlowStress\n  + 0.14 * enterprise.revenueVolatility\n  + 0.10 * enterprise.operatingAgeRisk\n  + 0.10 * enterprise.legalRisk\n  + 0.70 * enterprise.overdueRate,\n  0, 100\n);\n${productReturn}`,
+        code: `// 真实产品规则：仅供演示观察者核对\n// 攻击训练函数不读取本段代码或真实系数\n${productRuleCode}`,
         output: JSON.stringify({ enterprise: record.id, product_output: creditOutputText(product.id, record), sensitive_feature_returned: false }, null, 2),
       };
     }
@@ -2534,7 +2583,7 @@
         <section class="demo-act attack-demo-act" data-attack-stage hidden>
           <header class="demo-act-heading inverse"><strong>隐私攻击演示</strong></header>
           <div class="attack-stage ${seriesRecoveryProductIds.has(product.id) ? "membership-recovery-stage" : ""}">
-            <article class="attack-target"><header><span>攻击对象</span><strong>${escapeHtml(product.name)}</strong></header>${seriesRecoveryProductIds.has(product.id) ? "" : `<ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol>`}<div class="attack-canvas" data-attack-canvas>${seriesRecoveryProductIds.has(product.id) ? productRecoveryAttackVisual(product, 0) : renderVisual(activeSeries, product, 3)}</div></article>
+            <article class="attack-target"><header>${creditProductIds.has(product.id) ? "" : "<span>攻击对象</span>"}<strong>${escapeHtml(product.name)}</strong></header>${seriesRecoveryProductIds.has(product.id) ? "" : `<ol class="attack-progress-list" data-attack-progress>${progressItems.map((item, index) => `<li data-attack-index="${index}"><b>${index + 1}</b><span>${escapeHtml(item.name)}</span></li>`).join("")}</ol>`}<div class="attack-canvas" data-attack-canvas>${seriesRecoveryProductIds.has(product.id) ? productRecoveryAttackVisual(product, 0) : renderVisual(activeSeries, product, 3)}</div></article>
             ${seriesRecoveryProductIds.has(product.id) ? "" : `<aside class="audit-rail" aria-live="polite"><div class="audit-kicker"><span>旁路隐私评估器</span><i>已连接</i></div><h3 data-audit-title>准备执行适用攻击</h3><div class="audit-counter"><span>已完成攻击</span><strong data-risk-value>0 / ${progressItems.length}</strong></div><div class="audit-meter"><i data-risk-bar></i></div><ul data-evidence-list><li>等待攻击序列开始</li></ul></aside>`}
           </div>
           <div class="tour-results" data-results hidden></div>
@@ -2679,7 +2728,7 @@
       const primaryMetric = product.id === "city-grade" ? `${(run.recall * 100).toFixed(1)}%` : `${run.meanAbsoluteError.toFixed(2)} 个百分点`;
       results.innerHTML = `
         <header><div><h3>${escapeHtml(product.attacks[0].name)}</h3></div><strong>${primaryMetric}</strong></header>
-        <div class="membership-result-stats"><article><span>统一数据集</span><strong>${enterpriseCreditStore.records.length} 家</strong></article><article><span>完整参考企业</span><strong>${run.referenceCount}</strong></article><article><span>待推断企业</span><strong>${run.targetCount}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>`;
+        <div class="membership-result-stats ${product.id === "city-grade" ? "five-columns" : ""}"><article><span>统一数据集</span><strong>${enterpriseCreditStore.records.length} 家</strong></article><article><span>完整参考企业</span><strong>${run.referenceCount}</strong></article><article><span>待推断企业</span><strong>${run.targetCount}</strong></article>${product.id === "city-grade" ? `<article><span>平均区间长度</span><strong>${run.meanIntervalWidth.toFixed(2)} 个百分点</strong></article>` : ""}<article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>`;
       return;
     }
     if (ragProductIds.has(product.id)) {

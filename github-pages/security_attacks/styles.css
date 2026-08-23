@@ -400,6 +400,7 @@ th { font-weight: 700; }
 .membership-legend i.missed { background: #f0f0f0; }
 .membership-legend i.false-positive { background: #fae9e6; }
 .membership-result-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
+.membership-result-stats.five-columns { grid-template-columns: repeat(5, 1fr); }
 .membership-result-stats article { display: grid; gap: 4px; padding: 16px; border-bottom: 1px solid var(--ink); }
 .membership-result-stats article + article { border-left: 1px solid var(--ink); }
 .membership-result-stats span { color: var(--muted); font-size: 9px; }
@@ -594,7 +595,6 @@ th { font-weight: 700; }
 .credit-product-control .condition-builder { gap: 0; }
 
 .credit-inference-view { display: grid; gap: 12px; padding: 14px; }
-.credit-knowledge-line { margin: 0; padding: 0 2px; font-size: 11px; line-height: 1.65; }
 .credit-inference-table { border: 1px solid var(--ink); background: var(--paper); }
 .credit-inference-row { display: grid; grid-template-columns: 1.25fr .75fr .8fr .8fr; align-items: center; min-width: 0; border-bottom: 1px solid var(--line-soft); }
 .credit-inference-row:last-child { border-bottom: 0; }
@@ -729,6 +729,7 @@ th { font-weight: 700; }
   .face-signature-input > span, .face-image-input > span { border-right: 0; border-bottom: 1px solid var(--ink); }
   .membership-query-track > header { grid-template-columns: auto 1fr; }
   .membership-dataset-compare, .membership-result-stats { grid-template-columns: 1fr; }
+  .membership-result-stats.five-columns { grid-template-columns: 1fr; }
   .face-oracle-boundary { grid-template-columns: 1fr; }
   .face-oracle-boundary i { display: none; }
   .face-rejected-list, .face-final-result { grid-template-columns: 1fr; }

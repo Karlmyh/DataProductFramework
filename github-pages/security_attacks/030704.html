@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="标签、评分、排序与解释会暴露成员、敏感属性、决策边界与模型能力。" />
+    <meta name="description" content="企业违约预测 API 输入单家企业信息并返回未来90天违约概率，精细概率响应可能被用于反演敏感输入。" />
     <link rel="canonical" href="https://karlmyh.github.io/DataProductFramework/security_attacks/030704.html" />
     <link rel="stylesheet" href="styles.css" />
-    <title>030704 预测、分类与推荐服务攻击｜数据产品安全衡量框架</title>
+    <title>030704 企业违约预测 API 攻击｜数据产品安全衡量框架</title>
     
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-5ZH8RB1RV4"></script>
     <script>
@@ -25,26 +25,24 @@
           <strong>030704</strong>
         </nav>
         <span class="category-code">攻击面 · 030704</span>
-        <h1>预测、分类与推荐服务<br />攻击页面</h1>
-        <p class="lead">交付分类、风险判断、数值时序预测、排序推荐或决策控制能力。</p>
+        <h1>企业违约预测 API<br />攻击页面</h1>
+        <p class="lead">输入单家企业的信用信息，实时返回未来90天违约概率与风险标签。</p>
       </header>
 
       <section class="detail-section">
         <h2>攻击面判定</h2>
         <div class="facts-grid">
-          <div class="fact"><span>核心交付</span><p>交付分类、风险判断、数值时序预测、排序推荐或决策控制能力。</p></div>
-          <div class="fact"><span>主要暴露</span><p>标签、评分、排序与解释会暴露成员、敏感属性、决策边界与模型能力。</p></div>
-          <div class="fact"><span>分类边界</span><p>允许任意新输入反复调用；针对既定对象预先发布的结果归入 0305。</p></div>
+          <div class="fact"><span>核心交付</span><p>接收一家企业的六维信用信息，返回未来90天违约概率。</p></div>
+          <div class="fact"><span>主要暴露</span><p>概率响应将六个输入维度压缩为连续数值，可能被用来反演未公开的近90天逾期率。</p></div>
+          <div class="fact"><span>分类边界</span><p>030704 允许对新企业样本反复调用；030501—030503 只发布既定企业的指数、等级或排名。</p></div>
         </div>
       </section>
 
       <section class="detail-section detail-columns">
-        <div><h2>四级产品分支</h2><ol class="numbered-list"><li>分类与风险判断</li><li>数值与时序预测</li><li>排序与推荐</li><li>决策与控制</li></ol></div>
+        <div><h2>当前攻击场景</h2><ol class="numbered-list"><li>60家完整参考企业</li><li>40家隐藏逾期率的目标企业</li><li>对每家企业读取一次 API 违约概率</li><li>学习代理公式并反演逾期率</li></ol></div>
         <div><h2>主要攻击</h2><ol class="attack-list">
-                <li><span>01</span><strong>评分成员推断</strong></li>
-                <li><span>02</span><strong>属性推断</strong></li>
-                <li><span>03</span><strong>决策边界反演</strong></li>
-                <li><span>04</span><strong>模型抽取</strong></li></ol></div>
+                <li><span>01</span><strong>违约概率规则学习</strong></li>
+                <li><span>02</span><strong>近90天逾期率反演</strong></li></ol></div>
       </section>
 
       <section class="detail-section">

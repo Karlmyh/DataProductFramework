@@ -17,6 +17,15 @@
     legalRisk: 0.10,
     overdueRate: 0.70,
   };
+  const defaultCoefficients = {
+    intercept: -4.20,
+    debtRatio: 1.70,
+    cashFlowStress: 1.25,
+    revenueVolatility: 0.95,
+    operatingAgeRisk: 0.55,
+    legalRisk: 0.65,
+    overdueRate: 2.10,
+  };
   const gradeThresholds = [35, 50, 65];
   const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
   const riskIndexFor = (record) => Math.round(clamp(
@@ -36,6 +45,17 @@
       : riskIndex < gradeThresholds[2]
         ? "C"
         : "D";
+  const defaultProbabilityFor = (record) => {
+    const logit = defaultCoefficients.intercept
+      + defaultCoefficients.debtRatio * record.debtRatio / 100
+      + defaultCoefficients.cashFlowStress * record.cashFlowStress / 100
+      + defaultCoefficients.revenueVolatility * record.revenueVolatility / 100
+      + defaultCoefficients.operatingAgeRisk * record.operatingAgeRisk / 100
+      + defaultCoefficients.legalRisk * record.legalRisk / 100
+      + defaultCoefficients.overdueRate * record.overdueRate / 30;
+    return Math.round((1 / (1 + Math.exp(-logit))) * 10000) / 10000;
+  };
+  const defaultRiskLabelFor = (probability) => probability < 0.25 ? "低风险" : probability < 0.55 ? "中风险" : "高风险";
   const records = Array.from({ length: 100 }, (_, index) => {
     const serial = index + 1;
     const record = {
@@ -50,6 +70,8 @@
     };
     record.riskIndex = riskIndexFor(record);
     record.grade = gradeFor(record.riskIndex);
+    record.defaultProbability = defaultProbabilityFor(record);
+    record.defaultRiskLabel = defaultRiskLabelFor(record.defaultProbability);
     return record;
   });
   [...records]
@@ -67,8 +89,10 @@
     observerRule: {
       formula: "R = clip[0,100](0.26×资产负债率 + 0.18×现金流紧张度 + 0.14×营收波动度 + 0.10×经营年限风险 + 0.10×司法风险 + 0.70×近90天逾期率)",
       coefficients,
+      defaultCoefficients,
       gradeThresholds,
       rankRule: "按风险指数 R 从高到低排列；第1名风险最高。",
+      defaultFormula: "P(未来90天违约) = sigmoid(-4.20 + 1.70×资产负债率/100 + 1.25×现金流紧张度/100 + 0.95×营收波动度/100 + 0.55×经营年限风险/100 + 0.65×司法风险/100 + 2.10×近90天逾期率/30)",
     },
   };
 })();
