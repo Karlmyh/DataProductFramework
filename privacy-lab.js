@@ -2645,9 +2645,8 @@
       if (!run) return;
       const primaryMetric = product.id === "city-grade" ? `${(run.recall * 100).toFixed(1)}%` : `${run.meanAbsoluteError.toFixed(2)} 个百分点`;
       results.innerHTML = `
-        <header><div><span>敏感属性反演结果</span><h3>${escapeHtml(product.attacks[0].name)}</h3></div><strong>${primaryMetric}</strong></header>
-        <div class="membership-result-stats"><article><span>统一数据集</span><strong>${enterpriseCreditStore.records.length} 家</strong></article><article><span>完整参考企业</span><strong>${run.referenceCount}</strong></article><article><span>待推断企业</span><strong>${run.targetCount}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>
-        <div class="credit-result-note"><strong>${product.id === "city-grade" ? "等级反演结论" : "属性反演结论"}</strong><p>${escapeHtml(product.attacks[0].result)}</p></div>`;
+        <header><div><h3>${escapeHtml(product.attacks[0].name)}</h3></div><strong>${primaryMetric}</strong></header>
+        <div class="membership-result-stats"><article><span>统一数据集</span><strong>${enterpriseCreditStore.records.length} 家</strong></article><article><span>完整参考企业</span><strong>${run.referenceCount}</strong></article><article><span>待推断企业</span><strong>${run.targetCount}</strong></article><article><span>真实公式读取</span><strong>${run.formulaAccessCount}</strong></article></div>`;
       return;
     }
     if (seriesRecoveryProductIds.has(product.id)) {

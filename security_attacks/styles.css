@@ -633,8 +633,6 @@ th { font-weight: 700; }
 .credit-inference-summary span, .credit-inference-summary strong { display: block; }
 .credit-inference-summary span { color: var(--muted); font-size: 8px; }
 .credit-inference-summary strong { margin-top: 4px; font: 700 18px Arial, sans-serif; }
-.credit-result-note { padding: 14px 16px; border-top: 1px solid var(--ink); }
-.credit-result-note p { margin: 6px 0 0; font-size: 12px; line-height: 1.6; }
 
 .gradient-product-view { position: relative; padding: 18px; }
 .gradient-header, .gradient-output { display: flex; justify-content: space-between; gap: 14px; padding: 10px 12px; border: 1px solid var(--ink); background: var(--paper); }.gradient-header strong, .gradient-output strong { font-size: 11px; }
